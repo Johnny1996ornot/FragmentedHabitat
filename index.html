@@ -147,7 +147,7 @@
     .swatch { width: 9px; height: 9px; display: inline-block; background: #98a6ad; }
     .swatch.safe { background: #435d69; }
     .swatch.route { background: var(--gold); }
-    .deck-wrap { position: absolute; right: 2%; bottom: 3%; width: 125px; text-align: center; }
+    .deck-wrap { position: absolute; right: 2%; bottom: 12%; width: 125px; text-align: center; }
     .deck-stack { position: relative; width: 86px; height: 112px; margin: 0 auto 14px; }
     .deck-stack::before, .deck-stack::after { content: ""; position: absolute; inset: 0; background: #182d52; border: 1px solid #5976a6; border-radius: 5px; transform: rotate(-12deg) translate(-6px, 2px); }
     .deck-stack::after { transform: rotate(8deg) translate(5px, 0); }
@@ -161,6 +161,23 @@
     .deck-caption.pending { color: var(--gold); }
     .stage-note { color: var(--muted); margin: 24px 22px 0; max-width: 480px; font-size: 12px; }
     .stage-note strong { color: var(--mint); font-weight: 500; }
+    .help-button { display: inline-grid; place-items: center; width: 26px; height: 26px; margin-left: 10px; vertical-align: middle; border: 1px solid var(--mint); border-radius: 50%; color: var(--mint); background: #112b3e; font: 700 14px system-ui, sans-serif; cursor: pointer; }
+    .help-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+    #help-dialog { width: min(720px, calc(100% - 32px)); }
+    .board-header { display: grid; grid-template-columns: minmax(0,1fr) 244px; gap: 22px; align-items: start; }
+    .camera-controls { min-width: 0; }
+    .game-hud { margin: 0; padding: 12px 15px; }
+    .hud-dice { display: flex; gap: 15px; justify-content: space-between; align-items: center; color: var(--muted); font: 11px ui-monospace,monospace; margin-bottom: 8px; }
+    .game-hud .dice { width: 37px; height: 37px; font-size: 28px; }
+    .game-hud .roster { border: 0; background: none; padding: 0; margin: 0; max-height: 178px; overflow-y: auto; }
+    .game-hud .section-label { font-size: 9px; letter-spacing: .8px; margin-bottom: 4px; }
+    .game-hud .player-row { padding: 7px 0; gap: 8px; }
+    .game-hud .player-row.active { margin-left: 0; padding-left: 5px; }
+    .game-hud .player-row small { font-size: 9px; }
+    .game-hud .food { font-size: 23px; }
+    .scene { margin-top: 18px; }
+    @media (max-width: 1100px) and (min-width: 801px) { .board-header { grid-template-columns: 1fr; } .game-hud { width: 244px; justify-self: end; } }
+    @media (max-width: 800px) { .board-header { grid-template-columns: minmax(0,1fr) 170px; gap: 10px; } .game-hud { padding: 10px; } .view-controls { gap: 5px; } .view-controls .btn { padding: 7px; font-size: 10px; } .game-hud .player-row { grid-template-columns: 25px 1fr auto; gap: 5px; } .game-hud .pixel-face { width: 24px; height: 24px; } .game-hud .player-row strong { font-size: 11px; } .game-hud .player-row small { font-size: 8px; } .game-hud .roster { max-height: 154px; } .scene { margin-top: 10px; } }
     /* 04. Readable rules and settings, on the same page as the game */
     details { border-top: 1px solid var(--line); padding: 15px 0; }
     summary { cursor: pointer; font-size: 13px; color: var(--mint); }
@@ -184,7 +201,7 @@
     .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
     #setup-error { color: #ffb597; font-size: 12px; }
     @media (min-width: 1450px) { .stage { top: 45px; } .board-caption { margin-top: 45px; } }
-    @media (max-width: 1100px) { .app { grid-template-columns: 300px minmax(0, 1fr); gap: 20px; padding: 28px 20px; } .board { min-width: 660px; } h1 { font-size: 38px; } .deck-wrap { bottom: 0; right: 0; } }
+    @media (max-width: 1100px) { .app { grid-template-columns: 300px minmax(0, 1fr); gap: 20px; padding: 28px 20px; } .board { min-width: 660px; } h1 { font-size: 38px; } .deck-wrap { bottom: 12%; right: 0; } }
     @media (max-width: 800px) {
       .app { display: flex; flex-direction: column; padding: 24px 16px; }
       .sidebar { display: contents; }
@@ -218,7 +235,7 @@
     <aside class="sidebar">
       <header class="intro-block">
         <p class="eyebrow">Small animals. A big crossing.</p>
-        <h1>Fragmented<br><span>Habitat.</span></h1>
+        <h1>Fragmented<br><span>Habitat.</span><button class="help-button" id="open-help" aria-label="How to play Fragmented Habitat" title="How to play">?</button></h1>
         <p class="intro">The food is across the road.<br>The challenge is getting home.</p>
         <div class="toolbar">
           <button class="btn" id="settings-button">Settings</button>
@@ -229,7 +246,7 @@
         <p class="round-tag" id="round-title">Round 1</p>
         <p class="goal" id="goal-label"></p>
         <div class="turn-line">
-          <div class="dice" id="dice" aria-label="Dice not rolled">?</div>
+          
           <h2 id="turn-title"></h2>
         </div>
         <p class="turn-help" id="turn-help"></p>
@@ -248,15 +265,52 @@
         <p class="status" id="status" role="status" aria-live="polite"></p>
       </section>
       <section class="panel card-hand" id="card-hand" aria-label="Player card hand"></section>
-      <section class="panel roster" id="roster" aria-label="Animal families"></section>
+      
       <div class="more-info">
-        <details id="rules">
-          <summary>How to play — with examples</summary>
+        <details class="log"><summary>Recent events</summary><ol id="event-log"></ol></details>
+        <footer>FRAGMENTED HABITAT / PIXEL EDITION<br>1–7 players · Pass the screen · Play offline</footer>
+      </div>
+    </aside>
+    <!-- 06. One floating board, with a clickable earned-card deck -->
+    <section class="stage" aria-label="Raised game board">
+      <div class="board-header"><div class="camera-controls"><p class="board-caption">01 / The crossing</p>
+      <div class="view-controls" aria-label="Board rotation">
+        <button class="btn" id="rotate-left" aria-label="Rotate board left 15 degrees">↶ Rotate</button>
+        <button class="btn" id="rotate-right" aria-label="Rotate board right 15 degrees">Rotate ↷</button>
+        <button class="btn" id="zoom-out" aria-label="Zoom board out">−</button><button class="btn" id="zoom-in" aria-label="Zoom board in">+</button><button class="btn" id="reset-view">Reset view</button>
+        <output id="view-angle" aria-label="Board rotation and tilt angle">0° / 32°</output><output id="zoom-label" aria-label="Board zoom">100%</output>
+      </div>
+      <p class="rotation-help">Drag to rotate or tilt. Pinch or scroll over the board to zoom. Tap a gold square to move.</p></div><aside class="game-hud panel" aria-label="Dice and family food"><div class="hud-dice"><span>Last roll</span><div class="dice" id="dice" aria-label="Dice not rolled">?</div></div><section class="panel roster" id="roster" aria-label="Animal families"></section></aside></div>
+      <div class="scene">
+        <div class="board-scroll" aria-label="Scrollable board">
+          <svg class="board" id="board" viewBox="0 0 1140 690" role="group" aria-label="Six rows of forest, field, road, and fruit squares"></svg>
+        </div>
+        <div class="deck-wrap">
+          <div class="deck-stack">
+            <button class="deck" id="draw-card" disabled aria-describedby="deck-caption" aria-label="Draw an earned card">
+              <span class="deck-label">Habitat</span>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2h3v3h4V2h3v9h-2v3H5v-3H3Z" fill="currentColor"/><path d="M5 7h2v2H5m4-2h2v2H9m-2 4h2v2H7" fill="#10283b"/></svg>
+              <span class="deck-label" id="deck-count">17 cards</span>
+            </button>
+          </div>
+          <p class="deck-caption" id="deck-caption">Win a contest<br>to draw a card.</p>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="swatch route"></i>Gold: choose a step</span>
+        <span><i class="swatch"></i>Road: stop and check</span>
+        <span><i class="swatch safe"></i>Dark strip: safe refuge</span>
+      </div>
+      <p class="stage-note" id="stage-note"><strong>Forest → fruit → forest.</strong> Bring food home to score. Rotate the island to see it from another side. Reset view brings the forest back to the left.</p>
+    </section>
+  </main>
+        <dialog id="help-dialog" aria-labelledby="help-title">
+          <div class="help-heading"><h2 id="help-title">How to play</h2><button class="btn" id="close-help" aria-label="Close game rules">Close ×</button></div>
           <div class="rules">
             <h3>Get food. Bring it home.</h3>
             <p>You are a family of small animals living in the forest on the left. There is plenty of fruit on the right, but a road and hungry predators stand between you and your next meal.</p>
             <p>Everyone starts with <strong>3 food at home</strong> and one animal. Visit the fruit patch to pick up <strong>2 food</strong>, then return to the forest to add it to your total. Food being carried does not count yet. The first family with <strong>7 food at home</strong> wins, unless you choose a different goal in Settings.</p>
-            <p>Drag the board sideways to rotate and vertically to tilt, or use the Rotate buttons. On a phone, drag with one finger. <strong>Reset view</strong> restores the original angle without restarting the game. A tap or click on a gold square still moves your animal.</p>
+            <p>Drag the board sideways to rotate and vertically to tilt, or use the Rotate buttons. On a phone, drag with one finger and pinch with two to zoom. Trackpad pinch or scrolling over the board zooms the board; it does not zoom the website. <strong>Reset view</strong> restores the original angle without restarting the game. A tap or click on a gold square still moves your animal.</p>
             <h3>Your turn, step by step</h3>
             <ol>
               <li><strong>Choose an animal and roll.</strong> Your whole family shares one roll. If you have offspring, choose which animal gets to move; you can change your choice until you take the first step.</li>
@@ -270,8 +324,8 @@
             <h3>When two animals want the same square</h3>
             <p>Your own animals block one another. If you try to enter another family's square, you spend one movement step and start a contest. Choose odd or even; the defender gets the other choice. Roll once. If your choice comes up, you take the square. Otherwise, the defender keeps it.</p>
             <p>The winner chooses a highlighted square to push the loser one step left, right, forward, or back. A push onto the road triggers traffic immediately. A push onto a predator causes a hit. You cannot push into another occupied field square. Everyone can share the forest and fruit patch.</p>
-            <h3>Win a push. Draw a card.</h3>
-            <p>At the board's edge, an <strong>OUT</strong> square may be available. Push the loser there and they return home under the usual hit rule. The winner earns one card. Play pauses: <strong>the winner clicks the floating deck</strong> to reveal it and keep it in their hand. A normal push within the board earns no card.</p>
+            <h3>Win a contest. Draw a card.</h3>
+            <p>Once you win the odd/even roll, choose where to push the loser, then click the deck to draw one card. At the board's edge, an <strong>OUT</strong> square may be available. Push the loser there and they return home under the usual hit rule. Every odd/even contest winner earns one card, whether the push stays on the board or goes OUT. After the push, play pauses: <strong>the winner clicks the floating deck</strong> to reveal it and keep it in their hand. A normal push within the board also earns the winner a card. If it triggers traffic, draw first, then resolve that traffic check. If a push ends the whole game, no further card is needed.</p>
             <p><strong>Wait until the next round to use a new card.</strong> If you draw in round 2, it becomes available in round 3, after all families and predators finish round 2. It stays in your hand until you click its Use button at the right time. Nothing plays automatically.</p>
             <p><strong>Reroll — 7 copies:</strong> After rolling for movement, but before your first step, roll again and replace the old result. If you rolled 1, this gives you another chance; you must accept the new result. It does not give you two movement rolls.</p>
             <p><strong>Extra block — 5 copies:</strong> Add one step during your movement turn. You can use it after spending your last step, as long as you have not finished your turn.</p>
@@ -284,44 +338,8 @@
             <p>The fruit patch gives food once per trip. You must return home before collecting again. There are no reward squares. You can undo ordinary steps before ending your turn, but rolls, contests, card use, and hits are final. If every animal is removed, the game ends with no winner.</p>
             <p>Use Settings to change the players, names, animals, or winning total and start a fresh game. Reset restarts the same group. Everyone shares this screen; refreshing the page starts a new two-player game.</p>
           </div>
-        </details>
-        <details class="log"><summary>Recent events</summary><ol id="event-log"></ol></details>
-        <footer>FRAGMENTED HABITAT / PIXEL EDITION<br>1–7 players · Pass the screen · Play offline</footer>
-      </div>
-    </aside>
-    <!-- 06. One floating board, with a clickable earned-card deck -->
-    <section class="stage" aria-label="Raised game board">
-      <p class="board-caption">01 / The crossing</p>
-      <div class="view-controls" aria-label="Board rotation">
-        <button class="btn" id="rotate-left" aria-label="Rotate board left 15 degrees">↶ Rotate</button>
-        <button class="btn" id="rotate-right" aria-label="Rotate board right 15 degrees">Rotate ↷</button>
-        <button class="btn" id="reset-view">Reset view</button>
-        <output id="view-angle" aria-label="Board rotation and tilt angle">0° / 32°</output>
-      </div>
-      <p class="rotation-help">Drag sideways to rotate, up or down to tilt. Tap a gold square to move.</p>
-      <div class="scene">
-        <div class="board-scroll" aria-label="Scrollable board">
-          <svg class="board" id="board" viewBox="0 0 1140 690" role="group" aria-label="Six rows of forest, field, road, and fruit squares"></svg>
-        </div>
-        <div class="deck-wrap">
-          <div class="deck-stack">
-            <button class="deck" id="draw-card" disabled aria-describedby="deck-caption" aria-label="Draw an earned card">
-              <span class="deck-label">Habitat</span>
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2h3v3h4V2h3v9h-2v3H5v-3H3Z" fill="currentColor"/><path d="M5 7h2v2H5m4-2h2v2H9m-2 4h2v2H7" fill="#10283b"/></svg>
-              <span class="deck-label" id="deck-count">17 cards</span>
-            </button>
-          </div>
-          <p class="deck-caption" id="deck-caption">Earn a draw<br>with an OUT push.</p>
-        </div>
-      </div>
-      <div class="legend">
-        <span><i class="swatch route"></i>Gold: choose a step</span>
-        <span><i class="swatch"></i>Road: stop and check</span>
-        <span><i class="swatch safe"></i>Dark strip: safe refuge</span>
-      </div>
-      <p class="stage-note" id="stage-note"><strong>Forest → fruit → forest.</strong> Bring food home to score. Rotate the island to see it from another side. Reset view brings the forest back to the left.</p>
-    </section>
-  </main>
+        </dialog>
+
   <!-- 07. Settings change the current group and reset in one explicit action -->
   <dialog id="settings-dialog" aria-labelledby="settings-title">
     <h2 id="settings-title">Make it your game.</h2>
@@ -487,7 +505,7 @@
           this.trafficContext = null;
         }
         // Randomness, players, and board occupancy.
-      shuffle(a) {
+        shuffle(a) {
           for (let i = a.length - 1; i > 0; i--) {
             const j = Math.floor(this.shuffleRng() * (i + 1));
             [a[i], a[j]] = [a[j], a[i]];
@@ -537,7 +555,7 @@
           return true;
         }
         // A family buys offspring before its single movement roll.
-      canSpawn() {
+        canSpawn() {
           return this.phase === 'roll' && this.player.food >= 2 && this.family().length < 3 && this
             .family().some(t => t.c === 0);
         }
@@ -560,11 +578,11 @@
           this.selected = t.id;
           this.record(
             `${this.player.name} spent 2 food for offspring ${number}. Choose one animal to move this turn.`
-            );
+          );
           return true;
         }
         // Movement, arrival, and undo. Hazards resolve only at the relevant landing.
-      roll() {
+        roll() {
           if (this.phase === 'traffic') return this.traffic();
           if (this.phase === 'predators') return this.predatorTurn();
           if (this.phase === 'contest-roll') return this.resolveContest();
@@ -580,7 +598,7 @@
           this.phase = 'move';
           this.record(
             `${this.player.name} rolled ${n}. ${this.remaining} steps: choose an animal and route.`
-            );
+          );
           return n;
         }
         canMove(c, r) {
@@ -625,7 +643,7 @@
             this.phase = 'contest-choice';
             this.record(
               `${this.name(t)} challenges ${this.name(other)}. Attacker chooses odd or even; defender gets the other.`
-              );
+            );
             return true;
           }
           this.history.push({
@@ -679,10 +697,10 @@
           this.record(`Last step undone. ${this.remaining} steps left.`);
           return true;
         }
-        // An off-board contest earns one draw. Pause play so the winner can click the deck.
+        // A completed contest earns one draw. Pause play so the winner can click the deck.
         awardCard(owner) {
           if (this.pendingDraw || this.phase === 'finished' || !this.family(owner).length)
-          return false;
+            return false;
           if (!this.deck.length && !this.discard.length) {
             this.record('All cards are being held. There is no card to draw this time.');
             return false;
@@ -714,7 +732,7 @@
           this.phase = reward.resumePhase;
           this.record(
             `${this.players[owner].name} drew ${CARDS[type].name}. It is in their hand, ready from round ${reward.earnedRound + 1}.`
-            );
+          );
           return type;
         }
         cardOwner() {
@@ -722,7 +740,7 @@
             .tokens.find(t => t.id === this.trafficToken).owner : this.active;
         }
         // Held cards require both an unlocked round and the right moment.
-      canCard(type) {
+        canCard(type) {
           const owner = this.cardOwner();
           if (!this.players[owner].hand.some(card => card.type === type && card.availableRound <=
               this.round)) return false;
@@ -753,7 +771,7 @@
             this.phase = 'card-target';
             this.record(
               'Choose an enemy animal to move one square toward habitat. Occupied destinations are blocked.'
-              );
+            );
             return true;
           }
           this.spendCard(type, owner);
@@ -776,7 +794,7 @@
             this.contest = null;
             this.record(
               `${this.players[owner].name} used Safe Streets: this landing skips the traffic check.`
-              );
+            );
             if (context === 'stop') this.nextPlayer();
             else this.phase = 'move';
           }
@@ -837,7 +855,7 @@
           return true;
         }
         // Hits, traffic checks, and revival use the shared banked food.
-      hit(t, cause) {
+        hit(t, cause) {
           if (t.out) return;
           const p = this.players[t.owner];
           if (p.food > 0) {
@@ -846,7 +864,7 @@
             t.loaded = false;
             t.c = 0;
             this.record(
-            `${cause} hit ${this.name(t)}. Revived at home for 1 food; ${p.food} left.`);
+              `${cause} hit ${this.name(t)}. Revived at home for 1 food; ${p.food} left.`);
           } else {
             t.out = true;
             t.cargo = 0;
@@ -881,13 +899,13 @@
           return n;
         }
         // Contests decide a winner, then the winner chooses an adjacent push.
-      chooseParity(choice) {
+        chooseParity(choice) {
           if (this.phase !== 'contest-choice' || !['odd', 'even'].includes(choice)) return false;
           this.contest.choice = choice;
           this.phase = 'contest-roll';
           this.record(
             `Attacker chose ${choice}. Defender gets ${choice==='odd'?'even':'odd'}. Roll the contest die.`
-            );
+          );
           return true;
         }
         resolveContest() {
@@ -900,8 +918,8 @@
           this.contest.loser = won ? d.id : a.id;
           this.phase = 'push';
           this.record(
-            `${this.name(won?a:d)} wins the contest (${n}). Winner chooses one highlighted push square.`
-            );
+            `${this.name(won?a:d)} wins the contest (${n}) and earns a card. Choose a push square, then click the deck to draw.`
+          );
           return n;
         }
         pushOptions(a, d, winner) {
@@ -940,13 +958,13 @@
           const x = this.contest,
             a = this.tokens.find(t => t.id === x.attacker),
             d = this.tokens.find(t => t.id === x.defender),
-            loser = this.tokens.find(t => t.id === x.loser);
+            loser = this.tokens.find(t => t.id === x.loser),
+            winner = this.tokens.find(t => t.id === x.winner);
           if (x.winner === a.id) {
             a.c = x.dest.c;
             a.r = x.dest.r;
           }
           if (c < 0 || c > LAST || r < 0 || r >= ROWS) {
-            const winner = this.tokens.find(t => t.id === x.winner);
             this.hit(loser, 'Off-board push');
             this.contest = null;
             if (loser.id === this.selected) this.nextPlayer();
@@ -983,10 +1001,11 @@
             this.contest = null;
             this.phase = 'move';
           }
+          this.awardCard(winner.owner);
           return true;
         }
         // End-of-turn flow: all families, then each predator, then the next round.
-      checkEnd() {
+        checkEnd() {
           if (!this.alive.length) {
             this.phase = 'finished';
             this.winner = null;
@@ -1078,6 +1097,9 @@
       // Camera orientation belongs to the view, not the game state.
       let viewAngle = 0;
       let viewPitch = 32;
+      let viewZoom = 1;
+      const pointers = new Map();
+      let pinch = null;
       const CAMERA_UNIT = 46;
       let drag = null;
       let suppressClickUntil = 0;
@@ -1202,8 +1224,8 @@
       function project(column, row, height = 0) {
         const p = rawProject(column, row, height);
         return {
-          x: 560 + p.x * CAMERA_UNIT,
-          y: 330 + p.y * CAMERA_UNIT
+          x: 560 + p.x * CAMERA_UNIT * viewZoom,
+          y: 330 + p.y * CAMERA_UNIT * viewZoom
         };
       }
     
@@ -1214,6 +1236,11 @@
         buildBoard();
       }
     
+      function setZoom(zoom) {
+        viewZoom = Math.max(.6, Math.min(2.4, zoom));
+        $('zoom-label').textContent = `${Math.round(viewZoom * 100)}%`;
+        buildBoard();
+      }
       // Only the edges facing the viewer need vertical side faces.
       function raisedSides(parent, corners, height, front, side) {
         corners.forEach((start, index) => {
@@ -1222,10 +1249,10 @@
           parent.append(svgNode('polygon', {
             points: points(start, end, {
               x: end.x,
-              y: end.y + height * Math.cos(viewPitch * Math.PI / 180)
+              y: end.y + height * viewZoom * Math.cos(viewPitch * Math.PI / 180)
             }, {
               x: start.x,
-              y: start.y + height * Math.cos(viewPitch * Math.PI / 180)
+              y: start.y + height * viewZoom * Math.cos(viewPitch * Math.PI / 180)
             }),
             fill: index % 2 ? side : front,
             stroke: '#081925',
@@ -1243,17 +1270,13 @@
       }
     
       function sprite(kind, x, y, size = 33) {
-        const node = svgNode('use', {
-          href: `#pixel-${kind}`,
-          x,
-          y,
-          width: size,
-          height: size,
-          class: 'sprite'
+        const scaled = size * viewZoom;
+        return svgNode('use', {
+          href: `#pixel-${kind}`, x: x + size / 2 - scaled / 2,
+          y: y + size - scaled, width: scaled, height: scaled, class: 'sprite'
         });
-        return node;
       }
-    
+
       // Every block uses real world coordinates and the same camera as the tile grid.
       // width, height, and depth are physical dimensions, not screen offsets.
       function cuboid(column, row, width, height, depth, top, front, side, base = .08) {
@@ -1469,7 +1492,7 @@
             role: 'button',
             tabindex: legal ? '0' : '-1',
             'aria-disabled': String(!legal),
-            'aria-label': `${kind}, row ${r+1}, column ${c}. ${animals.map(t=>game.name(t)).join(', ')} ${predator?.name||''}${legal?(outside?' Push OUT and earn a card':game.phase==='push'?' Push here':game.phase==='card-target'?' Select enemy':' Move here'):''}`,
+            'aria-label': `${kind}, row ${r+1}, column ${c}. ${animals.map(t=>game.name(t)).join(', ')} ${predator?.name||''}${legal?(outside?' Push OUT, then draw your contest card':game.phase==='push'?' Push here':game.phase==='card-target'?' Select enemy':' Move here'):''}`,
           });
           if (!outside) {
             const [top, front, side] = colors[kind];
@@ -1679,8 +1702,8 @@
           predators: 'Roll for this predator. It follows its green lane and turns around at the edge. Only its final square hits.',
           'contest-choice': 'You are the attacker: choose odd or even. The defender gets the other choice.',
           'contest-roll': 'Roll once to decide who wins the square and gets to push the other animal.',
-          push: 'Choose a gold square for the loser. OUT sends them home and earns you one card.',
-          draw: 'Click the highlighted floating deck. Keep what you draw; it unlocks next round.',
+          push: 'Choose a gold square for the loser. You won a card: click the deck after the push.',
+          draw: 'You won the contest! Click the highlighted floating deck to draw one card. It unlocks next round.',
           'card-target': 'Choose a highlighted enemy. It moves one square toward the forest. Click Keep card to cancel.',
           finished: game.winner === null ? 'No animals remain. Reset to try again.' :
             'Enough food made it home. Reset to play another crossing.',
@@ -1745,7 +1768,7 @@
         const note = document.createElement('p');
         note.className = 'hand-note';
         note.textContent =
-          'Keep your cards. New draws unlock next round; click Use when you want to play one.';
+          'Win a contest, then click the deck. New cards unlock next round; click Use to play.';
         const row = document.createElement('div');
         row.className = 'hand-row';
         for (const [type, card] of Object.entries(CARDS)) {
@@ -1775,7 +1798,7 @@
           availability.className = 'availability';
           availability.textContent = ready ?
             `${ready} ready. ${game.canCard(type)?'Your choice.':CARD_DETAILS[type].timing}` : held
-            .length ? 'Not ready yet.' : 'No card held.';
+            .length ? 'Not ready yet.' : 'Win a contest to draw.';
           if (pending.length) availability.textContent +=
             ` ${pending.length} ready in round ${Math.min(...pending.map(c=>c.availableRound))}.`;
           box.append(glyph, total, name, description, button, availability);
@@ -1787,7 +1810,7 @@
         $('deck-count').textContent = draw ? 'Draw one' : `${game.deck.length} cards`;
         $('deck-caption').textContent = draw ?
           `${game.players[game.pendingDraw.owner].name}: click to draw.` :
-          `${game.deck.length} in deck / ${game.discard.length} used. Earn a draw with an OUT push.`;
+          `${game.deck.length} in deck / ${game.discard.length} used. Win an odd/even contest to draw.`;
         $('deck-caption').className = `deck-caption${draw?' pending':''}`;
       }
     
@@ -1948,12 +1971,43 @@
       }
       $('odd').addEventListener('click', () => act(() => game.chooseParity('odd')));
       $('even').addEventListener('click', () => act(() => game.chooseParity('even')));
+      $('open-help').addEventListener('click', () => $('help-dialog').showModal());
+      $('close-help').addEventListener('click', () => $('help-dialog').close());
       $('rotate-left').addEventListener('click', () => setRotation(viewAngle - 15));
       $('rotate-right').addEventListener('click', () => setRotation(viewAngle + 15));
-      $('reset-view').addEventListener('click', () => setRotation(0, 32));
+      $('zoom-out').addEventListener('click', () => setZoom(viewZoom / 1.15));
+      $('zoom-in').addEventListener('click', () => setZoom(viewZoom * 1.15));
+      $('reset-view').addEventListener('click', () => {
+        viewZoom = 1;
+        $('zoom-label').textContent = '100%';
+        setRotation(0, 32);
+      });
       const rotationSurface = $('board');
+      const pointerDistance = () => {
+        const [a, b] = [...pointers.values()];
+        return Math.hypot(a.x - b.x, a.y - b.y);
+      };
       rotationSurface.addEventListener('pointerdown', event => {
-        if (event.button !== 0 || drag) return;
+        if (event.button !== 0) return;
+        pointers.set(event.pointerId, {
+          x: event.clientX,
+          y: event.clientY
+        });
+        if (pointers.size === 2) {
+          if (rotationFrame !== null) {
+            cancelAnimationFrame(rotationFrame);
+            rotationFrame = null;
+          }
+          drag = null;
+          rotationSurface.classList.remove('dragging');
+          pinch = {
+            distance: Math.max(1, pointerDistance()),
+            zoom: viewZoom
+          };
+          for (const id of pointers.keys()) rotationSurface.setPointerCapture(id);
+          return;
+        }
+        if (drag || pointers.size > 1) return;
         drag = {
           id: event.pointerId,
           startX: event.clientX,
@@ -1964,11 +2018,20 @@
         };
       });
       rotationSurface.addEventListener('pointermove', event => {
+        if (!pointers.has(event.pointerId)) return;
+        pointers.set(event.pointerId, {
+          x: event.clientX,
+          y: event.clientY
+        });
+        if (pinch && pointers.size === 2) {
+          event.preventDefault();
+          setZoom(pinch.zoom * pointerDistance() / pinch.distance);
+          return;
+        }
         if (!drag || event.pointerId !== drag.id) return;
-        const dx = event.clientX - drag.startX;
-        const dy = event.clientY - drag.startY;
+        const dx = event.clientX - drag.startX,
+          dy = event.clientY - drag.startY;
         if (!drag.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
-    
         if (!drag.moved) {
           drag.moved = true;
           rotationSurface.setPointerCapture(event.pointerId);
@@ -1978,33 +2041,58 @@
         if (rotationFrame !== null) cancelAnimationFrame(rotationFrame);
         rotationFrame = requestAnimationFrame(() => {
           rotationFrame = null;
-          if (drag) setRotation(drag.startAngle + dx * .4, drag.startPitch - dy * .15);
+          if (drag) setRotation(drag.startAngle - dx * .4, drag.startPitch - dy * .15);
         });
       });
     
       function endRotation(event) {
+        const wasPinching = !!pinch;
+        pointers.delete(event.pointerId);
+        if (wasPinching) {
+          rotationSurface.classList.remove('dragging');
+          pinch = null;
+          drag = null;
+          suppressClickUntil = performance.now() + 300;
+        }
+        if (rotationSurface.hasPointerCapture(event.pointerId)) rotationSurface.releasePointerCapture(
+          event.pointerId);
         if (!drag || event.pointerId !== drag.id) return;
         if (rotationFrame !== null) {
           cancelAnimationFrame(rotationFrame);
           rotationFrame = null;
         }
-        const wasDragging = drag.moved;
-        const finalAngle = drag.startAngle + (event.clientX - drag.startX) * .4;
-        const finalPitch = drag.startPitch - (event.clientY - drag.startY) * .15;
+        const moved = drag.moved,
+          angle = drag.startAngle - (event.clientX - drag.startX) * .4,
+          pitch = drag.startPitch - (event.clientY - drag.startY) * .15;
         drag = null;
         rotationSurface.classList.remove('dragging');
-        if (rotationSurface.hasPointerCapture(event.pointerId)) {
-          rotationSurface.releasePointerCapture(event.pointerId);
-        }
-        if (wasDragging) {
+        if (moved) {
           suppressClickUntil = performance.now() + 250;
-          if (event.type === 'pointerup') setRotation(finalAngle, finalPitch);
+          if (event.type === 'pointerup') setRotation(angle, pitch);
         }
       }
       rotationSurface.addEventListener('pointerup', endRotation);
       rotationSurface.addEventListener('pointercancel', endRotation);
       rotationSurface.addEventListener('pointerleave', event => {
-        if (drag && !drag.moved && event.pointerId === drag.id) drag = null;
+        if (drag && !drag.moved && event.pointerId === drag.id) {
+          drag = null;
+          pointers.delete(event.pointerId);
+        }
+      });
+      // Trackpad pinch arrives as Ctrl+wheel. Cancel only over the game stage so the
+      // board zooms without changing the website's browser zoom.
+      document.querySelector('.stage').addEventListener('wheel', event => {
+        const pinchWheel = event.ctrlKey || event.metaKey;
+        if (!pinchWheel && !event.target.closest('#board')) return;
+        event.preventDefault();
+        const units = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 690 : 1;
+        if (!pinchWheel && Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+          setRotation(viewAngle - event.deltaX * .2);
+        } else {
+          setZoom(viewZoom * Math.exp(-event.deltaY * units * (pinchWheel ? .01 : .002)));
+        }
+      }, {
+        passive: false
       });
       render();
     })();

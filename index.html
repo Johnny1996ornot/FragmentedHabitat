@@ -8,242 +8,162 @@
   <title>Fragmented Habitat</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23071527'/%3E%3Cpath d='M3 2h3v3h4V2h3v9h-2v3H5v-3H3Z' fill='%23ecad60'/%3E%3Cpath d='M5 7h2v2H5m4-2h2v2H9m-2 4h2v2H7' fill='%23071527'/%3E%3C/svg%3E">
   <style>
-    /* 01. Midnight palette and page layout */
-    :root {
-      color-scheme: dark;
-      --night: #071527;
-      --panel: #0c2035;
-      --line: #284258;
-      --text: #ebf4f5;
-      --muted: #9bafbe;
-      --mint: #9ddfba;
-      --gold: #ffda83;
-      --cyan: #77d7ed;
-    }
-    * { box-sizing: border-box; }
-    [hidden] { display: none !important; }
-    body {
-      margin: 0;
-      color: var(--text);
-      background: radial-gradient(ellipse at 72% 30%, #12334c 0, #0a1c31 36%, var(--night) 72%);
-      font: 14px/1.55 system-ui, sans-serif;
-      min-height: 100vh;
-    }
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background-image: radial-gradient(#79cde32e .8px, transparent .8px);
-      background-size: 37px 37px;
-      z-index: -1;
-    }
-    button, input, select { font: inherit; }
-    button { cursor: pointer; }
-    button:disabled { cursor: default; }
-    button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
-      outline: 3px solid var(--gold);
-      outline-offset: 4px;
-    }
-    h1, h2, h3, p { margin: 0; }
-    .app {
-      display: grid;
-      grid-template-columns: 336px minmax(0, 1fr);
-      gap: clamp(24px, 3vw, 60px);
-      max-width: 1680px;
-      margin: auto;
-      padding: 40px 36px 64px;
-    }
-    .sidebar { min-width: 0; }
-    .eyebrow, .section-label, .round-tag, .board-caption {
-      font: 11px/1.5 ui-monospace, monospace;
-      text-transform: uppercase;
-      letter-spacing: 1.6px;
-    }
-    .eyebrow { color: var(--mint); }
-    h1 { font: 700 43px/1.08 ui-monospace, monospace; letter-spacing: -2px; margin: 13px 0 16px; }
-    h1 span { color: var(--mint); }
-    .intro { color: var(--muted); max-width: 30ch; font-size: 15px; }
-    .toolbar { display: flex; gap: 8px; margin: 20px 0 28px; }
-    .panel { border: 1px solid var(--line); background: #0a1d30dd; padding: 18px; margin-bottom: 16px; border-radius: 4px; }
-    .section-label { color: var(--muted); margin-bottom: 12px; }
-    .btn {
-      border: 1px solid #3f6075;
-      background: #132b40;
-      color: var(--text);
-      padding: 9px 13px;
-      border-radius: 3px;
-      font-size: 12px;
-      font-weight: 650;
-      transition: background .15s, border-color .15s;
-    }
-    .btn:hover:not(:disabled) { background: #24475c; border-color: var(--cyan); }
-    .btn.primary { background: var(--mint); color: #092a25; border-color: var(--mint); box-shadow: 0 3px 0 #47785c; }
-    .btn.primary:hover:not(:disabled) { background: #c2f7d7; }
-    .btn:disabled { color: #8b9bac; background: #14273a; border-color: #273b4f; box-shadow: none; }
-    .toolbar .btn { background: transparent; }
-    .round-tag { color: var(--gold); }
-    .goal { color: var(--muted); font-size: 12px; margin: 4px 0 16px; }
-    .turn-line { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
-    .turn-line h2 { font-size: 17px; line-height: 1.3; }
-    .dice { width: 49px; height: 49px; flex: 0 0 auto; background: #e9efdf; color: #102639; border: 2px solid #fff; box-shadow: 4px 4px 0 #366076; border-radius: 4px; display: grid; place-items: center; font-size: 35px; line-height: 1; }
-    .turn-help { color: #c2d0da; font-size: 13px; min-height: 42px; }
-    .control-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px; }
-    #roll { width: 100%; font-size: 14px; padding: 12px; }
-    #parity { display: flex; gap: 8px; }
-    .family-picks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
-    .animal-pick { font-size: 11px; padding: 6px 9px; }
-    .animal-pick[aria-pressed="true"] { color: var(--mint); border-color: var(--mint); }
-    .status { color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); margin-top: 15px; padding-top: 12px; }
-    .status.winner { color: var(--gold); }
-    /* 02. Family faces, food totals, and the retained card hand */
-    .token { display: inline-flex; position: relative; align-items: center; justify-content: center; flex-shrink: 0; }
-    .pixel-face { width: 32px; height: 32px; image-rendering: pixelated; display: block; }
-    .token sup { position: absolute; bottom: -1px; right: -3px; min-width: 13px; background: var(--token); color: white; border: 1px solid white; font: 9px/13px ui-monospace, monospace; text-align: center; }
-    .player-row { display: grid; grid-template-columns: 34px 1fr auto; gap: 11px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); }
-    .player-row:last-child { border-bottom: 0; }
-    .player-row.active { border-left: 2px solid var(--mint); margin-left: -10px; padding-left: 8px; }
-    .player-row.out { opacity: .5; }
-    .player-row strong { font-size: 13px; }
-    .player-row small { display: block; color: var(--muted); font-size: 10px; }
-    .food { font: 21px ui-monospace, monospace; color: var(--gold); text-align: right; }
-    .hand-header { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin-bottom: 10px; }
-    .hand-header h2 { font-size: 14px; }
-    .hand-header small, .hand-note { color: var(--muted); font-size: 11px; }
-    .hand-note { margin-bottom: 12px; }
-    .hand-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .card-option { border: 1px solid #30455e; background: linear-gradient(145deg, #172e47, #0c1f33); padding: 10px; border-radius: 4px; position: relative; }
-    .card-option.ready { border-color: #82ba9a; }
-    .card-option h3 { font-size: 11px; margin: 5px 0; }
-    .card-glyph { font: 22px/1 ui-monospace, monospace; color: var(--cyan); }
-    .card-count { position: absolute; right: 9px; top: 8px; font: 12px ui-monospace, monospace; color: var(--gold); }
-    .card-option small { display: block; font-size: 10px; color: var(--muted); line-height: 1.4; margin-bottom: 8px; }
-    .card-option .btn { width: 100%; padding: 6px 2px; font-size: 11px; }
-    .card-option .availability { margin-top: 7px; margin-bottom: 0; color: #bed5d6; }
-    /* 03. The raised island. Geometry and pixel sprites are drawn as inline SVG. */
-    .stage { position: sticky; top: 24px; align-self: start; min-width: 0; }
-    .board-caption { color: var(--muted); display: flex; align-items: center; gap: 12px; margin-top: 28px; }
-    .board-caption::before { content: ""; width: 26px; height: 2px; background: var(--mint); }
-    .scene { position: relative; margin-top: 6px; }
-    .board-scroll { overflow-x: auto; scrollbar-color: #3d657e #071527; padding-bottom: 8px; }
-    .board { display: block; width: 100%; min-width: 720px; height: auto; overflow: visible; }
-    .board { touch-action: none; user-select: none; cursor: grab; }
-    .board.dragging, .board.dragging .tile { cursor: grabbing; }
-    .view-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 12px 0 6px; }
-    .view-controls output { color: var(--muted); font: 11px ui-monospace, monospace; min-width: 34px; }
-    .rotation-help { color: var(--muted); font-size: 11px; margin-bottom: 6px; }
-    .board .tile { cursor: grab; }
-    .board .tile.legal { cursor: pointer; }
-    .tile.legal .tile-top { stroke: var(--gold); stroke-width: 2.5; filter: brightness(1.15); }
-    .tile.legal:hover .tile-top { fill: #d0c574; filter: brightness(1.2); }
-    .tile.current .tile-top { stroke: var(--cyan); stroke-width: 2.5; }
-    .tile:focus-visible { outline: none; }
-    .tile:focus-visible .tile-top { stroke: white; stroke-width: 4; }
-    .board .sprite, .board .tile-detail { pointer-events: none; }
-    .row-number, .lane-label { font: 11px ui-monospace, monospace; fill: #bdd3d7; }
-    .board-shadow { opacity: .5; }
-    .legend { color: var(--muted); display: flex; flex-wrap: wrap; gap: 10px 20px; font-size: 11px; margin: 2px 0 0 22px; max-width: 630px; }
-    .legend span { display: flex; gap: 7px; align-items: center; }
-    .swatch { width: 9px; height: 9px; display: inline-block; background: #98a6ad; }
-    .swatch.safe { background: #435d69; }
-    .swatch.route { background: var(--gold); }
-    .deck-wrap { position: absolute; right: 2%; bottom: 12%; width: 125px; text-align: center; }
-    .deck-stack { position: relative; width: 86px; height: 112px; margin: 0 auto 14px; }
-    .deck-stack::before, .deck-stack::after { content: ""; position: absolute; inset: 0; background: #182d52; border: 1px solid #5976a6; border-radius: 5px; transform: rotate(-12deg) translate(-6px, 2px); }
-    .deck-stack::after { transform: rotate(8deg) translate(5px, 0); }
-    .deck { position: absolute; inset: 0; z-index: 1; border: 2px solid #86aacb; border-radius: 5px; background: repeating-linear-gradient(45deg, #1d3e64, #1d3e64 6px, #173452 6px, #173452 12px); color: var(--mint); box-shadow: 8px 12px 0 #020c1999; padding: 8px; transition: transform .2s, box-shadow .2s; }
-    .deck svg { width: 43px; height: 43px; display: block; margin: 5px auto; }
-    .deck .deck-label { font: 10px ui-monospace, monospace; text-transform: uppercase; letter-spacing: 1px; }
-    .deck:disabled { filter: saturate(.7); }
-    .deck:not(:disabled) { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 26px #e0b65945, 8px 12px 0 #020c1999; }
-    .deck:hover:not(:disabled) { transform: translateY(-5px); }
-    .deck-caption { color: var(--muted); font: 11px/1.5 ui-monospace, monospace; }
-    .deck-caption.pending { color: var(--gold); }
-    .stage-note { color: var(--muted); margin: 24px 22px 0; max-width: 480px; font-size: 12px; }
-    .stage-note strong { color: var(--mint); font-weight: 500; }
-    .help-button { display: inline-grid; place-items: center; width: 26px; height: 26px; margin-left: 10px; vertical-align: middle; border: 1px solid var(--mint); border-radius: 50%; color: var(--mint); background: #112b3e; font: 700 14px system-ui, sans-serif; cursor: pointer; }
-    .help-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
-    #help-dialog { width: min(720px, calc(100% - 32px)); }
-    .board-header { display: grid; grid-template-columns: minmax(0,1fr) 244px; gap: 22px; align-items: start; }
-    .camera-controls { min-width: 0; }
-    .game-hud { margin: 0; padding: 12px 15px; }
-    .hud-dice { display: flex; gap: 15px; justify-content: space-between; align-items: center; color: var(--muted); font: 11px ui-monospace,monospace; margin-bottom: 8px; }
-    .game-hud .dice { width: 37px; height: 37px; font-size: 28px; }
-    .game-hud .roster { border: 0; background: none; padding: 0; margin: 0; max-height: 178px; overflow-y: auto; }
-    .game-hud .section-label { font-size: 9px; letter-spacing: .8px; margin-bottom: 4px; }
-    .game-hud .player-row { padding: 7px 0; gap: 8px; }
-    .game-hud .player-row.active { margin-left: 0; padding-left: 5px; }
-    .game-hud .player-row small { font-size: 9px; }
-    .game-hud .food { font-size: 23px; }
-    .scene { margin-top: 18px; }
-    @media (max-width: 1100px) and (min-width: 801px) { .board-header { grid-template-columns: 1fr; } .game-hud { width: 244px; justify-self: end; } }
-    @media (max-width: 800px) { .board-header { grid-template-columns: minmax(0,1fr) 170px; gap: 10px; } .game-hud { padding: 10px; } .view-controls { gap: 5px; } .view-controls .btn { padding: 7px; font-size: 10px; } .game-hud .player-row { grid-template-columns: 25px 1fr auto; gap: 5px; } .game-hud .pixel-face { width: 24px; height: 24px; } .game-hud .player-row strong { font-size: 11px; } .game-hud .player-row small { font-size: 8px; } .game-hud .roster { max-height: 154px; } .scene { margin-top: 10px; } }
-    /* 04. Readable rules and settings, on the same page as the game */
-    details { border-top: 1px solid var(--line); padding: 15px 0; }
-    summary { cursor: pointer; font-size: 13px; color: var(--mint); }
-    .rules { color: #c1d0da; font-size: 13px; padding-top: 12px; }
-    .rules h3 { color: var(--text); font-size: 14px; margin: 15px 0 7px; }
-    .rules p { margin: 8px 0; }
-    .rules ol { padding-left: 20px; }
-    .rules li { margin: 10px 0; }
-    .rules strong { color: var(--gold); }
-    .log ol { padding-left: 18px; max-height: 190px; overflow-y: auto; color: var(--muted); font-size: 11px; }
-    .log li { margin: 8px 0; }
-    footer { color: #7491a4; font: 10px/1.7 ui-monospace, monospace; margin-top: 18px; }
-    dialog { width: min(520px, calc(100% - 32px)); max-height: calc(100vh - 40px); overflow: auto; border: 1px solid #486980; border-radius: 6px; padding: 25px; background: #0c2137; color: var(--text); }
-    dialog::backdrop { background: #020a17cc; backdrop-filter: blur(5px); }
-    dialog h2 { font: 22px ui-monospace, monospace; margin-bottom: 10px; }
-    dialog p { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
-    .settings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
-    label { display: block; font-size: 12px; color: #c2d1da; }
-    input, select { width: 100%; display: block; margin-top: 5px; padding: 9px; background: #071728; border: 1px solid #3b556d; color: var(--text); border-radius: 3px; }
-    .player-field { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
-    .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
-    #setup-error { color: #ffb597; font-size: 12px; }
-    @media (min-width: 1450px) { .stage { top: 45px; } .board-caption { margin-top: 45px; } }
-    @media (max-width: 1100px) { .app { grid-template-columns: 300px minmax(0, 1fr); gap: 20px; padding: 28px 20px; } .board { min-width: 660px; } h1 { font-size: 38px; } .deck-wrap { bottom: 12%; right: 0; } }
-    @media (max-width: 800px) {
-      .app { display: flex; flex-direction: column; padding: 24px 16px; }
-      .sidebar { display: contents; }
-      .intro-block { order: 0; }
-      .stage { order: 1; position: relative; top: auto; width: 100%; align-self: stretch; }
-      .turn-panel { order: 2; }
-      .card-hand { order: 3; }
-      .roster { order: 4; }
-      .more-info { order: 5; }
-      .toolbar { margin: 16px 0 0; }
-      h1 { font-size: 36px; margin: 10px 0 12px; }
-      .intro { max-width: none; }
-      .board-caption { margin-top: 0; font-size: 10px; }
-      .scene { padding-bottom: 130px; }
-      .deck-wrap { bottom: 8px; right: 12px; display: flex; align-items: center; gap: 18px; width: 240px; }
-      .deck-stack { width: 67px; height: 88px; margin: 0; flex-shrink: 0; }
-      .deck svg { width: 32px; height: 32px; margin: 2px auto; }
-      .deck-caption { text-align: left; }
-      .stage-note { margin: 12px 0 0; }
-      .legend { margin-left: 0; }
-      .panel { margin-bottom: 0; }
-      .hand-row { grid-template-columns: repeat(4, 1fr); }
-    }
-    @media (max-width: 480px) { .hand-row { grid-template-columns: 1fr 1fr; } .settings, .player-field { grid-template-columns: 1fr; } }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+    /* One screen, three reserved zones: title/deck, island, player controls. */
+    :root { color-scheme:dark; --night:#071527; --panel:#0c2035; --text:#ebf4f5; --muted:#9bafbe; --mint:#9ddfba; --gold:#ffda83; --cyan:#77d7ed; --line:#284258; }
+    * { box-sizing:border-box; }
+    [hidden] { display:none!important; }
+    html, body { margin:0; width:100%; height:100%; overflow:hidden; }
+    body { color:var(--text); background:radial-gradient(ellipse at 55% 55%,#12334c,var(--night) 78%); font:13px/1.45 system-ui,sans-serif; }
+    body::before { content:""; position:fixed; inset:0; pointer-events:none; background-image:radial-gradient(#79cde32e .8px,transparent .8px); background-size:37px 37px; }
+    button, input, select { font:inherit; }
+    button { cursor:pointer; }
+    button:disabled { cursor:default; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
+    h1,h2,h3,p { margin:0; }
+    .app { position:relative; display:grid; grid-template-columns:210px minmax(0,1fr) 300px; gap:16px; width:100%; height:100dvh; padding:24px; }
+    .sidebar { z-index:2; min-width:0; display:flex; flex-direction:column; align-items:flex-start; }
+    .eyebrow { font:9px/1.6 ui-monospace,monospace; color:var(--mint); letter-spacing:1.2px; text-transform:uppercase; }
+    h1 { font:700 clamp(27px,2.5vw,40px)/1.12 ui-monospace,monospace; letter-spacing:-1.8px; margin:14px 0; }
+    h1 span { color:var(--mint); }
+    .intro { color:var(--muted); font-size:12px; }
+    .toolbar { display:flex; gap:6px; margin-top:20px; }
+    .btn { border:0; border-radius:7px; padding:9px 12px; background:#203b51; color:var(--text); font-size:11px; font-weight:650; }
+    .btn:hover:not(:disabled) { background:#31576e; }
+    .btn.primary { background:var(--mint); color:#092a25; }
+    .btn.primary:hover:not(:disabled) { background:#c2f7d7; }
+    .btn:disabled { opacity:.45; }
+    .panel { background:#0a1d30ed; border:0; border-radius:14px; padding:16px; box-shadow:0 12px 30px #020d1c55; }
+    .game-hud { align-self:start; z-index:2; min-width:0; display:flex; flex-direction:column; gap:12px; max-height:100%; }
+    .turn-heading { display:flex; gap:10px; align-items:center; justify-content:space-between; }
+    .round-tag { color:var(--gold); font:700 15px/1.4 ui-monospace,monospace; }
+    .dice { display:grid; place-items:center; flex-shrink:0; width:39px; height:39px; border-radius:7px; background:#e9efdf; color:#102639; box-shadow:3px 3px 0 #366076; font:30px/1 system-ui; }
+    .goal { font-size:10px; color:var(--muted); margin:6px 0 12px; }
+    .turn-line h2 { font-size:13px; }
+    .turn-help { color:#c2d0da; font-size:11px; margin-top:6px; }
+    .control-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+    #roll { width:100%; padding:11px; font-size:12px; }
+    #parity { display:flex; gap:7px; }
+    .family-picks { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+    .animal-pick { font-size:10px; padding:6px 8px; }
+    .animal-pick[aria-pressed="true"] { background:#1f514a; color:var(--mint); }
+    .status { font-size:10px; color:var(--muted); margin-top:12px; line-height:1.4; }
+    .status.winner { color:var(--gold); }
+    .section-label { color:var(--muted); font:9px ui-monospace,monospace; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+    .player-row { display:grid; grid-template-columns:28px minmax(0,1fr) 35px 31px; align-items:center; gap:7px; padding:8px 5px; border-radius:8px; }
+    .player-row.active { background:#23463788; }
+    .player-row.out { opacity:.5; }
+    .player-row strong { display:block; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .player-row small { display:block; font-size:9px; color:var(--muted); }
+    .token { position:relative; display:inline-flex; }
+    .pixel-face { width:26px; height:26px; image-rendering:pixelated; }
+    .token sup { position:absolute; right:-2px; bottom:-2px; color:white; background:#79543e; font:9px ui-monospace,monospace; padding:0 2px; }
+    .food { color:var(--gold); font:20px ui-monospace,monospace; text-align:right; }
+    .food small { font:8px system-ui; }
+    .card-icon { display:flex; align-items:center; justify-content:center; gap:2px; background:#1e3b53; border:0; color:var(--mint); border-radius:7px; padding:4px; }
+    .card-icon svg { width:19px; height:19px; }
+    .card-icon svg rect { fill:#17364b; stroke:currentColor; stroke-width:1.5; }
+    .card-icon svg path { fill:none; stroke:currentColor; stroke-width:1.5; }
+    .card-icon span { display:block; font:9px ui-monospace,monospace; }
+    .stage { min-width:0; min-height:0; display:flex; flex-direction:column; position:relative; }
+    .scene { flex:1; min-height:0; position:relative; overflow:hidden; }
+    .board { display:block; width:100%; height:100%; touch-action:none; user-select:none; cursor:grab; overflow:hidden; }
+    .board.dragging, .board.dragging .tile { cursor:grabbing; }
+    .board.panning, .board.panning .tile { cursor:move; }
+    .tile.legal { cursor:pointer; }
+    .tile.legal .tile-top { stroke:var(--gold); stroke-width:2.5; filter:brightness(1.15); }
+    .tile.legal:hover .tile-top { fill:#d0c574; }
+    .tile.current .tile-top { stroke:var(--cyan); stroke-width:2.5; }
+    .tile:focus-visible { outline:none; }
+    .tile:focus-visible .tile-top { stroke:white; stroke-width:4; }
+    .sprite,.tile-detail { pointer-events:none; }
+    .row-number,.lane-label { font:11px ui-monospace,monospace; fill:#bdd3d7; }
+    .board-shadow { opacity:.5; }
+    .camera-controls { align-self:center; flex-shrink:0; text-align:center; padding:8px 0 0; }
+    .view-controls { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:6px; }
+    .view-controls output { font:10px ui-monospace,monospace; color:var(--muted); }
+    .move-handle { touch-action:none; cursor:move; }
+    .move-handle[aria-pressed="true"] { background:var(--mint); color:#092a25; }
+    .rotation-help { font-size:10px; color:var(--muted); margin-top:8px; }
+    .deck-wrap { position:relative; width:130px; margin:auto 0; text-align:center; padding-top:20px; }
+    .deck-stack { position:relative; width:76px; height:100px; margin:0 auto 15px; }
+    .deck-stack::before,.deck-stack::after { content:""; position:absolute; inset:0; background:#182d52; border:1px solid #5976a6; border-radius:7px; transform:rotate(-12deg) translate(-6px,2px); }
+    .deck-stack::after { transform:rotate(8deg) translate(5px,0); }
+    .deck { position:absolute; inset:0; z-index:1; border:1px solid #86aacb; border-radius:7px; background:repeating-linear-gradient(45deg,#1d3e64,#1d3e64 6px,#173452 6px,#173452 12px); color:var(--mint); box-shadow:7px 12px 0 #020c1980; padding:8px; }
+    .deck svg { width:35px; height:35px; display:block; margin:6px auto; }
+    .deck-label { font:9px ui-monospace,monospace; text-transform:uppercase; }
+    .deck:not(:disabled) { border-color:var(--gold); color:var(--gold); box-shadow:0 0 24px #ffda8344; }
+    .deck-caption { font-size:10px; color:var(--muted); }
+    .deck-caption.pending { color:var(--gold); }
+    footer { color:#7491a4; font:9px/1.8 ui-monospace,monospace; }
+    .help-button { width:23px; height:23px; margin-left:7px; vertical-align:middle; border:0; border-radius:50%; color:var(--mint); background:#204255; font:700 13px system-ui; }
+    dialog { width:min(540px,calc(100% - 24px)); max-height:calc(100dvh - 24px); overflow:auto; border:0; border-radius:16px; padding:24px; color:var(--text); background:#0c2137; box-shadow:0 20px 90px #0008; }
+    dialog::backdrop { background:#020a17b8; backdrop-filter:blur(4px); }
+    .help-heading { display:flex; gap:12px; justify-content:space-between; align-items:center; margin-bottom:14px; }
+    dialog h2 { font:700 20px ui-monospace,monospace; }
+    dialog p { color:var(--muted); font-size:12px; margin:10px 0; }
+    .rules strong { color:var(--gold); }
+    .rule-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .rule-cards p { padding:10px; background:#163048; border-radius:8px; margin:0; font-size:11px; }
+    .hand-note { margin-bottom:14px; }
+    .hand-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .card-option { position:relative; padding:16px; background:#162f47; border-radius:12px; }
+    .card-option.ready { background:#1e433d; }
+    .card-option h3 { font-size:13px; margin:8px 0; }
+    .card-glyph { font:28px ui-monospace,monospace; color:var(--cyan); }
+    .card-count { position:absolute; right:14px; top:14px; color:var(--gold); }
+    .card-option small { display:block; color:var(--muted); font-size:11px; margin:8px 0; }
+    .card-option .btn { width:100%; }
+    .settings,.player-field { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0; }
+    label { display:block; font-size:12px; color:#c2d1da; }
+    input,select { display:block; width:100%; margin-top:5px; padding:9px; background:#071728; border:1px solid #3b556d; color:var(--text); border-radius:6px; }
+    .actions { display:flex; gap:9px; margin-top:20px; }
+    #setup-error { color:#ffb597; }
+    @media (max-height:820px) and (min-width:801px) { .app { padding:16px; gap:12px; grid-template-columns:190px minmax(0,1fr) 284px; } .panel { padding:12px; } .game-hud { gap:8px; } .player-row { padding:5px 4px; } .turn-help,.status { font-size:10px; } .goal { margin-bottom:8px; } .family-picks { margin-top:7px; } .control-actions { margin-top:8px; } }
+    @media (max-width:1100px) and (min-width:801px) { .app { grid-template-columns:170px minmax(0,1fr) 270px; padding:16px; gap:10px; } h1 { font-size:27px; } .panel { padding:12px; } .view-controls .btn { padding:8px; } }
+    /* Compact screens keep a board row and a controls row inside the viewport. */
+    @media (max-width:800px) { .app { grid-template-columns:1fr 1fr; grid-template-rows:auto minmax(0,1fr) auto; gap:8px; padding:12px; } .sidebar { grid-column:1 / -1; flex-direction:row; align-items:center; justify-content:space-between; } .intro-block h1 { margin:0; font-size:22px; } .intro-block h1 br { display:none; } .intro-block h1 span { margin-left:5px; } .eyebrow,.intro,footer { display:none; } .toolbar { margin-top:6px; } .toolbar .btn { padding:6px 9px; font-size:10px; } .deck-wrap { margin:0; width:74px; padding:0; } .deck-stack { width:40px; height:54px; margin:0 auto 7px; } .deck { padding:4px; } .deck svg { width:20px; height:20px; margin:0 auto; } .deck-label { font-size:6px; } .deck-caption { font-size:8px; } .stage { grid-column:1 / -1; grid-row:2; } .game-hud { grid-column:1 / -1; grid-row:3; display:grid; grid-template-columns:1fr 1fr; gap:8px; } .panel { padding:10px; border-radius:10px; } .round-tag { font-size:11px; } .dice { width:28px; height:28px; font-size:23px; } .goal { font-size:8px; margin:4px 0; } .turn-line h2 { font-size:10px; } .turn-help,.status { font-size:9px; margin-top:4px; } .control-actions { gap:4px; margin-top:6px; } .btn { font-size:9px; padding:6px 7px; } #roll { font-size:10px; padding:7px; } .family-picks { margin-top:6px; } .animal-pick { font-size:8px; padding:4px; } .player-row { grid-template-columns:20px minmax(0,1fr) 26px 22px; gap:3px; padding:4px 2px; } .pixel-face { width:20px; height:20px; } .player-row strong { font-size:9px; } .player-row small { font-size:7px; } .card-icon { padding:2px; gap:1px; } .card-icon svg { width:14px; height:14px; } .card-icon span { font-size:8px; } .food { font-size:16px; } .food small { font-size:7px; } .section-label { font-size:8px; margin-bottom:4px; } .camera-controls { padding:0; } .view-controls { gap:4px; } .view-controls output { font-size:8px; } .rotation-help { font-size:8px; margin-top:4px; } }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none!important; } }
+
   </style>
 </head>
 <body>
-  <!-- 05. Sidebar: introduction, turns, hands, families, and rules -->
+  <!-- 05. One screen: title/deck, board, and upper-right controls -->
   <main class="app" id="game">
     <aside class="sidebar">
       <header class="intro-block">
         <p class="eyebrow">Small animals. A big crossing.</p>
-        <h1>Fragmented<br><span>Habitat.</span><button class="help-button" id="open-help" aria-label="How to play Fragmented Habitat" title="How to play">?</button></h1>
-        <p class="intro">The food is across the road.<br>The challenge is getting home.</p>
-        <div class="toolbar">
-          <button class="btn" id="settings-button">Settings</button>
-          <button class="btn" id="new-game">Reset game</button>
-        </div>
+        <h1>Fragmented<br><span>Habitat.</span><button class="help-button" id="open-help" aria-label="How to play" title="How to play">?</button></h1>
+        <p class="intro">Find fruit. Cross safely.<br>Bring it home.</p>
+        <div class="toolbar"><button class="btn" id="settings-button">Settings</button><button class="btn" id="new-game">Reset game</button></div>
       </header>
+        <div class="deck-wrap">
+          <div class="deck-stack">
+            <button class="deck" id="draw-card" disabled aria-describedby="deck-caption" aria-label="Draw an earned card">
+              <span class="deck-label">Habitat</span>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2h3v3h4V2h3v9h-2v3H5v-3H3Z" fill="currentColor"/><path d="M5 7h2v2H5m4-2h2v2H9m-2 4h2v2H7" fill="#10283b"/></svg>
+              <span class="deck-label" id="deck-count">17 cards</span>
+            </button>
+          </div>
+          <p class="deck-caption" id="deck-caption">Win a contest<br>to draw a card.</p>
+        </div>
+
+      <footer>FRAGMENTED HABITAT · v8<br>1–7 players · Shared screen</footer>
+    </aside>
+    <section class="stage" aria-label="Raised game board">
+      <div class="scene"><svg class="board" id="board" viewBox="0 0 1140 780" role="group" aria-label="Six rows of forest, field, road, and fruit squares"></svg></div>
+      <div class="camera-controls">
+        <div class="view-controls" aria-label="Board controls">
+          <button class="btn move-handle" id="move-board" aria-pressed="false" title="Drag this handle, or click it then drag the board">✥ Move board</button>
+          <button class="btn" id="rotate-left" aria-label="Rotate board left">↶</button><button class="btn" id="rotate-right" aria-label="Rotate board right">↷</button>
+          <button class="btn" id="zoom-out" aria-label="Zoom board out">−</button><button class="btn" id="zoom-in" aria-label="Zoom board in">+</button>
+          <button class="btn" id="reset-view">Reset view</button><output id="view-angle" aria-label="Board rotation">0°</output><output id="zoom-label" aria-label="Board zoom">100%</output>
+        </div>
+        <p class="rotation-help" id="camera-help">Drag to rotate · Pinch to zoom · Gold squares to move</p>
+      </div>
+    </section>
+    <aside class="game-hud" aria-label="Turn controls, dice and family food">
       <section class="panel turn-panel" aria-label="Current turn">
-        <p class="round-tag" id="round-title">Round 1</p>
+        <div class="turn-heading"><h2 class="round-tag" id="round-title">ROUND 1: PLAYER 1 — RAT</h2><div class="dice" id="dice" aria-label="Dice not rolled">?</div></div>
         <p class="goal" id="goal-label"></p>
         <div class="turn-line">
           
@@ -264,81 +184,24 @@
         <div class="family-picks" id="family-picks" aria-label="Choose an animal"></div>
         <p class="status" id="status" role="status" aria-live="polite"></p>
       </section>
-      <section class="panel card-hand" id="card-hand" aria-label="Player card hand"></section>
-      
-      <div class="more-info">
-        <details class="log"><summary>Recent events</summary><ol id="event-log"></ol></details>
-        <footer>FRAGMENTED HABITAT / PIXEL EDITION<br>1–7 players · Pass the screen · Play offline</footer>
-      </div>
+      <section class="panel roster" id="roster" aria-label="Animal families"></section>
     </aside>
-    <!-- 06. One floating board, with a clickable earned-card deck -->
-    <section class="stage" aria-label="Raised game board">
-      <div class="board-header"><div class="camera-controls"><p class="board-caption">01 / The crossing</p>
-      <div class="view-controls" aria-label="Board rotation">
-        <button class="btn" id="rotate-left" aria-label="Rotate board left 15 degrees">↶ Rotate</button>
-        <button class="btn" id="rotate-right" aria-label="Rotate board right 15 degrees">Rotate ↷</button>
-        <button class="btn" id="zoom-out" aria-label="Zoom board out">−</button><button class="btn" id="zoom-in" aria-label="Zoom board in">+</button><button class="btn" id="reset-view">Reset view</button>
-        <output id="view-angle" aria-label="Board rotation and tilt angle">0° / 32°</output><output id="zoom-label" aria-label="Board zoom">100%</output>
-      </div>
-      <p class="rotation-help">Drag to rotate or tilt. Pinch or scroll over the board to zoom. Tap a gold square to move.</p></div><aside class="game-hud panel" aria-label="Dice and family food"><div class="hud-dice"><span>Last roll</span><div class="dice" id="dice" aria-label="Dice not rolled">?</div></div><section class="panel roster" id="roster" aria-label="Animal families"></section></aside></div>
-      <div class="scene">
-        <div class="board-scroll" aria-label="Scrollable board">
-          <svg class="board" id="board" viewBox="0 0 1140 690" role="group" aria-label="Six rows of forest, field, road, and fruit squares"></svg>
-        </div>
-        <div class="deck-wrap">
-          <div class="deck-stack">
-            <button class="deck" id="draw-card" disabled aria-describedby="deck-caption" aria-label="Draw an earned card">
-              <span class="deck-label">Habitat</span>
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2h3v3h4V2h3v9h-2v3H5v-3H3Z" fill="currentColor"/><path d="M5 7h2v2H5m4-2h2v2H9m-2 4h2v2H7" fill="#10283b"/></svg>
-              <span class="deck-label" id="deck-count">17 cards</span>
-            </button>
-          </div>
-          <p class="deck-caption" id="deck-caption">Win a contest<br>to draw a card.</p>
-        </div>
-      </div>
-      <div class="legend">
-        <span><i class="swatch route"></i>Gold: choose a step</span>
-        <span><i class="swatch"></i>Road: stop and check</span>
-        <span><i class="swatch safe"></i>Dark strip: safe refuge</span>
-      </div>
-      <p class="stage-note" id="stage-note"><strong>Forest → fruit → forest.</strong> Bring food home to score. Rotate the island to see it from another side. Reset view brings the forest back to the left.</p>
-    </section>
   </main>
-        <dialog id="help-dialog" aria-labelledby="help-title">
-          <div class="help-heading"><h2 id="help-title">How to play</h2><button class="btn" id="close-help" aria-label="Close game rules">Close ×</button></div>
-          <div class="rules">
-            <h3>Get food. Bring it home.</h3>
-            <p>You are a family of small animals living in the forest on the left. There is plenty of fruit on the right, but a road and hungry predators stand between you and your next meal.</p>
-            <p>Everyone starts with <strong>3 food at home</strong> and one animal. Visit the fruit patch to pick up <strong>2 food</strong>, then return to the forest to add it to your total. Food being carried does not count yet. The first family with <strong>7 food at home</strong> wins, unless you choose a different goal in Settings.</p>
-            <p>Drag the board sideways to rotate and vertically to tilt, or use the Rotate buttons. On a phone, drag with one finger and pinch with two to zoom. Trackpad pinch or scrolling over the board zooms the board; it does not zoom the website. <strong>Reset view</strong> restores the original angle without restarting the game. A tap or click on a gold square still moves your animal.</p>
-            <h3>Your turn, step by step</h3>
-            <ol>
-              <li><strong>Choose an animal and roll.</strong> Your whole family shares one roll. If you have offspring, choose which animal gets to move; you can change your choice until you take the first step.</li>
-              <li><strong>Follow the gold squares.</strong> Each neighboring square costs one step. You can go left, right, up, or down. A roll of 4 gives you up to four steps; you do not have to use them all. While still at home, you can choose any starting row for free before entering the field.</li>
-              <li><strong>Click Stop here when you are done.</strong> Finish on green land or the dark gray refuge to avoid traffic. Stop on light gray road and you must check for a car. If you have no legal move at all, you can pass.</li>
-            </ol>
-            <p>Passing through the road is safe from cars. <strong>Stopping on it</strong> is the risk: roll again, and an odd number means you are safe; an even number means you are hit. The dark gray strip is a refuge, so no traffic roll is needed there.</p>
-            <h3>The foxes and tigers have their own turn</h3>
-            <p>After every living family has played, roll once for each predator. They start outside the board and move straight along their marked green lanes. At an edge they turn around and use any steps they have left. A predator only catches an animal on the square where it finishes; animals it passes are safe.</p>
-            <p>You cannot walk onto a square where a predator is standing. But another player can push you there, which causes an immediate hit. Predators never use the road.</p>
-            <h3>When two animals want the same square</h3>
-            <p>Your own animals block one another. If you try to enter another family's square, you spend one movement step and start a contest. Choose odd or even; the defender gets the other choice. Roll once. If your choice comes up, you take the square. Otherwise, the defender keeps it.</p>
-            <p>The winner chooses a highlighted square to push the loser one step left, right, forward, or back. A push onto the road triggers traffic immediately. A push onto a predator causes a hit. You cannot push into another occupied field square. Everyone can share the forest and fruit patch.</p>
-            <h3>Win a contest. Draw a card.</h3>
-            <p>Once you win the odd/even roll, choose where to push the loser, then click the deck to draw one card. At the board's edge, an <strong>OUT</strong> square may be available. Push the loser there and they return home under the usual hit rule. Every odd/even contest winner earns one card, whether the push stays on the board or goes OUT. After the push, play pauses: <strong>the winner clicks the floating deck</strong> to reveal it and keep it in their hand. A normal push within the board also earns the winner a card. If it triggers traffic, draw first, then resolve that traffic check. If a push ends the whole game, no further card is needed.</p>
-            <p><strong>Wait until the next round to use a new card.</strong> If you draw in round 2, it becomes available in round 3, after all families and predators finish round 2. It stays in your hand until you click its Use button at the right time. Nothing plays automatically.</p>
-            <p><strong>Reroll — 7 copies:</strong> After rolling for movement, but before your first step, roll again and replace the old result. If you rolled 1, this gives you another chance; you must accept the new result. It does not give you two movement rolls.</p>
-            <p><strong>Extra block — 5 copies:</strong> Add one step during your movement turn. You can use it after spending your last step, as long as you have not finished your turn.</p>
-            <p><strong>Enemy backward — 3 copies:</strong> During your movement turn, choose a highlighted enemy and move it one square toward the forest. Its destination must be free; road and predator hazards still apply. Moving it into the forest can help it bank its food, so choose carefully! Cancel the selection to keep your card.</p>
-            <p><strong>Safe Streets — 2 copies:</strong> When your animal needs a traffic check, click Use before the traffic roll. That one landing is safe. This also works when someone pushes your animal onto the road, even during their turn. It does not protect against predators.</p>
-            <p>Used cards go to the discard pile. When the deck empties, only discarded cards are reshuffled. If all 17 cards are held, there is nothing to draw until one is discarded.</p>
-            <h3>Hits and offspring</h3>
-            <p>A hit costs your family <strong>1 food from home</strong>. Your animal revives in the forest and loses everything it was carrying. If you have no food when hit, that animal is removed. Your family keeps playing if another animal survives; if none survive, your turns are skipped and your cards are discarded.</p>
-            <p>Before rolling, you can spend <strong>2 food</strong> for an offspring if one of your animals is at home. You can have up to three living animals. They share food and cards, but each carries its own food. One family still gets just one movement roll per turn.</p>
-            <p>The fruit patch gives food once per trip. You must return home before collecting again. There are no reward squares. You can undo ordinary steps before ending your turn, but rolls, contests, card use, and hits are final. If every animal is removed, the game ends with no winner.</p>
-            <p>Use Settings to change the players, names, animals, or winning total and start a fresh game. Reset restarts the same group. Everyone shares this screen; refreshing the page starts a new two-player game.</p>
-          </div>
-        </dialog>
+  <dialog id="hand-dialog" aria-labelledby="hand-title"><div class="help-heading"><h2 id="hand-title">Player cards</h2><button class="btn" id="close-hand">Close ×</button></div><section id="card-hand" aria-label="Player card hand"></section></dialog>
+  <dialog id="help-dialog" aria-labelledby="help-title">
+    <div class="help-heading"><h2 id="help-title">How to play</h2><button class="btn" id="close-help">Close ×</button></div>
+    <div class="rules">
+      <p><strong>Bring food home.</strong> Start with 3 food. Visit the fruit patch for 2 more, then return to the forest to bank it. First to 7 wins.</p>
+      <p><strong>Roll, choose, move.</strong> One die per family. Move one animal up, down, left or right along gold squares, then finish your turn. An offspring costs 2 food; buy before rolling while an animal is home.</p>
+      <p><strong>Watch the road.</strong> Stopping on light gray means a traffic roll: odd is safe, even is a hit. Passing through is safe; the dark strip needs no check.</p>
+      <p><strong>Watch the predators.</strong> After all players, roll for each fox or tiger. They stay in their green lane and bounce at its edges. Only their final square catches you. You cannot step onto a predator.</p>
+      <p><strong>Compete for a square.</strong> Enter an enemy's square, choose odd or even and roll. The winner pushes the loser one square, then clicks the deck for a card. Forced road landings need traffic checks; a predator or OUT push causes a hit.</p>
+      <p><strong>A hit costs 1 food.</strong> Lose carried fruit and return home. With no food to revive, that animal is removed.</p>
+      <p><strong>Your cards are beside your name.</strong> Click the card icon to view them, Use to play, or Close to keep them. New cards unlock next round.</p>
+      <div class="rule-cards"><p><strong>↻ Reroll ×7</strong><br>Replace a movement roll before stepping.</p><p><strong>+1 Extra block ×5</strong><br>Add one movement step.</p><p><strong>← Enemy backward ×3</strong><br>Move an enemy one block toward home.</p><p><strong>◇ Safe Streets ×2</strong><br>Skip one road check, before rolling.</p></div>
+    </div>
+  </dialog>
+  <ol id="event-log" hidden></ol>
 
   <!-- 07. Settings change the current group and reset in one explicit action -->
   <dialog id="settings-dialog" aria-labelledby="settings-title">
@@ -731,7 +594,7 @@
           this.pendingDraw = null;
           this.phase = reward.resumePhase;
           this.record(
-            `${this.players[owner].name} drew ${CARDS[type].name}. It is in their hand, ready from round ${reward.earnedRound + 1}.`
+            `${this.players[owner].name} drew ${CARDS[type].name}. Open the card icon beside their name; ready from round ${reward.earnedRound + 1}.`
           );
           return type;
         }
@@ -1072,7 +935,7 @@
   <script>
     (() => {
       'use strict';
-    
+
       const {
         Game,
         ANIMALS,
@@ -1096,7 +959,11 @@
       let game = new Game(config);
       // Camera orientation belongs to the view, not the game state.
       let viewAngle = 0;
-      let viewPitch = 32;
+      const viewPitch = 38;
+      let viewPanX = 0,
+        viewPanY = 0;
+      let moveMode = false;
+      let viewedHandOwner = null;
       let viewZoom = 1;
       const pointers = new Map();
       let pinch = null;
@@ -1105,7 +972,7 @@
       let suppressClickUntil = 0;
       let rotationFrame = null;
       const DRAG_THRESHOLD = 6;
-    
+
       // Each letter is one colored square. No fonts, images, or online assets are needed.
       const PALETTE = {
         d: '#172635',
@@ -1171,14 +1038,14 @@
           '..kllwkkwllk..', '...llwkkwll...', '....wwwwww....', '.....wwww.....',
         ],
       };
-    
+
       function svgNode(name, attributes = {}, text = '') {
         const node = document.createElementNS(SVG_NS, name);
         for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value);
         if (text) node.textContent = text;
         return node;
       }
-    
+
       function pixelFace(kind) {
         const face = svgNode('svg', {
           viewBox: '0 0 16 16',
@@ -1190,7 +1057,7 @@
         }));
         return face;
       }
-    
+
       function token(animal) {
         const player = game.players[animal.owner];
         const element = document.createElement('span');
@@ -1203,7 +1070,7 @@
         element.setAttribute('aria-label', game.name(animal));
         return element;
       }
-    
+
       // Orthographic camera: two perpendicular screen axes with one uniform world scale.
       // This uses the camera geometry of the portfolio, without shearing the landscape
       // or automatically changing the zoom as the camera orbits.
@@ -1220,22 +1087,22 @@
           depth: away * Math.cos(elevation) + height * Math.sin(elevation)
         };
       }
-    
+
       function project(column, row, height = 0) {
         const p = rawProject(column, row, height);
         return {
-          x: 560 + p.x * CAMERA_UNIT * viewZoom,
-          y: 330 + p.y * CAMERA_UNIT * viewZoom
+          x: 560 + viewPanX + p.x * CAMERA_UNIT * viewZoom,
+          y: 380 + viewPanY + p.y * CAMERA_UNIT * viewZoom
         };
       }
-    
-      function setRotation(angle, pitch = viewPitch) {
+
+      function setRotation(angle) {
         viewAngle = ((angle % 360) + 360) % 360;
-        viewPitch = Math.max(20, Math.min(40, pitch));
-        $('view-angle').textContent = `${Math.round(viewAngle) % 360}° / ${Math.round(viewPitch)}°`;
+        // Tilt is locked: vertical dragging never flattens or stretches the island.
+        $('view-angle').textContent = `${Math.round(viewAngle) % 360}°`;
         buildBoard();
       }
-    
+
       function setZoom(zoom) {
         viewZoom = Math.max(.6, Math.min(2.4, zoom));
         $('zoom-label').textContent = `${Math.round(viewZoom * 100)}%`;
@@ -1260,20 +1127,24 @@
           }));
         });
       }
-    
+
       function points(...vertices) {
         return vertices.map(p => `${p.x},${p.y}`).join(' ');
       }
-    
+
       function groundCorners(c, r) {
         return [project(c, r), project(c + 1, r), project(c + 1, r + 1), project(c, r + 1)];
       }
-    
+
       function sprite(kind, x, y, size = 33) {
         const scaled = size * viewZoom;
         return svgNode('use', {
-          href: `#pixel-${kind}`, x: x + size / 2 - scaled / 2,
-          y: y + size - scaled, width: scaled, height: scaled, class: 'sprite'
+          href: `#pixel-${kind}`,
+          x: x + size / 2 - scaled / 2,
+          y: y + size - scaled,
+          width: scaled,
+          height: scaled,
+          class: 'sprite'
         });
       }
 
@@ -1305,7 +1176,7 @@
         }));
         return group;
       }
-    
+
       function tree(column, row, fruit = false, small = false) {
         const group = svgNode('g', {
           class: 'tile-detail'
@@ -1327,7 +1198,7 @@
           }
         return group;
       }
-    
+
       function fruitBasket(column, row) {
         const group = svgNode('g', {
           class: 'tile-detail'
@@ -1343,7 +1214,7 @@
         }
         return group;
       }
-    
+
       function car(column, row) {
         const group = svgNode('g', {
           class: 'tile-detail'
@@ -1357,7 +1228,7 @@
           }
         return group;
       }
-    
+
       function makeDefinitions() {
         const definitions = svgNode('defs');
         for (const [kind, rows] of Object.entries(FACES)) {
@@ -1393,7 +1264,7 @@
         definitions.append(glow);
         return definitions;
       }
-    
+
       function buildBoard() {
         const board = $('board');
         board.replaceChildren(makeDefinitions());
@@ -1447,7 +1318,7 @@
           points: points(...boundary),
           fill: '#31575b'
         }));
-    
+
         const colors = {
           home: ['#54aa7b', '#2c6851', '#1e4c40'],
           patch: ['#80ad57', '#4b753c', '#335632'],
@@ -1628,7 +1499,7 @@
               .moveEnemy(c, r) : game.move(c, r));
           };
           group.addEventListener('click', () => {
-            if (performance.now() < suppressClickUntil) return;
+            if (moveMode || performance.now() < suppressClickUntil) return;
             activate();
           });
           group.addEventListener('keydown', event => {
@@ -1663,10 +1534,11 @@
           }, label));
         }
       }
-    
+
       function renderTurn() {
         const phase = game.phase;
-        $('round-title').textContent = `Round ${game.round}${phase==='predators'?' / Predators':''}`;
+        const turnOwner = game.players[game.cardOwner()];
+        $('round-title').textContent = phase === 'predators' ? `ROUND ${game.round}: PREDATORS` : phase === 'finished' ? `ROUND ${game.round}: GAME OVER` : `ROUND ${game.round}: ${turnOwner.name.toUpperCase()} — ${ANIMALS[turnOwner.animal].name.toUpperCase()}`;
         $('goal-label').textContent = `First to ${game.target} food at home wins.`;
         $('dice').textContent = game.die === null ? '?' : ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][game
           .die
@@ -1686,27 +1558,25 @@
         const titles = {
           predators: () => `${game.predators[game.predatorIndex].name}`,
           push: () =>
-            `${game.players[game.tokens.find(t=>t.id===game.contest.winner).owner].name} chooses the push`,
-          draw: () => `${game.players[game.pendingDraw.owner].name}, draw your card`,
+            `${game.players[game.tokens.find(t=>t.id===game.contest.winner).owner].name} won — choose a push`,
+          draw: () => `${game.players[game.pendingDraw.owner].name} won a card`,
           traffic: () =>
-            `${game.players[game.tokens.find(t=>t.id===game.trafficToken).owner].name}: traffic check`,
-          finished: () => game.winner === null ? 'The crossing is over' :
-            `${game.players[game.winner].name} wins!`,
+            `Traffic check`,
+          finished: () => game.winner === null ? 'The crossing is over' : `${game.players[game.winner].name} wins!`,
         };
         $('turn-title').textContent = titles[phase] ? titles[phase]() :
           `${game.player.name} / ${ANIMALS[game.player.animal].name} ${game.token.number}`;
         const help = {
-          roll: 'Choose an animal, then roll. If someone is at home, you can buy an offspring first.',
+          roll: 'Choose an animal, then roll.',
           move: `${game.remaining} of ${game.budget} steps left. ${game.moved?'Choose a gold square, or stop here.':'Choose your animal and starting row, then follow the gold squares.'}`,
           traffic: 'Odd means safe. Even means a car hit. Use a ready Safe Streets card before rolling to skip this check.',
           predators: 'Roll for this predator. It follows its green lane and turns around at the edge. Only its final square hits.',
           'contest-choice': 'You are the attacker: choose odd or even. The defender gets the other choice.',
           'contest-roll': 'Roll once to decide who wins the square and gets to push the other animal.',
-          push: 'Choose a gold square for the loser. You won a card: click the deck after the push.',
-          draw: 'You won the contest! Click the highlighted floating deck to draw one card. It unlocks next round.',
+          push: 'Push the loser to a gold square, then draw a card.',
+          draw: 'You won a card. Click the glowing deck; use it next round.',
           'card-target': 'Choose a highlighted enemy. It moves one square toward the forest. Click Keep card to cancel.',
-          finished: game.winner === null ? 'No animals remain. Reset to try again.' :
-            'Enough food made it home. Reset to play another crossing.',
+          finished: game.winner === null ? 'No animals remain. Reset to try again.' : 'Enough food made it home. Reset to play another crossing.',
         };
         $('turn-help').textContent = help[phase];
         $('roll').textContent = phase === 'traffic' ? 'Check traffic' : phase === 'predators' ?
@@ -1730,7 +1600,7 @@
             picks.append(button);
           }
       }
-    
+
       const CARD_DETAILS = {
         reroll: {
           glyph: '↻',
@@ -1753,30 +1623,26 @@
           timing: 'Use before your traffic roll.'
         },
       };
-    
+
+      // Cards belong to profiles. The overlay renders only cards actually held.
       function renderHand() {
-        const hand = $('card-hand'),
-          owner = game.players[game.cardOwner()];
+        const hand = $('card-hand');
+        const ownerId = viewedHandOwner ?? game.cardOwner();
+        const owner = game.players[ownerId];
+        $('hand-title').textContent = `${owner.name}’s cards`;
         hand.replaceChildren();
-        const header = document.createElement('div');
-        header.className = 'hand-header';
-        const title = document.createElement('h2');
-        title.textContent = `${owner.name}’s hand`;
-        const count = document.createElement('small');
-        count.textContent = `${owner.hand.length} held`;
-        header.append(title, count);
         const note = document.createElement('p');
         note.className = 'hand-note';
-        note.textContent =
-          'Win a contest, then click the deck. New cards unlock next round; click Use to play.';
+        note.textContent = owner.hand.length ? 'Use a ready card, or close to keep it. New cards unlock next round.' : 'No cards yet. Win a contest, push the loser, then click the deck.';
         const row = document.createElement('div');
         row.className = 'hand-row';
         for (const [type, card] of Object.entries(CARDS)) {
-          const held = owner.hand.filter(c => c.type === type),
-            ready = held.filter(c => c.availableRound <= game.round).length;
-          const pending = held.filter(c => c.availableRound > game.round);
+          const held = owner.hand.filter(c => c.type === type);
+          if (!held.length) continue;
+          const ready = held.filter(c => c.availableRound <= game.round).length;
+          const available = ownerId === game.cardOwner() && game.canCard(type);
           const box = document.createElement('div');
-          box.className = `card-option${game.canCard(type)?' ready':''}`;
+          box.className = `card-option${available ? ' ready' : ''}`;
           const glyph = document.createElement('span');
           glyph.className = 'card-glyph';
           glyph.textContent = CARD_DETAILS[type].glyph;
@@ -1792,28 +1658,27 @@
           button.type = 'button';
           button.className = 'btn';
           button.textContent = `Use ${card.name}`;
-          button.disabled = !game.canCard(type);
-          button.addEventListener('click', () => act(() => game.useCard(type)));
+          button.disabled = !available;
+          button.addEventListener('click', () => {
+            // Close before the effect so movement/target selection stays on the board.
+            $('hand-dialog').close();
+            viewedHandOwner = null;
+            act(() => game.useCard(type));
+          });
           const availability = document.createElement('small');
           availability.className = 'availability';
-          availability.textContent = ready ?
-            `${ready} ready. ${game.canCard(type)?'Your choice.':CARD_DETAILS[type].timing}` : held
-            .length ? 'Not ready yet.' : 'Win a contest to draw.';
-          if (pending.length) availability.textContent +=
-            ` ${pending.length} ready in round ${Math.min(...pending.map(c=>c.availableRound))}.`;
+          availability.textContent = !ready ? `Unlocks in round ${Math.min(...held.map(c => c.availableRound))}.` : available ? 'Ready to use.' : ownerId !== game.cardOwner() ? 'Wait for your turn.' : CARD_DETAILS[type].timing;
           box.append(glyph, total, name, description, button, availability);
           row.append(box);
         }
-        hand.append(header, note, row);
+        hand.append(note, row);
         const draw = game.canDraw();
         $('draw-card').disabled = !draw;
         $('deck-count').textContent = draw ? 'Draw one' : `${game.deck.length} cards`;
-        $('deck-caption').textContent = draw ?
-          `${game.players[game.pendingDraw.owner].name}: click to draw.` :
-          `${game.deck.length} in deck / ${game.discard.length} used. Win an odd/even contest to draw.`;
-        $('deck-caption').className = `deck-caption${draw?' pending':''}`;
+        $('deck-caption').textContent = draw ? `${game.players[game.pendingDraw.owner].name}: draw your card.` : 'Win a contest to draw.';
+        $('deck-caption').className = `deck-caption${draw ? ' pending' : ''}`;
       }
-    
+
       function renderRoster() {
         const roster = $('roster');
         roster.replaceChildren();
@@ -1832,17 +1697,25 @@
           name.textContent = owner.name;
           const subtitle = document.createElement('small');
           subtitle.textContent =
-            `${ANIMALS[owner.animal].name} / ${family.length} alive / ${family.reduce((sum,t)=>sum+t.cargo,0)} carried`;
-          const held = document.createElement('small');
-          held.textContent = `${owner.hand.length} cards kept`;
-          detail.append(name, subtitle, held);
+            `${ANIMALS[owner.animal].name} · ${family.length} pets · ${family.reduce((sum,t)=>sum+t.cargo,0)} fruit`;
+          detail.append(name, subtitle);
+          const cards = document.createElement('button');
+          cards.className = 'card-icon';
+          cards.dataset.owner = owner.id;
+          cards.setAttribute('aria-label', `${owner.name}: view ${owner.hand.length} cards`);
+          cards.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="13" height="17" rx="2" transform="rotate(-12 11 12)"/><rect x="8" y="4" width="13" height="17" rx="2"/><path d="M11 12h7m-3.5-3.5v7"/></svg><span>${owner.hand.length}</span>`;
+          cards.addEventListener('click', () => {
+            viewedHandOwner = owner.id;
+            renderHand();
+            $('hand-dialog').showModal();
+          });
           const food = document.createElement('div');
           food.className = 'food';
           food.textContent = owner.food;
           const goal = document.createElement('small');
           goal.textContent = `of ${game.target}`;
           food.append(goal);
-          row.append(detail, food);
+          row.append(detail, cards, food);
           roster.append(row);
         }
         const log = $('event-log');
@@ -1853,14 +1726,14 @@
           log.append(entry);
         }
       }
-    
+
       function render() {
         buildBoard();
         renderTurn();
         renderHand();
         renderRoster();
       }
-    
+
       function act(action) {
         if (action() === false) return;
         render();
@@ -1881,7 +1754,7 @@
           preventScroll: true
         });
       }
-    
+
       // Defaults open directly on a playable two-player board. Settings are an overlay.
       function playerFields(saved) {
         const previous = saved || [...$('player-fields').children].map(box => ({
@@ -1919,7 +1792,7 @@
           $('player-fields').append(box);
         }
       }
-    
+
       function reset(next = config) {
         config = structuredClone(next);
         game = new Game(config);
@@ -1973,31 +1846,55 @@
       $('even').addEventListener('click', () => act(() => game.chooseParity('even')));
       $('open-help').addEventListener('click', () => $('help-dialog').showModal());
       $('close-help').addEventListener('click', () => $('help-dialog').close());
+      $('close-hand').addEventListener('click', () => $('hand-dialog').close());
+      $('hand-dialog').addEventListener('close', () => {
+        viewedHandOwner = null;
+      });
       $('rotate-left').addEventListener('click', () => setRotation(viewAngle - 15));
       $('rotate-right').addEventListener('click', () => setRotation(viewAngle + 15));
       $('zoom-out').addEventListener('click', () => setZoom(viewZoom / 1.15));
       $('zoom-in').addEventListener('click', () => setZoom(viewZoom * 1.15));
       $('reset-view').addEventListener('click', () => {
         viewZoom = 1;
+        viewPanX = viewPanY = 0;
+        moveMode = false;
+        updateMoveMode();
         $('zoom-label').textContent = '100%';
-        setRotation(0, 32);
+        setRotation(0);
       });
+      // A fixed elevation keeps the island rigid. Orbit changes yaw only; pan
+      // changes its screen position, and zoom applies the same scale to all axes.
       const rotationSurface = $('board');
+      const moveHandle = $('move-board');
+
+      function updateMoveMode() {
+        moveHandle.setAttribute('aria-pressed', String(moveMode));
+        rotationSurface.classList.toggle('panning', moveMode);
+        $('camera-help').textContent = moveMode ? 'Drag the board to move it. Click Move board again to rotate.' : 'Drag to rotate · Pinch to zoom · Gold squares to move';
+      }
       const pointerDistance = () => {
         const [a, b] = [...pointers.values()];
         return Math.hypot(a.x - b.x, a.y - b.y);
       };
-      rotationSurface.addEventListener('pointerdown', event => {
+
+      function boardUnits(dx, dy) {
+        const rect = rotationSurface.getBoundingClientRect();
+        const scale = Math.min(rect.width / 1140, rect.height / 780);
+        return {
+          x: dx / scale,
+          y: dy / scale
+        };
+      }
+
+      function beginDrag(event, handle = false) {
         if (event.button !== 0) return;
         pointers.set(event.pointerId, {
           x: event.clientX,
           y: event.clientY
         });
         if (pointers.size === 2) {
-          if (rotationFrame !== null) {
-            cancelAnimationFrame(rotationFrame);
-            rotationFrame = null;
-          }
+          if (rotationFrame !== null) cancelAnimationFrame(rotationFrame);
+          rotationFrame = null;
           drag = null;
           rotationSurface.classList.remove('dragging');
           pinch = {
@@ -2013,11 +1910,16 @@
           startX: event.clientX,
           startY: event.clientY,
           startAngle: viewAngle,
-          startPitch: viewPitch,
-          moved: false
+          startPanX: viewPanX,
+          startPanY: viewPanY,
+          pan: handle || moveMode,
+          handle,
+          moved: false,
+          surface: handle ? moveHandle : rotationSurface
         };
-      });
-      rotationSurface.addEventListener('pointermove', event => {
+      }
+
+      function moveDrag(event) {
         if (!pointers.has(event.pointerId)) return;
         pointers.set(event.pointerId, {
           x: event.clientX,
@@ -2034,63 +1936,72 @@
         if (!drag.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
         if (!drag.moved) {
           drag.moved = true;
-          rotationSurface.setPointerCapture(event.pointerId);
+          drag.surface.setPointerCapture(event.pointerId);
           rotationSurface.classList.add('dragging');
         }
         event.preventDefault();
         if (rotationFrame !== null) cancelAnimationFrame(rotationFrame);
         rotationFrame = requestAnimationFrame(() => {
           rotationFrame = null;
-          if (drag) setRotation(drag.startAngle - dx * .4, drag.startPitch - dy * .15);
+          applyDrag(dx, dy);
         });
-      });
-    
+      }
+
+      function applyDrag(dx, dy) {
+        if (!drag) return;
+        if (drag.pan) {
+          const delta = boardUnits(dx, dy);
+          viewPanX = drag.startPanX + delta.x;
+          viewPanY = drag.startPanY + delta.y;
+          buildBoard();
+        } else setRotation(drag.startAngle - dx * .4);
+      }
+
       function endRotation(event) {
-        const wasPinching = !!pinch;
         pointers.delete(event.pointerId);
-        if (wasPinching) {
-          rotationSurface.classList.remove('dragging');
+        if (pinch) {
           pinch = null;
           drag = null;
           suppressClickUntil = performance.now() + 300;
         }
-        if (rotationSurface.hasPointerCapture(event.pointerId)) rotationSurface.releasePointerCapture(
-          event.pointerId);
-        if (!drag || event.pointerId !== drag.id) return;
-        if (rotationFrame !== null) {
-          cancelAnimationFrame(rotationFrame);
+        if (drag && event.pointerId === drag.id) {
+          if (rotationFrame !== null) cancelAnimationFrame(rotationFrame);
           rotationFrame = null;
+          if (drag.moved) {
+            if (event.type === 'pointerup') applyDrag(event.clientX - drag.startX, event.clientY - drag.startY);
+            suppressClickUntil = performance.now() + 300;
+          }
+          if (drag.surface.hasPointerCapture(event.pointerId)) drag.surface.releasePointerCapture(event.pointerId);
+          drag = null;
         }
-        const moved = drag.moved,
-          angle = drag.startAngle - (event.clientX - drag.startX) * .4,
-          pitch = drag.startPitch - (event.clientY - drag.startY) * .15;
-        drag = null;
+        if (rotationSurface.hasPointerCapture(event.pointerId)) rotationSurface.releasePointerCapture(event.pointerId);
         rotationSurface.classList.remove('dragging');
-        if (moved) {
-          suppressClickUntil = performance.now() + 250;
-          if (event.type === 'pointerup') setRotation(angle, pitch);
-        }
       }
-      rotationSurface.addEventListener('pointerup', endRotation);
-      rotationSurface.addEventListener('pointercancel', endRotation);
+      rotationSurface.addEventListener('pointerdown', event => beginDrag(event));
+      moveHandle.addEventListener('pointerdown', event => beginDrag(event, true));
+      for (const surface of [rotationSurface, moveHandle]) {
+        surface.addEventListener('pointermove', moveDrag);
+        surface.addEventListener('pointerup', endRotation);
+        surface.addEventListener('pointercancel', endRotation);
+      }
+      moveHandle.addEventListener('click', () => {
+        if (performance.now() < suppressClickUntil) return;
+        moveMode = !moveMode;
+        updateMoveMode();
+      });
       rotationSurface.addEventListener('pointerleave', event => {
         if (drag && !drag.moved && event.pointerId === drag.id) {
           drag = null;
           pointers.delete(event.pointerId);
         }
       });
-      // Trackpad pinch arrives as Ctrl+wheel. Cancel only over the game stage so the
-      // board zooms without changing the website's browser zoom.
       document.querySelector('.stage').addEventListener('wheel', event => {
         const pinchWheel = event.ctrlKey || event.metaKey;
         if (!pinchWheel && !event.target.closest('#board')) return;
         event.preventDefault();
-        const units = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 690 : 1;
-        if (!pinchWheel && Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-          setRotation(viewAngle - event.deltaX * .2);
-        } else {
-          setZoom(viewZoom * Math.exp(-event.deltaY * units * (pinchWheel ? .01 : .002)));
-        }
+        const units = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 780 : 1;
+        if (!pinchWheel && Math.abs(event.deltaX) > Math.abs(event.deltaY)) setRotation(viewAngle - event.deltaX * .2);
+        else setZoom(viewZoom * Math.exp(-event.deltaY * units * (pinchWheel ? .01 : .002)));
       }, {
         passive: false
       });

@@ -127,7 +127,7 @@
     .scene { position: relative; margin-top: 6px; }
     .board-scroll { overflow-x: auto; scrollbar-color: #3d657e #071527; padding-bottom: 8px; }
     .board { display: block; width: 100%; min-width: 720px; height: auto; overflow: visible; }
-    .board { touch-action: pan-y; user-select: none; cursor: grab; }
+    .board { touch-action: none; user-select: none; cursor: grab; }
     .board.dragging, .board.dragging .tile { cursor: grabbing; }
     .view-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 12px 0 6px; }
     .view-controls output { color: var(--muted); font: 11px ui-monospace, monospace; min-width: 34px; }
@@ -256,7 +256,7 @@
             <h3>Get food. Bring it home.</h3>
             <p>You are a family of small animals living in the forest on the left. There is plenty of fruit on the right, but a road and hungry predators stand between you and your next meal.</p>
             <p>Everyone starts with <strong>3 food at home</strong> and one animal. Visit the fruit patch to pick up <strong>2 food</strong>, then return to the forest to add it to your total. Food being carried does not count yet. The first family with <strong>7 food at home</strong> wins, unless you choose a different goal in Settings.</p>
-            <p>Drag the board sideways to rotate it, or use the Rotate buttons. On a phone, drag with one finger. <strong>Reset view</strong> restores the original angle without restarting the game. A tap or click on a gold square still moves your animal.</p>
+            <p>Drag the board sideways to rotate and vertically to tilt, or use the Rotate buttons. On a phone, drag with one finger. <strong>Reset view</strong> restores the original angle without restarting the game. A tap or click on a gold square still moves your animal.</p>
             <h3>Your turn, step by step</h3>
             <ol>
               <li><strong>Choose an animal and roll.</strong> Your whole family shares one roll. If you have offspring, choose which animal gets to move; you can change your choice until you take the first step.</li>
@@ -296,9 +296,9 @@
         <button class="btn" id="rotate-left" aria-label="Rotate board left 15 degrees">↶ Rotate</button>
         <button class="btn" id="rotate-right" aria-label="Rotate board right 15 degrees">Rotate ↷</button>
         <button class="btn" id="reset-view">Reset view</button>
-        <output id="view-angle" aria-label="Board rotation angle">0°</output>
+        <output id="view-angle" aria-label="Board rotation and tilt angle">0° / 32°</output>
       </div>
-      <p class="rotation-help">Drag the board sideways to rotate. Tap or click a gold square to move.</p>
+      <p class="rotation-help">Drag sideways to rotate, up or down to tilt. Tap a gold square to move.</p>
       <div class="scene">
         <div class="board-scroll" aria-label="Scrollable board">
           <svg class="board" id="board" viewBox="0 0 1140 690" role="group" aria-label="Six rows of forest, field, road, and fruit squares"></svg>
@@ -1077,7 +1077,8 @@
       let game = new Game(config);
       // Camera orientation belongs to the view, not the game state.
       let viewAngle = 0;
-      let viewScale = 1;
+      let viewPitch = 32;
+      const CAMERA_UNIT = 46;
       let drag = null;
       let suppressClickUntil = 0;
       let rotationFrame = null;
@@ -1181,46 +1182,38 @@
         return element;
       }
     
-      // Rotate the world around its center, then project it onto the isometric view.
-      // The board changes orientation; animal faces and labels stay upright.
-      function rawProject(column, row) {
-        const radians = viewAngle * Math.PI / 180;
+      // Orthographic camera: two perpendicular screen axes with one uniform world scale.
+      // This uses the camera geometry of the portfolio, without shearing the landscape
+      // or automatically changing the zoom as the camera orbits.
+      function rawProject(column, row, height = 0) {
+        const yaw = (viewAngle + 40) * Math.PI / 180;
+        const elevation = viewPitch * Math.PI / 180;
         const x = column - 8.5;
         const z = row - 3;
-        const rotatedX = x * Math.cos(radians) - z * Math.sin(radians);
-        const rotatedZ = x * Math.sin(radians) + z * Math.cos(radians);
+        const across = x * Math.cos(yaw) - z * Math.sin(yaw);
+        const away = x * Math.sin(yaw) + z * Math.cos(yaw);
         return {
-          x: rotatedX * 44 - rotatedZ * 36,
-          y: rotatedX * 15 + rotatedZ * 30
+          x: across,
+          y: away * Math.sin(elevation) - height * Math.cos(elevation),
+          depth: away * Math.cos(elevation) + height * Math.sin(elevation)
         };
       }
     
-      function fitView() {
-        const bounds = [
-            [-.8, -.8],
-            [17.8, -.8],
-            [17.8, 6.8],
-            [-.8, 6.8]
-          ]
-          .map(([column, row]) => rawProject(column, row));
-        const width = Math.max(...bounds.map(p => p.x)) - Math.min(...bounds.map(p => p.x));
-        const height = Math.max(...bounds.map(p => p.y)) - Math.min(...bounds.map(p => p.y));
-        viewScale = Math.min(1, 1060 / width, 480 / height);
-      }
-    
-      function project(column, row) {
-        const p = rawProject(column, row);
+      function project(column, row, height = 0) {
+        const p = rawProject(column, row, height);
         return {
-          x: 560 + p.x * viewScale,
-          y: 300.5 + p.y * viewScale
+          x: 560 + p.x * CAMERA_UNIT,
+          y: 330 + p.y * CAMERA_UNIT
         };
       }
     
-      function setRotation(angle) {
+      function setRotation(angle, pitch = viewPitch) {
         viewAngle = ((angle % 360) + 360) % 360;
-        $('view-angle').textContent = `${Math.round(viewAngle) % 360}°`;
+        viewPitch = Math.max(20, Math.min(40, pitch));
+        $('view-angle').textContent = `${Math.round(viewAngle) % 360}° / ${Math.round(viewPitch)}°`;
         buildBoard();
       }
+    
       // Only the edges facing the viewer need vertical side faces.
       function raisedSides(parent, corners, height, front, side) {
         corners.forEach((start, index) => {
@@ -1229,10 +1222,10 @@
           parent.append(svgNode('polygon', {
             points: points(start, end, {
               x: end.x,
-              y: end.y + height
+              y: end.y + height * Math.cos(viewPitch * Math.PI / 180)
             }, {
               x: start.x,
-              y: start.y + height
+              y: start.y + height * Math.cos(viewPitch * Math.PI / 180)
             }),
             fill: index % 2 ? side : front,
             stroke: '#081925',
@@ -1261,104 +1254,84 @@
         return node;
       }
     
-      function cuboid(x, y, width, height, depth, top, front, side) {
+      // Every block uses real world coordinates and the same camera as the tile grid.
+      // width, height, and depth are physical dimensions, not screen offsets.
+      function cuboid(column, row, width, height, depth, top, front, side, base = .08) {
         const group = svgNode('g', {
           class: 'tile-detail'
         });
-        group.append(
-          svgNode('polygon', {
-            points: `${x},${y} ${x+width},${y+width*.34} ${x+width-depth},${y+width*.34+depth*.64} ${x-depth},${y+depth*.64}`,
-            fill: top
-          }),
-          svgNode('polygon', {
-            points: `${x-depth},${y+depth*.64} ${x+width-depth},${y+width*.34+depth*.64} ${x+width-depth},${y+width*.34+depth*.64+height} ${x-depth},${y+depth*.64+height}`,
-            fill: front
-          }),
-          svgNode('polygon', {
-            points: `${x+width},${y+width*.34} ${x+width-depth},${y+width*.34+depth*.64} ${x+width-depth},${y+width*.34+depth*.64+height} ${x+width},${y+width*.34+height}`,
-            fill: side
-          }),
-        );
+        const footprint = [
+          [column - width / 2, row - depth / 2],
+          [column + width / 2, row - depth / 2],
+          [column + width / 2, row + depth / 2],
+          [column - width / 2, row + depth / 2]
+        ];
+        const upper = footprint.map(([c, r]) => project(c, r, base + height));
+        const lower = footprint.map(([c, r]) => project(c, r, base));
+        upper.forEach((start, index) => {
+          const next = (index + 1) % 4;
+          if (upper[next].x >= start.x) return;
+          group.append(svgNode('polygon', {
+            points: points(start, upper[next], lower[next], lower[index]),
+            fill: index % 2 ? side : front
+          }));
+        });
+        group.append(svgNode('polygon', {
+          points: points(...upper),
+          fill: top
+        }));
         return group;
       }
     
-      function tree(x, y, fruit = false, small = false) {
+      function tree(column, row, fruit = false, small = false) {
         const group = svgNode('g', {
           class: 'tile-detail'
         });
-        const size = small ? 12 : 18;
-        group.append(cuboid(x, y - 15, 5, 19, 5, '#987646', '#684a31', '#493b2e'));
-        group.append(cuboid(x - 3, y - 38, size, 17, size, fruit ? '#70bd71' : '#69c58e', fruit ?
-          '#368255' : '#2b9269', '#22604a'));
-        group.append(cuboid(x - 1, y - 49, size - 3, 10, size - 3, '#94d494', '#54a771', '#2a7756'));
-        if (fruit) {
-          group.append(svgNode('rect', {
-            x: x - 8,
-            y: y - 22,
-            width: 5,
-            height: 5,
-            fill: '#ffae64'
-          }));
-          group.append(svgNode('rect', {
-            x: x + 2,
-            y: y - 30,
-            width: 5,
-            height: 5,
-            fill: '#ed6a62'
-          }));
-          group.append(svgNode('rect', {
-            x: x + 8,
-            y: y - 27,
-            width: 4,
-            height: 4,
-            fill: '#ffe094'
-          }));
-        }
+        const size = small ? .28 : .42;
+        group.append(cuboid(column, row, .11, .4, .11, '#987646', '#684a31', '#493b2e'));
+        group.append(cuboid(column, row, size, .35, size, fruit ? '#70bd71' : '#69c58e',
+          fruit ? '#368255' : '#2b9269', '#22604a', .36));
+        group.append(cuboid(column, row, size * .8, .22, size * .8, '#94d494', '#54a771', '#2a7756',
+          .69));
+        if (fruit)
+          for (const [dx, dz, base, color] of [
+              [-.18, -.12, .48, '#ffae64'],
+              [.18, .12, .54, '#ed6a62'],
+              [-.12, .18, .57, '#ffe094'],
+              [.12, -.18, .59, '#ed6a62']
+            ]) {
+            group.append(cuboid(column + dx, row + dz, .09, .09, .09, color, color, color, base));
+          }
         return group;
       }
     
-      function fruitBasket(x, y) {
+      function fruitBasket(column, row) {
         const group = svgNode('g', {
           class: 'tile-detail'
         });
-        group.append(cuboid(x, y - 6, 16, 8, 11, '#dab372', '#9a6843', '#674732'));
-        for (const [dx, dy, color] of [
-            [0, -8, '#f47e6c'],
-            [6, -6, '#ffcc72'],
-            [-4, -5, '#eabcf4'],
-            [3, -11, '#ec6962']
+        group.append(cuboid(column, row, .32, .16, .25, '#dab372', '#9a6843', '#674732'));
+        for (const [dx, dz, color] of [
+            [-.08, -.06, '#f47e6c'],
+            [.08, .06, '#ffcc72'],
+            [-.08, .06, '#eabcf4'],
+            [.08, -.06, '#ec6962']
           ]) {
-          group.append(svgNode('rect', {
-            x: x + dx,
-            y: y + dy,
-            width: 5,
-            height: 5,
-            fill: color
-          }));
+          group.append(cuboid(column + dx, row + dz, .09, .08, .09, color, color, color, .25));
         }
         return group;
       }
     
-      function car(x, y) {
+      function car(column, row) {
         const group = svgNode('g', {
           class: 'tile-detail'
         });
-        group.append(cuboid(x, y - 8, 23, 9, 14, '#8cd9ed', '#419dbc', '#21627d'));
-        group.append(cuboid(x + 5, y - 14, 11, 7, 10, '#c2f5ef', '#7ab8ca', '#3a8197'));
-        group.append(svgNode('rect', {
-          x: x - 10,
-          y: y + 7,
-          width: 5,
-          height: 5,
-          fill: '#081826'
-        }));
-        group.append(svgNode('rect', {
-          x: x + 7,
-          y: y + 12,
-          width: 5,
-          height: 5,
-          fill: '#081826'
-        }));
+        group.append(cuboid(column, row, .42, .18, .29, '#8cd9ed', '#419dbc', '#21627d', .1));
+        group.append(cuboid(column, row, .23, .13, .23, '#c2f5ef', '#7ab8ca', '#3a8197', .28));
+        for (const dx of [-.14, .14])
+          for (const dz of [-.14, .14]) {
+            group.append(cuboid(column + dx, row + dz, .09, .1, .07, '#081826', '#081826', '#081826',
+              .04));
+          }
         return group;
       }
     
@@ -1400,7 +1373,6 @@
     
       function buildBoard() {
         const board = $('board');
-        fitView();
         board.replaceChildren(makeDefinitions());
         board.append(svgNode('ellipse', {
           cx: 560,
@@ -1469,7 +1441,7 @@
             c,
             r
           });
-        cells.sort((a, b) => project(a.c, a.r).y - project(b.c, b.r).y);
+        cells.sort((a, b) => rawProject(a.c, a.r).depth - rawProject(b.c, b.r).depth);
         for (const {
             c,
             r
@@ -1546,15 +1518,14 @@
               }));
             }
             // Decorations are offset away from standing animals and never intercept a click.
-            if (c === 0 || c === 1 && r % 2 === 0) group.append(tree(center.x - 8, center.y - 2,
+            if (c === 0 || c === 1 && r % 2 === 0) group.append(tree(c + .32, r + .4,
               false, c === 1));
             if (c === LAST) {
-              group.append(tree(center.x + 6, center.y - 4, true));
-              group.append(fruitBasket(center.x - 9, center.y + 8));
+              group.append(tree(c + .62, r + .34, true));
+              group.append(fruitBasket(c + .3, r + .7));
             }
             if ([2, 14, 15].includes(c) && !animals.length && !predator && (c + r) % 3 === 0) {
-              group.append(cuboid(center.x - 4, center.y - 4, 7, 7, 7, '#b0cf88', '#6d965d',
-                '#4d734f'));
+              group.append(cuboid(c + .45, r + .5, .15, .15, .15, '#b0cf88', '#6d965d', '#4d734f'));
             }
           } else {
             group.append(svgNode('polygon', {
@@ -1627,7 +1598,7 @@
               class: 'tile-detail'
             }, arrow));
           }
-          if (r === ROWS && [6, 10].includes(c)) group.append(car(center.x, center.y - 5));
+          if (r === ROWS && [6, 10].includes(c)) group.append(car(c + .5, r + .5));
           const activate = () => {
             if (!legal) return;
             act(() => game.phase === 'push' ? game.push(c, r) : game.phase === 'card-target' ? game
@@ -1979,7 +1950,7 @@
       $('even').addEventListener('click', () => act(() => game.chooseParity('even')));
       $('rotate-left').addEventListener('click', () => setRotation(viewAngle - 15));
       $('rotate-right').addEventListener('click', () => setRotation(viewAngle + 15));
-      $('reset-view').addEventListener('click', () => setRotation(0));
+      $('reset-view').addEventListener('click', () => setRotation(0, 32));
       const rotationSurface = $('board');
       rotationSurface.addEventListener('pointerdown', event => {
         if (event.button !== 0 || drag) return;
@@ -1988,6 +1959,7 @@
           startX: event.clientX,
           startY: event.clientY,
           startAngle: viewAngle,
+          startPitch: viewPitch,
           moved: false
         };
       });
@@ -1995,8 +1967,8 @@
         if (!drag || event.pointerId !== drag.id) return;
         const dx = event.clientX - drag.startX;
         const dy = event.clientY - drag.startY;
-        if (!drag.moved && Math.abs(dx) < DRAG_THRESHOLD) return;
-        if (!drag.moved && Math.abs(dy) > Math.abs(dx)) return;
+        if (!drag.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+    
         if (!drag.moved) {
           drag.moved = true;
           rotationSurface.setPointerCapture(event.pointerId);
@@ -2006,7 +1978,7 @@
         if (rotationFrame !== null) cancelAnimationFrame(rotationFrame);
         rotationFrame = requestAnimationFrame(() => {
           rotationFrame = null;
-          if (drag) setRotation(drag.startAngle + dx * .4);
+          if (drag) setRotation(drag.startAngle + dx * .4, drag.startPitch - dy * .15);
         });
       });
     
@@ -2018,6 +1990,7 @@
         }
         const wasDragging = drag.moved;
         const finalAngle = drag.startAngle + (event.clientX - drag.startX) * .4;
+        const finalPitch = drag.startPitch - (event.clientY - drag.startY) * .15;
         drag = null;
         rotationSurface.classList.remove('dragging');
         if (rotationSurface.hasPointerCapture(event.pointerId)) {
@@ -2025,7 +1998,7 @@
         }
         if (wasDragging) {
           suppressClickUntil = performance.now() + 250;
-          if (event.type === 'pointerup') setRotation(finalAngle);
+          if (event.type === 'pointerup') setRotation(finalAngle, finalPitch);
         }
       }
       rotationSurface.addEventListener('pointerup', endRotation);

@@ -127,7 +127,12 @@
     .scene { position: relative; margin-top: 6px; }
     .board-scroll { overflow-x: auto; scrollbar-color: #3d657e #071527; padding-bottom: 8px; }
     .board { display: block; width: 100%; min-width: 720px; height: auto; overflow: visible; }
-    .board .tile { cursor: default; }
+    .board { touch-action: pan-y; user-select: none; cursor: grab; }
+    .board.dragging, .board.dragging .tile { cursor: grabbing; }
+    .view-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 12px 0 6px; }
+    .view-controls output { color: var(--muted); font: 11px ui-monospace, monospace; min-width: 34px; }
+    .rotation-help { color: var(--muted); font-size: 11px; margin-bottom: 6px; }
+    .board .tile { cursor: grab; }
     .board .tile.legal { cursor: pointer; }
     .tile.legal .tile-top { stroke: var(--gold); stroke-width: 2.5; filter: brightness(1.15); }
     .tile.legal:hover .tile-top { fill: #d0c574; filter: brightness(1.2); }
@@ -251,6 +256,7 @@
             <h3>Get food. Bring it home.</h3>
             <p>You are a family of small animals living in the forest on the left. There is plenty of fruit on the right, but a road and hungry predators stand between you and your next meal.</p>
             <p>Everyone starts with <strong>3 food at home</strong> and one animal. Visit the fruit patch to pick up <strong>2 food</strong>, then return to the forest to add it to your total. Food being carried does not count yet. The first family with <strong>7 food at home</strong> wins, unless you choose a different goal in Settings.</p>
+            <p>Drag the board sideways to rotate it, or use the Rotate buttons. On a phone, drag with one finger. <strong>Reset view</strong> restores the original angle without restarting the game. A tap or click on a gold square still moves your animal.</p>
             <h3>Your turn, step by step</h3>
             <ol>
               <li><strong>Choose an animal and roll.</strong> Your whole family shares one roll. If you have offspring, choose which animal gets to move; you can change your choice until you take the first step.</li>
@@ -286,6 +292,13 @@
     <!-- 06. One floating board, with a clickable earned-card deck -->
     <section class="stage" aria-label="Raised game board">
       <p class="board-caption">01 / The crossing</p>
+      <div class="view-controls" aria-label="Board rotation">
+        <button class="btn" id="rotate-left" aria-label="Rotate board left 15 degrees">↶ Rotate</button>
+        <button class="btn" id="rotate-right" aria-label="Rotate board right 15 degrees">Rotate ↷</button>
+        <button class="btn" id="reset-view">Reset view</button>
+        <output id="view-angle" aria-label="Board rotation angle">0°</output>
+      </div>
+      <p class="rotation-help">Drag the board sideways to rotate. Tap or click a gold square to move.</p>
       <div class="scene">
         <div class="board-scroll" aria-label="Scrollable board">
           <svg class="board" id="board" viewBox="0 0 1140 690" role="group" aria-label="Six rows of forest, field, road, and fruit squares"></svg>
@@ -306,7 +319,7 @@
         <span><i class="swatch"></i>Road: stop and check</span>
         <span><i class="swatch safe"></i>Dark strip: safe refuge</span>
       </div>
-      <p class="stage-note" id="stage-note"><strong>Forest → fruit → forest.</strong> Bring food home to score. On a small screen, swipe sideways to explore the board.</p>
+      <p class="stage-note" id="stage-note"><strong>Forest → fruit → forest.</strong> Bring food home to score. Rotate the island to see it from another side. Reset view brings the forest back to the left.</p>
     </section>
   </main>
   <!-- 07. Settings change the current group and reset in one explicit action -->
@@ -1062,6 +1075,13 @@
         }],
       };
       let game = new Game(config);
+      // Camera orientation belongs to the view, not the game state.
+      let viewAngle = 0;
+      let viewScale = 1;
+      let drag = null;
+      let suppressClickUntil = 0;
+      let rotationFrame = null;
+      const DRAG_THRESHOLD = 6;
     
       // Each letter is one colored square. No fonts, images, or online assets are needed.
       const PALETTE = {
@@ -1161,12 +1181,64 @@
         return element;
       }
     
-      // Isometric tile projection. Animals remain upright so their faces stay readable.
-      function project(column, row) {
+      // Rotate the world around its center, then project it onto the isometric view.
+      // The board changes orientation; animal faces and labels stay upright.
+      function rawProject(column, row) {
+        const radians = viewAngle * Math.PI / 180;
+        const x = column - 8.5;
+        const z = row - 3;
+        const rotatedX = x * Math.cos(radians) - z * Math.sin(radians);
+        const rotatedZ = x * Math.sin(radians) + z * Math.cos(radians);
         return {
-          x: 290 + column * 44 - row * 36,
-          y: 83 + column * 15 + row * 30
+          x: rotatedX * 44 - rotatedZ * 36,
+          y: rotatedX * 15 + rotatedZ * 30
         };
+      }
+    
+      function fitView() {
+        const bounds = [
+            [-.8, -.8],
+            [17.8, -.8],
+            [17.8, 6.8],
+            [-.8, 6.8]
+          ]
+          .map(([column, row]) => rawProject(column, row));
+        const width = Math.max(...bounds.map(p => p.x)) - Math.min(...bounds.map(p => p.x));
+        const height = Math.max(...bounds.map(p => p.y)) - Math.min(...bounds.map(p => p.y));
+        viewScale = Math.min(1, 1060 / width, 480 / height);
+      }
+    
+      function project(column, row) {
+        const p = rawProject(column, row);
+        return {
+          x: 560 + p.x * viewScale,
+          y: 300.5 + p.y * viewScale
+        };
+      }
+    
+      function setRotation(angle) {
+        viewAngle = ((angle % 360) + 360) % 360;
+        $('view-angle').textContent = `${Math.round(viewAngle) % 360}°`;
+        buildBoard();
+      }
+      // Only the edges facing the viewer need vertical side faces.
+      function raisedSides(parent, corners, height, front, side) {
+        corners.forEach((start, index) => {
+          const end = corners[(index + 1) % corners.length];
+          if (end.x >= start.x) return;
+          parent.append(svgNode('polygon', {
+            points: points(start, end, {
+              x: end.x,
+              y: end.y + height
+            }, {
+              x: start.x,
+              y: start.y + height
+            }),
+            fill: index % 2 ? side : front,
+            stroke: '#081925',
+            'stroke-opacity': '.35'
+          }));
+        });
       }
     
       function points(...vertices) {
@@ -1328,6 +1400,7 @@
     
       function buildBoard() {
         const board = $('board');
+        fitView();
         board.replaceChildren(makeDefinitions());
         board.append(svgNode('ellipse', {
           cx: 560,
@@ -1374,29 +1447,9 @@
           fill: '#010815',
           class: 'board-shadow'
         }));
-        const [a, b, c, d] = boundary;
+        raisedSides(board, boundary, 24, '#173e46', '#0d2b36');
         board.append(svgNode('polygon', {
-          points: points(d, c, {
-            x: c.x,
-            y: c.y + 24
-          }, {
-            x: d.x,
-            y: d.y + 24
-          }),
-          fill: '#173e46'
-        }));
-        board.append(svgNode('polygon', {
-          points: points(b, c, {
-            x: c.x,
-            y: c.y + 24
-          }, {
-            x: b.x,
-            y: b.y + 24
-          }),
-          fill: '#0d2b36'
-        }));
-        board.append(svgNode('polygon', {
-          points: points(a, b, c, d),
+          points: points(...boundary),
           fill: '#31575b'
         }));
     
@@ -1427,19 +1480,12 @@
             game.canTarget(c, r) : !outside && game.canMove(c, r);
           const predator = game.predatorAt(c, r);
           if (outside && !legal && !predator && !(r === ROWS && [6, 10].includes(c))) continue;
-          const p = project(c, r);
-          const centerOfTile = {
-            x: p.x + 4,
-            y: p.y + 22.5
-          };
+          const centerOfTile = project(c + .5, r + .5);
           const corners = groundCorners(c, r).map(point => ({
             x: centerOfTile.x + (point.x - centerOfTile.x) * .96,
             y: centerOfTile.y + (point.y - centerOfTile.y) * .96
           }));
-          const center = {
-            x: p.x + 4,
-            y: p.y + 22.5
-          };
+          const center = centerOfTile;
           const animals = outside ? [] : game.alive.filter(t => t.c === c && t.r === r);
           const kind = outside ? 'outside' : tile(c);
           const current = !outside && game.token && !game.token.out && game.token.c === c && game
@@ -1455,29 +1501,7 @@
           });
           if (!outside) {
             const [top, front, side] = colors[kind];
-            const [north, east, south, west] = corners;
-            group.append(svgNode('polygon', {
-              points: points(west, south, {
-                x: south.x,
-                y: south.y + 10
-              }, {
-                x: west.x,
-                y: west.y + 10
-              }),
-              fill: front,
-              stroke: '#081925',
-              'stroke-opacity': '.35'
-            }));
-            group.append(svgNode('polygon', {
-              points: points(east, south, {
-                x: south.x,
-                y: south.y + 10
-              }, {
-                x: east.x,
-                y: east.y + 10
-              }),
-              fill: side
-            }));
+            raisedSides(group, corners, 10, front, side);
             group.append(svgNode('polygon', {
               points: points(...corners),
               fill: top,
@@ -1486,8 +1510,11 @@
               class: 'tile-top'
             }));
             if (game.predators.some(predator => predator.c === c)) {
-              group.append(svgNode('path', {
-                d: `M${center.x-6} ${center.y-4}l5 -4l5 7`,
+              const left = project(c + .35, r + .58),
+                tip = project(c + .5, r + .32),
+                right = project(c + .65, r + .58);
+              group.append(svgNode('polyline', {
+                points: points(left, tip, right),
                 fill: 'none',
                 stroke: '#dce9ae',
                 'stroke-width': 1.5,
@@ -1496,19 +1523,22 @@
               }));
             }
             if (kind === 'road' && [6, 10].includes(c)) {
+              const start = project(c + .5, r + .33),
+                end = project(c + .5, r + .67);
               group.append(svgNode('line', {
-                x1: center.x + 6,
-                y1: center.y - 5,
-                x2: center.x - 6,
-                y2: center.y + 5,
+                x1: start.x,
+                y1: start.y,
+                x2: end.x,
+                y2: end.y,
                 stroke: '#e8e8d5',
                 'stroke-width': 2,
                 class: 'tile-detail'
               }));
             }
             if (kind === 'haven') {
-              group.append(svgNode('path', {
-                d: `M${center.x} ${center.y-8}l7 5l-7 5l-7 -5z`,
+              group.append(svgNode('polygon', {
+                points: points(project(c + .5, r + .3), project(c + .7, r + .5), project(c + .5,
+                  r + .7), project(c + .3, r + .5)),
                 fill: 'none',
                 stroke: '#96d7cb',
                 'stroke-width': 1,
@@ -1583,6 +1613,11 @@
             class: 'tile-detail'
           }, `+${animals.length-2}`));
           if (predator) {
+            const direction = project(c, r + predator.dir),
+              origin = project(c, r);
+            const sector = (Math.round(Math.atan2(direction.y - origin.y, direction.x - origin.x) / (
+              Math.PI / 4)) + 8) % 8;
+            const arrow = ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'][sector];
             group.append(sprite(predator.icon, center.x - 16, center.y - 28, 33));
             group.append(svgNode('text', {
               x: center.x + 22,
@@ -1590,7 +1625,7 @@
               fill: '#fff1bd',
               'font-size': 13,
               class: 'tile-detail'
-            }, predator.dir === 1 ? '↓' : '↑'));
+            }, arrow));
           }
           if (r === ROWS && [6, 10].includes(c)) group.append(car(center.x, center.y - 5));
           const activate = () => {
@@ -1598,7 +1633,10 @@
             act(() => game.phase === 'push' ? game.push(c, r) : game.phase === 'card-target' ? game
               .moveEnemy(c, r) : game.move(c, r));
           };
-          group.addEventListener('click', activate);
+          group.addEventListener('click', () => {
+            if (performance.now() < suppressClickUntil) return;
+            activate();
+          });
           group.addEventListener('keydown', event => {
             if (event.key === 'Enter' || event.key === ' ') {
               event.preventDefault();
@@ -1637,7 +1675,8 @@
         $('round-title').textContent = `Round ${game.round}${phase==='predators'?' / Predators':''}`;
         $('goal-label').textContent = `First to ${game.target} food at home wins.`;
         $('dice').textContent = game.die === null ? '?' : ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][game
-        .die];
+          .die
+        ];
         $('dice').setAttribute('aria-label', game.die === null ? 'Dice not rolled' :
           `Dice: ${game.die}`);
         $('roll').hidden = !['roll', 'traffic', 'predators', 'contest-roll'].includes(phase);
@@ -1938,6 +1977,62 @@
       }
       $('odd').addEventListener('click', () => act(() => game.chooseParity('odd')));
       $('even').addEventListener('click', () => act(() => game.chooseParity('even')));
+      $('rotate-left').addEventListener('click', () => setRotation(viewAngle - 15));
+      $('rotate-right').addEventListener('click', () => setRotation(viewAngle + 15));
+      $('reset-view').addEventListener('click', () => setRotation(0));
+      const rotationSurface = $('board');
+      rotationSurface.addEventListener('pointerdown', event => {
+        if (event.button !== 0 || drag) return;
+        drag = {
+          id: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          startAngle: viewAngle,
+          moved: false
+        };
+      });
+      rotationSurface.addEventListener('pointermove', event => {
+        if (!drag || event.pointerId !== drag.id) return;
+        const dx = event.clientX - drag.startX;
+        const dy = event.clientY - drag.startY;
+        if (!drag.moved && Math.abs(dx) < DRAG_THRESHOLD) return;
+        if (!drag.moved && Math.abs(dy) > Math.abs(dx)) return;
+        if (!drag.moved) {
+          drag.moved = true;
+          rotationSurface.setPointerCapture(event.pointerId);
+          rotationSurface.classList.add('dragging');
+        }
+        event.preventDefault();
+        if (rotationFrame !== null) cancelAnimationFrame(rotationFrame);
+        rotationFrame = requestAnimationFrame(() => {
+          rotationFrame = null;
+          if (drag) setRotation(drag.startAngle + dx * .4);
+        });
+      });
+    
+      function endRotation(event) {
+        if (!drag || event.pointerId !== drag.id) return;
+        if (rotationFrame !== null) {
+          cancelAnimationFrame(rotationFrame);
+          rotationFrame = null;
+        }
+        const wasDragging = drag.moved;
+        const finalAngle = drag.startAngle + (event.clientX - drag.startX) * .4;
+        drag = null;
+        rotationSurface.classList.remove('dragging');
+        if (rotationSurface.hasPointerCapture(event.pointerId)) {
+          rotationSurface.releasePointerCapture(event.pointerId);
+        }
+        if (wasDragging) {
+          suppressClickUntil = performance.now() + 250;
+          if (event.type === 'pointerup') setRotation(finalAngle);
+        }
+      }
+      rotationSurface.addEventListener('pointerup', endRotation);
+      rotationSurface.addEventListener('pointercancel', endRotation);
+      rotationSurface.addEventListener('pointerleave', event => {
+        if (drag && !drag.moved && event.pointerId === drag.id) drag = null;
+      });
       render();
     })();
   </script>

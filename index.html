@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#071527">
-  <meta name="description" content="A pixel board game about small animals, dangerous roads, and the journey home.">
+  <meta name="description" content="A local board game for 1–7 players: grow an animal family, cross roads and predator lanes, collect fruit, and bring food home to win.">
   <title>Fragmented Habitat</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23071527'/%3E%3Cpath d='M3 2h3v3h4V2h3v9h-2v3H5v-3H3Z' fill='%23ecad60'/%3E%3Cpath d='M5 7h2v2H5m4-2h2v2H9m-2 4h2v2H7' fill='%23071527'/%3E%3C/svg%3E">
   <style>
@@ -147,7 +147,7 @@
           <p class="deck-caption" id="deck-caption">Win a contest<br>to draw a card.</p>
         </div>
 
-      <footer>FRAGMENTED HABITAT · v8<br>1–7 players · Shared screen</footer>
+      <footer>FRAGMENTED HABITAT · v9<br>1–7 players · Shared screen</footer>
     </aside>
     <section class="stage" aria-label="Raised game board">
       <div class="scene"><svg class="board" id="board" viewBox="0 0 1140 780" role="group" aria-label="Six rows of forest, field, road, and fruit squares"></svg></div>
@@ -192,7 +192,7 @@
     <div class="help-heading"><h2 id="help-title">How to play</h2><button class="btn" id="close-help">Close ×</button></div>
     <div class="rules">
       <p><strong>Bring food home.</strong> Start with 3 food. Visit the fruit patch for 2 more, then return to the forest to bank it. First to 7 wins.</p>
-      <p><strong>Roll, choose, move.</strong> One die per family. Move one animal up, down, left or right along gold squares, then finish your turn. An offspring costs 2 food; buy before rolling while an animal is home.</p>
+      <p><strong>Roll, choose, move.</strong> One die per family. Move one animal up, down, left or right along gold squares, then finish your turn. Add another animal for 2 food before rolling, wherever your existing animals are. The new animal starts in the forest; choose which family member to move. Maximum three living animals.</p>
       <p><strong>Watch the road.</strong> Stopping on light gray means a traffic roll: odd is safe, even is a hit. Passing through is safe; the dark strip needs no check.</p>
       <p><strong>Watch the predators.</strong> After all players, roll for each fox or tiger. They stay in their green lane and bounce at its edges. Only their final square catches you. You cannot step onto a predator.</p>
       <p><strong>Compete for a square.</strong> Enter an enemy's square, choose odd or even and roll. The winner pushes the loser one square, then clicks the deck for a card. Forced road landings need traffic checks; a predator or OUT push causes a hit.</p>
@@ -417,10 +417,9 @@
           this.record(`${this.name(t)} selected. One animal uses this turn’s roll.`);
           return true;
         }
-        // A family buys offspring before its single movement roll.
+        // Buy offspring before rolling. Existing animals may be anywhere on the board.
         canSpawn() {
-          return this.phase === 'roll' && this.player.food >= 2 && this.family().length < 3 && this
-            .family().some(t => t.c === 0);
+          return this.phase === 'roll' && this.player.food >= 2 && this.family().length < 3;
         }
         spawn() {
           if (!this.canSpawn()) return false;
@@ -1548,6 +1547,9 @@
         $('roll').hidden = !['roll', 'traffic', 'predators', 'contest-roll'].includes(phase);
         $('spawn').hidden = phase !== 'roll';
         $('spawn').disabled = !game.canSpawn();
+        const species = ANIMALS[game.player.animal].name;
+        $('spawn').textContent = game.family().length >= 3 ? 'Maximum 3 animals' : game.player.food < 2 ? 'Add animal · need 2 food' : `Add ${species} · 2 food`;
+        $('spawn').title = game.family().length >= 3 ? 'Your family already has three living animals.' : game.player.food < 2 ? `You have ${game.player.food} food; adding an animal costs 2.` : `Add another ${species} at the forest. Your existing animals can be anywhere.`;
         $('stop').hidden = phase !== 'move';
         $('stop').disabled = !game.canStop();
         $('stop').textContent = !game.steps && game.canStop() ? 'Pass turn' : game.remaining === 0 ?
@@ -1595,7 +1597,7 @@
             button.setAttribute('aria-pressed', String(animal.id === game.selected));
             button.disabled = phase === 'move' && game.moved;
             button.textContent =
-              `Animal ${animal.number}${animal.cargo?` / carrying ${animal.cargo}`:animal.c===0?' / home':''}`;
+              ` ${ANIMALS[game.player.animal].name} ${animal.number}${animal.cargo?` / carrying ${animal.cargo}`:animal.c===0?' / home':''}`.trim();
             button.addEventListener('click', () => act(() => game.select(animal.id)));
             picks.append(button);
           }

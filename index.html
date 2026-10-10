@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#071527" />
     <meta
       name="description"
-      content="Fragmented Habitat v16: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
+      content="Fragmented Habitat v17: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
     />
     <title>Fragmented Habitat</title>
     <link
@@ -1149,6 +1149,147 @@
           font-size: 12px;
         }
       }
+      @keyframes dice-roll {
+        0% {
+          transform: rotate(-12deg) translateY(-3px);
+        }
+        50% {
+          transform: rotate(12deg) translateY(3px);
+        }
+        100% {
+          transform: rotate(-12deg) translateY(-3px);
+        }
+      }
+      .is-rolling {
+        animation: dice-roll 0.16s linear infinite;
+      }
+      .rolling .control-actions button,
+      .rolling .tile,
+      .rolling #deck {
+        pointer-events: none;
+      }
+      @media (min-width: 801px) {
+        .app {
+          grid-template-columns: 260px minmax(0, 1fr) 340px;
+        }
+        h1 {
+          font-family: system-ui, sans-serif;
+          font-size: clamp(40px, 3.2vw, 48px);
+          letter-spacing: -2px;
+        }
+      }
+      .turn-heading {
+        display: block;
+      }
+      .turn-tools {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin: 12px 0;
+      }
+      .round-tag {
+        font-size: 23px;
+        line-height: 1.25;
+      }
+      .dice {
+        width: 62px;
+        height: 62px;
+        font-size: 49px;
+      }
+      .dice-pair {
+        gap: 12px;
+      }
+      .die-item small {
+        font-size: 10px;
+      }
+      .turn-tools .deck-wrap {
+        margin: 0;
+        padding: 0;
+        width: 100px;
+      }
+      .turn-tools .deck-stack {
+        width: 56px;
+        height: 76px;
+        margin: 0 auto 8px;
+      }
+      .turn-tools .deck-star {
+        font-size: 27px;
+      }
+      .turn-tools .deck-label {
+        font-size: 8px;
+      }
+      .turn-tools .deck-caption {
+        font-size: 10px;
+        text-align: center;
+      }
+      .predator-results {
+        font-size: 12px;
+        line-height: 1.5;
+        padding: 8px;
+        background: #19394d;
+        color: #ffdc8e;
+        border-radius: 8px;
+        margin-bottom: 8px;
+      }
+      @media (max-width: 800px) {
+        .round-tag {
+          font-size: 16px;
+        }
+        .dice {
+          width: 42px;
+          height: 42px;
+          font-size: 33px;
+        }
+        .turn-tools {
+          gap: 5px;
+          margin: 8px 0;
+        }
+        .dice-pair {
+          gap: 6px;
+        }
+        .turn-tools .deck-wrap {
+          width: 52px;
+        }
+        .turn-tools .deck-stack {
+          width: 35px;
+          height: 48px;
+        }
+        .turn-tools .deck-star {
+          font-size: 18px;
+        }
+        .turn-tools .deck-label {
+          font-size: 6px;
+        }
+        .turn-tools .deck-caption {
+          font-size: 8px;
+        }
+        .intro-block h1 {
+          font-size: 27px;
+        }
+        .predator-results {
+          font-size: 10px;
+          padding: 5px;
+        }
+      }
+      @media (min-width: 801px) and (max-height: 760px) {
+        .round-tag {font-size:20px;}
+        .panel {
+          padding: 10px;
+        }
+        .player-row {
+          padding: 4px;
+        }
+        .turn-tools {
+          margin: 8px 0;
+        }
+        .status {
+          display: none;
+        }
+        .game-hud {
+          gap: 8px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -1171,23 +1312,9 @@
           ><button class="btn" id="reset">Reset</button
           ><button class="btn" id="token-designs">Tokens</button>
         </div>
-        <div class="deck-wrap">
-          <div class="deck-stack">
-            <button
-              id="deck"
-              class="deck"
-              disabled
-              aria-label="Draw an earned card"
-            >
-              <span class="deck-star">✦</span><br /><span class="deck-label"
-                >Wild cards</span
-              >
-            </button>
-          </div>
-          <p id="deck-caption" class="deck-caption"></p>
-        </div>
+
         <footer>
-          VERSION 16 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+          VERSION 17 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
             Recent events
           </button>
         </footer>
@@ -1229,25 +1356,49 @@
         <section class="panel">
           <div class="turn-heading">
             <h2 id="round" class="round-tag"></h2>
-            <div class="dice-pair">
-              <div class="die-item">
-                <div
-                  id="dice"
-                  class="dice"
-                  aria-label="Last numbered dice roll"
-                ></div>
-                <small>MOVE</small>
+            <div class="turn-tools">
+              <div class="deck-wrap">
+                <div class="deck-stack">
+                  <button
+                    id="deck"
+                    class="deck"
+                    disabled
+                    aria-label="Draw an earned card"
+                  >
+                    <span class="deck-star">✦</span><br /><span
+                      class="deck-label"
+                      >Wild cards</span
+                    >
+                  </button>
+                </div>
+                <p id="deck-caption" class="deck-caption"></p>
               </div>
-              <div class="die-item">
-                <div
-                  id="traffic-dice"
-                  class="dice traffic-dice"
-                  aria-label="Traffic sun and moon die"
-                ></div>
-                <small>TRAFFIC</small>
+              <div class="dice-pair">
+                <div class="die-item">
+                  <div
+                    id="dice"
+                    class="dice"
+                    aria-label="Last numbered dice roll"
+                  ></div>
+                  <small>MOVE</small>
+                </div>
+                <div class="die-item">
+                  <div
+                    id="traffic-dice"
+                    class="dice traffic-dice"
+                    aria-label="Traffic sun and moon die"
+                  ></div>
+                  <small>DAY / NIGHT</small>
+                </div>
               </div>
             </div>
           </div>
+          <div
+            id="predator-results"
+            class="predator-results"
+            aria-live="polite"
+            hidden
+          ></div>
           <p id="goal" class="goal"></p>
           <p id="turn-help" class="turn-help"></p>
           <div class="control-actions">
@@ -1293,9 +1444,9 @@
         movement point.
       </p>
       <p>
-        <strong>Add an animal:</strong> before rolling, spend 2 food to add
-        another animal at home. Its parent can be anywhere. You can have up to
-        three living animals, but move only one per turn.
+        <strong>Add an animal (optional):</strong> before rolling, spend 2 food
+        to add another animal at home. Its parent can be anywhere. You can have
+        up to three living animals, but move only one per turn.
       </p>
       <div class="landscape-rules">
         <h3>The landscape</h3>
@@ -1317,9 +1468,10 @@
           <strong>Predator lanes:</strong> leaving the habitat exposes animals
           to predators. Four predators patrol each green lane. Player animals
           have numbered flags; predators do not. After all players have taken a
-          turn, roll once per lane: all four move that many spaces clockwise. If
-          one stops on your animal’s square, your animal is hit. You cannot
-          voluntarily move onto a predator.
+          turn, click Move all predators once. The game rolls once per lane and
+          shows the results below the turn heading. All four in a lane move that
+          many spaces clockwise. If one stops on your animal’s square, your
+          animal is hit. You cannot voluntarily move onto a predator.
         </p>
         <p>
           <strong>Resource patches:</strong> patches at the board’s edge hold
@@ -1528,20 +1680,18 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <script id="game-engine">
-      /* Fragmented Habitat v16 — rules engine, independent of the display. */
+      /* Fragmented Habitat v17 — rules engine, independent of the display. */
       (() => {
         "use strict";
-        const SECTORS = 16;
-        const RESOURCE_SPACES = Array.from({ length: SECTORS }, (_, s) =>
-          s % 2 ? [s - 0.25, s + 0.25] : [s],
-        ).flat();
+        const SECTORS = 24;
+        const RESOURCE_SPACES = Array.from({ length: SECTORS }, (_, s) => s);
         const RESOURCE = 14,
           ISLAND = 7;
         const ROAD = new Set([4, 5, 6, 8, 9, 10]);
         const PREDATOR_LANES = [1, 2, 3, 11, 12, 13];
         const PREDATOR_KINDS = ["snake", "fox", "coyote", "cat"];
         const PREDATORS_PER_LANE = 4;
-        const CORNUCOPIA = new Set([0, 2, 6, 8, 10, 14]);
+        const CORNUCOPIA = new Set([0, 3, 9, 12, 15, 21]);
         const ANIMALS = [
           "Rat",
           "Squirrel",
@@ -1612,7 +1762,7 @@
             { r, s: wrap(s + 1) },
             { r: r - 1, s: r === 1 ? 0 : s },
             ...(r === RESOURCE - 1
-              ? (s % 2 ? [s - 0.25, s + 0.25] : [s]).map((s) => ({
+              ? [s].map((s) => ({
                   r: RESOURCE,
                   s,
                 }))
@@ -1674,6 +1824,7 @@
             });
             this.police = { r: ISLAND, s: Math.floor(this.rng() * SECTORS) };
             this.predIndex = 0;
+            this.predatorRolls = [];
             this.pending = null;
             this.contest = null;
             this.pendingDraw = null;
@@ -2136,9 +2287,10 @@
               this.phase = "roll";
             } else {
               this.predIndex = 0;
+              this.predatorRolls = [];
               this.phase = "predators";
               this.record(
-                "Everyone has moved. Roll once per predator lane; all four predators move together.",
+                "Everyone has moved. Click Move all predators once; the six lane rolls run automatically.",
               );
             }
             if (!this.tokens.some((t) => !t.out)) {
@@ -2151,6 +2303,7 @@
             if (this.phase !== "predators") return false;
             const r = PREDATOR_LANES[this.predIndex],
               n = (this.lastRoll = this.dice());
+            this.predatorRolls.push({ lane: this.predIndex + 1, roll: n });
             const lane = this.predators.filter((p) => p.r === r);
             // Update the whole lane before resolving catches, so spacing is preserved.
             lane.forEach((p) => (p.s = wrap(p.s + n)));
@@ -3399,34 +3552,17 @@
             }
             if (ROAD.has(r)) {
               if (r === 5 || r === 9) {
-                for (const delta of [-0.035, 0.035]) {
-                  const rr = (radii[r] + radii[r - 1]) / 2 + delta;
-                  const path = Array.from({ length: 5 }, (_, i) =>
-                    project(xy(rr, (s - 0.5 + i / 4) * ANGLE)),
-                  )
-                    .map((q, i) => `${i ? "L" : "M"}${q.x},${q.y}`)
-                    .join("");
-                  g.append(
-                    svg("path", {
-                      d: path,
-                      fill: "none",
-                      stroke: "#e8c965",
-                      "stroke-width": 1.05 * zoom,
-                      "pointer-events": "none",
-                    }),
-                  );
-                }
-              } else if (s % 2 === 0) {
                 const rr = (radii[r] + radii[r - 1]) / 2;
-                const a = project(xy(rr, (s - 0.25) * ANGLE)),
-                  b = project(xy(rr, (s + 0.25) * ANGLE));
+                const a = project(xy(rr, (s - 0.28) * ANGLE)),
+                  b = project(xy(rr, (s + 0.28) * ANGLE));
                 g.append(
                   svg("path", {
+                    class: "road-dash",
                     d: `M${a.x},${a.y}L${b.x},${b.y}`,
                     fill: "none",
-                    stroke: "#d6ddda",
-                    "stroke-width": 1.2 * zoom,
-                    opacity: ".72",
+                    stroke: "#f1e7c5",
+                    "stroke-width": 2 * zoom,
+                    "stroke-linecap": "round",
                     "pointer-events": "none",
                   }),
                 );
@@ -3619,7 +3755,8 @@
           b.hidden = !show;
           b.textContent = label;
           b.disabled = !enabled;
-          b.onclick = () => act(action);
+          b.onclick =
+            id === "roll" ? () => rollAction(action) : () => act(action);
         }
         function render() {
           board();
@@ -3629,7 +3766,12 @@
               ? game.players[game.cardOwner()]
               : p;
           $("round").textContent =
-            `ROUND ${game.round}: PLAYER ${p.id + 1} — ${p.animal.toUpperCase()}`;
+            ["predators"].includes(game.phase) ||
+            (autoPredators && game.phase === "rescue")
+              ? `ROUND ${game.round}: PREDATOR PATROL`
+              : game.phase === "police"
+                ? `ROUND ${game.round}: POLICE PATROL`
+                : `ROUND ${game.round}: PLAYER ${p.id + 1} — ${p.animal.toUpperCase()}`;
           $("dice").textContent = game.lastRoll
             ? ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][game.lastRoll - 1]
             : "⚄";
@@ -3653,12 +3795,18 @@
           };
           $("turn-help").textContent = descriptions[game.phase];
           $("status").textContent = game.log.at(-1);
+          $("predator-results").hidden = !game.predatorRolls.length;
+          $("predator-results").textContent =
+            "Predator rolls · " +
+            game.predatorRolls
+              .map((p) => `Lane ${p.lane}: ${p.roll}`)
+              .join(" · ");
           $("traffic-dice").textContent =
             game.lastTraffic === "sun"
               ? "☀"
               : game.lastTraffic === "moon"
                 ? "☾"
-                : "☀☾";
+                : "?";
           $("traffic-dice").classList.toggle(
             "night",
             game.lastTraffic === "moon",
@@ -3674,7 +3822,7 @@
             game.phase === "police"
               ? "Roll police patrol"
               : game.phase === "predators"
-                ? "Roll lane dice"
+                ? "Move all predators"
                 : game.phase === "traffic"
                   ? "Roll sun / moon die"
                   : game.phase === "hunter"
@@ -3707,7 +3855,7 @@
               ? "Maximum 3 animals"
               : game.player.food < 2
                 ? "Add animal · need 2 food"
-                : `Add ${p.animal} · 2 food`,
+                : `Add ${p.animal} · 2 food (optional)`,
             () => game.spawn(),
             game.phase === "roll",
             game.canSpawn(),
@@ -3794,11 +3942,67 @@
           $("deck-caption").classList.toggle("pending", game.phase === "draw");
           $("event-log").textContent = game.log.slice(-8).join("\n");
           if ($("hand-dialog").open) renderHand();
+          if (rolling) $("roll").disabled = true;
           globalThis.qaGame = game;
+        }
+        let rolling = false,
+          autoPredators = false,
+          predatorRunner = false;
+        async function animateRoll(action) {
+          if (rolling) return;
+          const originalGame = game;
+          rolling = true;
+          document.querySelector(".app").classList.add("rolling");
+          $("roll").disabled = true;
+          const die = ["traffic", "hunter"].includes(game.phase)
+            ? $("traffic-dice")
+            : $("dice");
+          die.classList.add("is-rolling");
+          let tick = 0;
+          const timer = setInterval(() => {
+            die.textContent =
+              die.id === "traffic-dice"
+                ? ++tick % 2
+                  ? "☀"
+                  : "☾"
+                : ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][++tick % 6];
+          }, 65);
+          await new Promise((resolve) => setTimeout(resolve, 400));
+          clearInterval(timer);
+          die.classList.remove("is-rolling");
+          rolling = false;
+          document.querySelector(".app").classList.remove("rolling");
+          if (game !== originalGame) {
+            autoPredators = false;
+            render();
+            return;
+          }
+          action();
+          render();
+        }
+        async function continuePredators() {
+          if (predatorRunner || !autoPredators) return;
+          predatorRunner = true;
+          try {
+            while (autoPredators && game.phase === "predators")
+              await animateRoll(() => game.rollPredator());
+            if (!["predators", "rescue"].includes(game.phase))
+              autoPredators = false;
+          } finally {
+            predatorRunner = false;
+          }
+        }
+        function rollAction(action) {
+          if (rolling) return;
+          if (game.phase === "predators") {
+            autoPredators = true;
+            continuePredators();
+          } else animateRoll(action);
         }
         function act(action) {
           const result = action();
           if (result !== false) render();
+          if (autoPredators && game.phase === "predators") continuePredators();
           return result;
         }
         function renderHand() {
@@ -3880,6 +4084,7 @@
           .querySelectorAll("[data-close]")
           .forEach((b) => (b.onclick = () => $(b.dataset.close).close()));
         $("apply-settings").onclick = () => {
+          autoPredators = false;
           game = new Game({
             players: Number($("player-count").value),
             target: Number($("target").value),
@@ -3889,6 +4094,7 @@
         };
         $("reset").onclick = () => $("reset-dialog").showModal();
         $("confirm-reset").onclick = () => {
+          autoPredators = false;
           game = new Game({
             players: game.players.length,
             target: game.target,

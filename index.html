@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#071527" />
     <meta
       name="description"
-      content="Fragmented Habitat v15: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
+      content="Fragmented Habitat v16: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
     />
     <title>Fragmented Habitat</title>
     <link
@@ -1187,7 +1187,7 @@
           <p id="deck-caption" class="deck-caption"></p>
         </div>
         <footer>
-          VERSION 15 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+          VERSION 16 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
             Recent events
           </button>
         </footer>
@@ -1266,7 +1266,7 @@
           <p id="status" class="status" aria-live="polite"></p>
         </section>
         <section class="panel">
-          <p class="section-label">Families · held cards · banked food</p>
+          <p class="section-label">Players · held cards · banked food</p>
           <div id="roster"></div>
         </section>
       </aside>
@@ -1285,10 +1285,12 @@
         strategy.
       </p>
       <p>
-        <strong>Start:</strong> each family has one animal and 5 food. Choose an
+        <strong>Start:</strong> each player has one animal and 5 food. Choose an
         animal, roll the movement die, then click neighbouring spaces. Move
         inward, outward or sideways. You may stop after one step; you do not
-        have to use the whole roll. You may retrace your own steps, including returning to the square you just left. Each return step uses one movement point.
+        have to use the whole roll. You may retrace your own steps, including
+        returning to the square you just left. Each return step uses one
+        movement point.
       </p>
       <p>
         <strong>Add an animal:</strong> before rolling, spend 2 food to add
@@ -1313,26 +1315,50 @@
         </p>
         <p>
           <strong>Predator lanes:</strong> leaving the habitat exposes animals
-          to predators. Four red-based predators patrol each green lane. After
-          all players have taken a turn, roll once per lane: all four move that
-          many spaces clockwise. If one stops on your animal’s square, your
-          animal is hit. You cannot voluntarily move onto a predator.
+          to predators. Four predators patrol each green lane. Player animals
+          have numbered flags; predators do not. After all players have taken a
+          turn, roll once per lane: all four move that many spaces clockwise. If
+          one stops on your animal’s square, your animal is hit. You cannot
+          voluntarily move onto a predator.
         </p>
         <p>
           <strong>Resource patches:</strong> patches at the board’s edge hold
           food. An ordinary patch gives 1 fruit to carry home. A golden horn
           patch gives 3 fruit, but you must face the hunter: moon/night means
           keep the fruit; sun/day means a hit. Each patch supplies only the
-          first animal that collects from it. It then stays empty for the rest
-          of the game. Each animal collects from one patch per trip.
+          first animal that collects from it. It stays empty unless its carried
+          fruit is returned after a hit. Each animal collects from one patch per
+          trip.
         </p>
       </div>
-      <p>
-        <strong>Revival:</strong> after a predator, car, hunter or off-board
-        hit, lose carried fruit and pay 2 food to revive at home. If your family
-        cannot pay, that animal is eliminated. Rescue cards can help before the
-        cost is paid.
-      </p>
+      <h3>Hits, revival and elimination</h3>
+      <ul>
+        <li>
+          A predator, car, hunter or off-board hit sends the affected animal
+          back to the habitat if you can revive it.
+        </li>
+        <li>
+          Any fruit it carries returns to the resource patch it came from. That
+          patch can be collected again.
+        </li>
+        <li>
+          Pay <strong>2 banked food</strong> to revive the animal at home.
+        </li>
+        <li>
+          If you cannot pay 2 food, <strong>you are eliminated</strong>. All
+          your animals leave the board, their carried fruit returns to its
+          original patches, and your held cards go to the discard pile.
+        </li>
+        <li>
+          An eligible rescue card may be used before you pay. Play Dead keeps
+          the animal and its fruit in place. Angel Conservationists revives it
+          for free, but its fruit still returns to the patch.
+        </li>
+        <li>
+          The police officer’s safe return is different: you keep your fruit and
+          bank it at home, with no revival cost.
+        </li>
+      </ul>
       <p>
         <strong>Interspecific competition:</strong> land on another player’s
         animal to contest its space. The challenger chooses odd or even, and the
@@ -1340,7 +1366,7 @@
         and chooses an adjacent square to push the loser into. A push onto a
         road triggers a day/night check; a push onto a predator causes a hit.
         Other landing effects also apply. You cannot share a square outside the
-        habitat or contest your own family.
+        habitat or contest your own animals.
       </p>
       <p>
         <strong>Risk rewards:</strong> winning a contest, surviving a car roll
@@ -1373,19 +1399,35 @@
         </li>
         <li>
           <strong>2 Angel Conservationists:</strong> revive at home free after a
-          car or hunter hit; carried fruit is lost.
+          car or hunter hit; carried fruit returns to its original patch.
         </li>
       </ul>
-      <p>
-        <strong>Winning:</strong> the default target is 10 banked food; Settings
-        can change it. The game ends when someone reaches the target, only one
-        family remains, or every patch has been collected. The last family wins
-        immediately. If patches run out, finish any hunter check and reward
-        draw, then compare banked food plus fruit still carried by surviving
-        animals. Highest total wins; ties share the win. The same scoring
-        applies if no animals survive. One-player games end at the target,
-        depletion or elimination.
-      </p>
+      <h3>How the game ends</h3>
+      <ul>
+        <li>
+          <strong>Food target:</strong> the first player to reach the chosen
+          banked-food target wins. The default is 10; change it in Settings.
+        </li>
+        <li>
+          <strong>Only one player remains:</strong> that player wins
+          immediately, regardless of their food total.
+        </li>
+        <li>
+          <strong>No food remains in the patches:</strong> finish any pending
+          hunter check and reward draw. If all patches are still empty, the
+          player with the most banked food plus fruit carried by surviving
+          animals wins. Equal totals share the win.
+        </li>
+        <li>
+          <strong>Returned fruit:</strong> food lost after a hit goes back to
+          its original patch, so the board is not depleted while that food is
+          available again.
+        </li>
+        <li>
+          <strong>Solo play:</strong> reach the target or the highest available
+          depletion score; if you cannot pay revival, you lose.
+        </li>
+      </ul>
       <p>
         <strong>Board controls:</strong> drag sideways to turn, vertically to
         tilt, and pinch or wheel to zoom. 3D View gives separate tilt, turn and
@@ -1458,7 +1500,7 @@
     <dialog id="reset-dialog">
       <h2>Start again?</h2>
       <p>
-        This clears all food, cards and positions. Each family restarts with 5
+        This clears all food, cards and positions. Each player restarts with 5
         food.
       </p>
       <div class="toolbar">
@@ -1474,9 +1516,9 @@
       </p>
       <div class="token-gallery" id="token-gallery"></div>
       <p>
-        Red bases identify predators. These are digital concepts; physical
-        samples can explore enamel-style wooden tokens or illustrated acrylic
-        discs.
+        Numbered flags identify player animals. These are digital concepts;
+        physical samples can explore enamel-style wooden tokens or illustrated
+        acrylic discs.
       </p>
       <button class="btn" data-close="design-dialog">Close</button>
     </dialog>
@@ -1486,7 +1528,7 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <script id="game-engine">
-      /* Fragmented Habitat v15 — rules engine, independent of the display. */
+      /* Fragmented Habitat v16 — rules engine, independent of the display. */
       (() => {
         "use strict";
         const SECTORS = 16;
@@ -1544,7 +1586,7 @@
             name: "Angel Conservationists",
             count: 2,
             icon: "✦",
-            text: "After a car or hunter hit, revive at home for free. Carried fruit is lost.",
+            text: "After a car or hunter hit, revive at home for free. Carried fruit returns to its original patch.",
           },
         };
         const wrap = (n) => ((n % SECTORS) + SECTORS) % SECTORS;
@@ -1590,7 +1632,13 @@
             this.lastTraffic = null;
             this.players = Array.from(
               { length: Math.max(1, Math.min(7, players)) },
-              (_, id) => ({ id, animal: ANIMALS[id], food: 5, hand: [] }),
+              (_, id) => ({
+                id,
+                animal: ANIMALS[id],
+                food: 5,
+                hand: [],
+                eliminated: false,
+              }),
             );
             this.tokens = this.players.map((p) => ({
               id: p.id + 1,
@@ -1599,6 +1647,7 @@
               r: 0,
               s: 0,
               cargo: 0,
+              sourcePatch: null,
               loaded: false,
               out: false,
             }));
@@ -1630,7 +1679,7 @@
             this.pendingDraw = null;
             this.harvested = new Set();
             this.log = [
-              "Predators are randomly spaced. Each family starts with 5 food. Choose an animal and roll.",
+              "Predators are randomly spaced. Each player starts with 5 food. Choose an animal and roll.",
             ];
             this.deck = Object.entries(CARDS).flatMap(([type, c]) =>
               Array(c.count).fill(type),
@@ -1665,12 +1714,21 @@
           score(owner) {
             return (
               this.players[owner].food +
-              this.family(owner).reduce((sum, t) => sum + t.cargo, 0)
+              this.animals(owner).reduce((sum, t) => sum + t.cargo, 0)
             );
           }
           checkEnd() {
             if (this.phase === "finished") return true;
-            const live = this.players.filter((p) => this.family(p.id).length);
+            const live = this.players.filter((p) => this.animals(p.id).length);
+            if (this.players.length === 1 && !live.length) {
+              this.winners = [];
+              this.winner = null;
+              this.endReason = "Player eliminated";
+              this.phase = "finished";
+              this.pending = this.pendingDraw = this.contest = null;
+              this.record("You cannot pay 2 food. Game over.");
+              return true;
+            }
             const target = this.players.find((p) => p.food >= this.target);
             let winners, reason;
             if (target) {
@@ -1678,7 +1736,7 @@
               reason = "Food target reached";
             } else if (this.players.length > 1 && live.length === 1) {
               winners = [live[0].id];
-              reason = "Last family standing";
+              reason = "Only one player remains";
             } else if (
               !live.length ||
               this.harvested.size === RESOURCE_SPACES.length
@@ -1705,7 +1763,7 @@
           }
           rewardCard(owner, reason, done) {
             if (this.phase === "finished") return;
-            if (!this.family(owner).length) {
+            if (!this.animals(owner).length) {
               done();
               return;
             }
@@ -1733,14 +1791,14 @@
             if (this.checkEnd()) return;
             this.round++;
             this.active = this.players.findIndex(
-              (p) => this.family(p.id).length,
+              (p) => this.animals(p.id).length,
             );
             if (this.active < 0) {
               this.phase = "finished";
               this.winner = null;
               return;
             }
-            this.selected = this.family()[0].id;
+            this.selected = this.animals()[0].id;
             this.phase = "roll";
             this.record(`Round ${this.round}. New cards are now ready.`);
           }
@@ -1762,7 +1820,7 @@
           get token() {
             return this.tokens.find((t) => t.id === this.selected);
           }
-          family(owner = this.active) {
+          animals(owner = this.active) {
             return this.tokens.filter((t) => t.owner === owner && !t.out);
           }
           name(t) {
@@ -1794,7 +1852,7 @@
             return (
               this.phase === "roll" &&
               this.player.food >= 2 &&
-              this.family().length < 3
+              this.animals().length < 3
             );
           }
           spawn() {
@@ -1813,6 +1871,7 @@
               r: 0,
               s: 0,
               cargo: 0,
+              sourcePatch: null,
               loaded: false,
               out: false,
             };
@@ -1896,9 +1955,15 @@
             return true;
           }
           collect(t) {
-            if (t.r === RESOURCE && !t.loaded && !this.harvested.has(t.s)) {
+            if (
+              t.r === RESOURCE &&
+              RESOURCE_SPACES.includes(t.s) &&
+              !t.loaded &&
+              !this.harvested.has(t.s)
+            ) {
               this.harvested.add(t.s);
               t.loaded = true;
+              t.sourcePatch = t.s;
               t.cargo = CORNUCOPIA.has(t.s) ? 3 : 1;
               this.record(
                 `${this.name(t)} collected ${t.cargo} fruit. Bring it home.`,
@@ -1926,6 +1991,7 @@
                 this.record(`${this.name(t)} banked ${t.cargo} food.`);
               }
               t.cargo = 0;
+              t.sourcePatch = null;
               t.loaded = false;
               this.checkEnd();
             }
@@ -2017,10 +2083,24 @@
             if (!this.checkEnd()) p.done();
             return true;
           }
-          applyHit(t, free = false) {
+          returnFruit(t) {
+            if (
+              t.cargo > 0 &&
+              t.sourcePatch !== null &&
+              t.sourcePatch !== undefined
+            ) {
+              this.harvested.delete(t.sourcePatch);
+              this.record(
+                `${this.name(t)} returned ${t.cargo} fruit to its original resource patch.`,
+              );
+            }
             t.cargo = 0;
+            t.sourcePatch = null;
             t.loaded = false;
+          }
+          applyHit(t, free = false) {
             const owner = this.players[t.owner];
+            this.returnFruit(t);
             if (free || owner.food >= 2) {
               if (!free) owner.food -= 2;
               t.r = 0;
@@ -2029,14 +2109,16 @@
                 `${this.name(t)} revived at home${free ? " for free" : " for 2 food"}.`,
               );
             } else {
-              t.out = true;
-              this.record(
-                `${this.name(t)} has no food to revive and leaves the game.`,
-              );
-              if (!this.family(t.owner).length) {
-                this.discard.push(...owner.hand.map((c) => c.type));
-                owner.hand = [];
+              owner.eliminated = true;
+              for (const animal of this.animals(t.owner)) {
+                this.returnFruit(animal);
+                animal.out = true;
               }
+              this.discard.push(...owner.hand.map((c) => c.type));
+              owner.hand = [];
+              this.record(
+                `Player ${t.owner + 1} cannot pay 2 food and is eliminated. All their animals leave the board.`,
+              );
             }
           }
           endTurn() {
@@ -2046,11 +2128,11 @@
             this.steps = 0;
             this.remaining = 0;
             let next = this.active + 1;
-            while (next < this.players.length && !this.family(next).length)
+            while (next < this.players.length && !this.animals(next).length)
               next++;
             if (next < this.players.length) {
               this.active = next;
-              this.selected = this.family()[0].id;
+              this.selected = this.animals()[0].id;
               this.phase = "roll";
             } else {
               this.predIndex = 0;
@@ -2829,8 +2911,8 @@
               cy: q.y + u * 0.05,
               rx: u * 0.49,
               ry: u * 0.16,
-              fill: threat ? "#ef3549" : "#071b29",
-              opacity: threat ? ".95" : ".42",
+              fill: "#071b29",
+              opacity: ".42",
             }),
           );
           medal.append(
@@ -2838,7 +2920,7 @@
               cx,
               cy,
               r: u * 0.47,
-              fill: threat ? "#c9253d" : "#475d65",
+              fill: "#475d65",
             }),
           );
           medal.append(
@@ -2847,7 +2929,7 @@
               cy: cy - u * 0.035,
               r: u * 0.45,
               fill: `url(#gloss-${kind})`,
-              stroke: threat ? "#ff5467" : "#f1e7c1",
+              stroke: "#f1e7c1",
               "stroke-width": Math.max(0.6, zoom * 0.8),
             }),
           );
@@ -3407,6 +3489,45 @@
                 off,
                 r ? 25 : 30,
               );
+              const anchor = project(off, 0.12);
+              const flag = svg("g", {
+                class: "player-flag",
+                "pointer-events": "none",
+                "aria-label": `Player ${t.owner + 1}`,
+              });
+              flag.append(
+                svg("line", {
+                  x1: anchor.x + 10 * zoom,
+                  y1: anchor.y - 3 * zoom,
+                  x2: anchor.x + 10 * zoom,
+                  y2: anchor.y - 44 * zoom,
+                  stroke: "#eff3e7",
+                  "stroke-width": 1.8 * zoom,
+                }),
+              );
+              flag.append(
+                svg("path", {
+                  d: `M${anchor.x + 10 * zoom},${anchor.y - 44 * zoom} h${31 * zoom} l${-5 * zoom},${8 * zoom} l${5 * zoom},${8 * zoom} h${-31 * zoom} Z`,
+                  fill: COLORS[t.owner],
+                  stroke: "#edf3de",
+                  "stroke-width": 0.8 * zoom,
+                }),
+              );
+              flag.append(
+                svg(
+                  "text",
+                  {
+                    x: anchor.x + 23 * zoom,
+                    y: anchor.y - 33 * zoom,
+                    fill: "#102637",
+                    "font-size": 11 * zoom,
+                    "font-weight": 800,
+                    "text-anchor": "middle",
+                  },
+                  `P${t.owner + 1}`,
+                ),
+              );
+              g.append(flag);
               const pos = project(off, 0.32);
               g.append(
                 svg("circle", {
@@ -3528,7 +3649,7 @@
             draw: `Player ${game.pendingDraw?.owner + 1}: click the deck to draw your card.`,
             rescue: `${response.animal}: use a rescue card or accept the hit.`,
             "card-target": "Tap an enemy to move it one space toward home.",
-            finished: `${game.endReason || "Game over"}. ${game.winners?.map((id) => `PLAYER ${id + 1} — ${game.players[id].animal}`).join(" & ") || "No winner"} ${game.winners?.length > 1 ? "SHARE THE WIN" : "WINS"}!`,
+            finished: `${game.endReason || "Game over"}. ${game.winners?.map((id) => `PLAYER ${id + 1} — ${game.players[id].animal}`).join(" & ") || "No winner"} ${game.winners?.length > 1 ? "SHARE THE WIN" : game.winners?.length ? "WINS" : ""}!`,
           };
           $("turn-help").textContent = descriptions[game.phase];
           $("status").textContent = game.log.at(-1);
@@ -3582,7 +3703,7 @@
           );
           setButton(
             "spawn",
-            game.family().length >= 3
+            game.animals().length >= 3
               ? "Maximum 3 animals"
               : game.player.food < 2
                 ? "Add animal · need 2 food"
@@ -3623,7 +3744,7 @@
           $("odd").onclick = () => act(() => game.chooseParity("odd"));
           $("even").onclick = () => act(() => game.chooseParity("even"));
           $("family").replaceChildren();
-          game.family().forEach((t) => {
+          game.animals().forEach((t) => {
             const b = document.createElement("button");
             b.className = "btn animal-pick";
             b.textContent = `${p.animal} ${t.number} · ${t.r === 0 ? "home" : t.cargo ? `${t.cargo} fruit` : "away"}`;
@@ -3639,13 +3760,13 @@
             row.className =
               "player-row" +
               (p.id === game.active ? " active" : "") +
-              (!game.family(p.id).length ? " out" : "");
+              (!game.animals(p.id).length ? " out" : "");
             row.append(face(p.animal.toLowerCase()));
             const name = document.createElement("div");
             const bold = document.createElement("strong");
             bold.textContent = `Player ${p.id + 1} · ${p.animal}`;
             const small = document.createElement("small");
-            small.textContent = `${game.family(p.id).length} animals · ${game.family(p.id).reduce((n, t) => n + t.cargo, 0)} carrying`;
+            small.textContent = `${game.animals(p.id).length} animals · ${game.animals(p.id).reduce((n, t) => n + t.cargo, 0)} carrying`;
             name.append(bold, small);
             row.append(name);
             const card = document.createElement("button");
@@ -3661,7 +3782,7 @@
             const food = document.createElement("div");
             food.className = "food";
             food.textContent = p.food;
-            food.title = "Banked family food";
+            food.title = "Banked player food";
             row.append(food);
             $("roster").append(row);
           });

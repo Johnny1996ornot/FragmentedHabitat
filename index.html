@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#071527" />
     <meta
       name="description"
-      content="Fragmented Habitat v17: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
+      content="Fragmented Habitat v18: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
     />
     <title>Fragmented Habitat</title>
     <link
@@ -1273,7 +1273,9 @@
         }
       }
       @media (min-width: 801px) and (max-height: 760px) {
-        .round-tag {font-size:20px;}
+        .round-tag {
+          font-size: 20px;
+        }
         .panel {
           padding: 10px;
         }
@@ -1308,13 +1310,14 @@
           </p>
         </div>
         <div class="toolbar">
-          <button class="btn" id="settings">Settings</button
+          <button class="btn" id="board-mode">Reverse board</button
+          ><button class="btn" id="settings">Settings</button
           ><button class="btn" id="reset">Reset</button
           ><button class="btn" id="token-designs">Tokens</button>
         </div>
 
         <footer>
-          VERSION 17 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+          VERSION 18 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
             Recent events
           </button>
         </footer>
@@ -1448,6 +1451,15 @@
         to add another animal at home. Its parent can be anywhere. You can have
         up to three living animals, but move only one per turn.
       </p>
+      <p>
+        <strong>Two board modes:</strong> Classic starts in the central habitat
+        and collects food at the edges. Reverse race starts in evenly spaced
+        edge habitats and collects food in the centre. In reverse mode, each
+        player has three marked entry spaces; return through one of your own
+        entries to bank fruit. Both modes use the same roads, predators, cards
+        and winning conditions. Switching modes starts a fresh game. Reverse
+        race is an optional variant.
+      </p>
       <div class="landscape-rules">
         <h3>The landscape</h3>
         <p>
@@ -1474,13 +1486,13 @@
           animal is hit. You cannot voluntarily move onto a predator.
         </p>
         <p>
-          <strong>Resource patches:</strong> patches at the board’s edge hold
-          food. An ordinary patch gives 1 fruit to carry home. A golden horn
-          patch gives 3 fruit, but you must face the hunter: moon/night means
-          keep the fruit; sun/day means a hit. Each patch supplies only the
-          first animal that collects from it. It stays empty unless its carried
-          fruit is returned after a hit. Each animal collects from one patch per
-          trip.
+          <strong>Resource patches:</strong> patches hold food at the edges in
+          Classic mode and in the centre in Reverse race. An ordinary patch
+          gives 1 fruit to carry home. A golden horn patch gives 3 fruit, but
+          you must face the hunter: moon/night means keep the fruit; sun/day
+          means a hit. Each patch supplies only the first animal that collects
+          from it. It stays empty unless its carried fruit is returned after a
+          hit. Each animal collects from one patch per trip.
         </p>
       </div>
       <h3>Hits, revival and elimination</h3>
@@ -1644,13 +1656,20 @@
           <option>20</option>
         </select></label
       >
+      <label
+        >Board mode<select id="mode-select">
+          <option value="classic">Central habitat · edge food</option>
+          <option value="reverse">Edge habitats · central food</option>
+        </select></label
+      >
       <div class="toolbar">
         <button id="apply-settings" class="btn primary">Start fresh game</button
         ><button class="btn" data-close="settings-dialog">Cancel</button>
       </div>
     </dialog>
     <dialog id="reset-dialog">
-      <h2>Start again?</h2>
+      <h2 id="reset-title">Start again?</h2>
+      <p id="mode-warning" hidden></p>
       <p>
         This clears all food, cards and positions. Each player restarts with 5
         food.
@@ -1680,7 +1699,7 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <script id="game-engine">
-      /* Fragmented Habitat v17 — rules engine, independent of the display. */
+      /* Fragmented Habitat v18 — rules engine, independent of the display. */
       (() => {
         "use strict";
         const SECTORS = 24;
@@ -1772,7 +1791,11 @@
           ];
         }
         class Game {
-          constructor({ players = 2, target = 10 } = {}, rng = Math.random) {
+          constructor(
+            { players = 2, target = 10, mode = "classic" } = {},
+            rng = Math.random,
+          ) {
+            this.mode = mode === "reverse" ? "reverse" : "classic";
             this.rng = rng;
             this.target = target;
             this.round = 1;
@@ -1861,6 +1884,21 @@
               [chosen[i], chosen[j]] = [chosen[j], chosen[i]];
             }
             return chosen;
+          }
+          homeSector(owner) {
+            return wrap(Math.round((owner * SECTORS) / this.players.length));
+          }
+          homeEntries(owner) {
+            const s = this.homeSector(owner);
+            return [wrap(s - 1), s, wrap(s + 1)];
+          }
+          neighbours(r, s, owner = this.active) {
+            if (this.mode !== "reverse") return neighbours(r, s);
+            if (r === 0)
+              return this.homeEntries(owner).map((s) => ({ r: 1, s }));
+            return neighbours(r, s).filter(
+              (p) => p.r !== 0 || this.homeEntries(owner).includes(s),
+            );
           }
           score(owner) {
             return (
@@ -2056,8 +2094,8 @@
           }
           canContest(enemy) {
             return (
-              enemy.r === RESOURCE ||
-              neighbours(enemy.r, enemy.s).some(
+              (enemy.r === RESOURCE && this.mode !== "reverse") ||
+              this.neighbours(enemy.r, enemy.s, enemy.owner).some(
                 (p) => !this.occupied(p.r, p.s, [enemy.id, this.selected]),
               )
             );
@@ -2070,7 +2108,11 @@
               this.token.out
             )
               return [];
-            return neighbours(this.token.r, this.token.s).filter(
+            return this.neighbours(
+              this.token.r,
+              this.token.s,
+              this.token.owner,
+            ).filter(
               (p) =>
                 !this.predatorAt(p.r, p.s) &&
                 (!this.occupied(p.r, p.s) ||
@@ -2393,8 +2435,14 @@
             if (this.phase !== "push") return [];
             const c = this.contest;
             return [
-              ...neighbours(c.r, c.s, true),
-              ...(c.r === RESOURCE ? [{ r: RESOURCE + 1, s: c.s }] : []),
+              ...this.neighbours(
+                c.r,
+                c.s,
+                this.tokens.find((t) => t.id === c.loser).owner,
+              ),
+              ...(c.r === RESOURCE && this.mode !== "reverse"
+                ? [{ r: RESOURCE + 1, s: c.s }]
+                : []),
             ].filter(
               (p) =>
                 p.r === RESOURCE + 1 ||
@@ -2487,6 +2535,9 @@
                 !t.out &&
                 t.owner !== this.active &&
                 t.r > 0 &&
+                (this.mode !== "reverse" ||
+                  t.r !== 1 ||
+                  this.homeEntries(t.owner).includes(t.s)) &&
                 !this.predatorAt(
                   t.r - 1,
                   t.r === 1
@@ -2794,6 +2845,16 @@
           ...Array.from({ length: 13 }, (_, i) => 2.16 + i * 0.3),
           6.55,
         ];
+        // Logical rings always count steps from habitat to food; only their physical
+        // placement changes. Road checks and predator movement share one rules engine.
+        function bounds(r) {
+          if (game.mode !== "reverse")
+            return r ? [radii[r - 1] + 0.035, radii[r]] : [0, radii[0]];
+          if (r === 0) return [6.15, 6.55];
+          if (r === RESOURCE) return [1.25, 2.15];
+          const inner = 2.15 + (13 - r) * (4 / 13);
+          return [inner + 0.035, inner + 4 / 13];
+        }
         function face(kind, size = 26) {
           const n = svg("svg", {
             viewBox: "0 0 16 16",
@@ -2988,7 +3049,7 @@
             .join(" ");
         }
         function cell(r, s) {
-          if (!r)
+          if (!r && game.mode !== "reverse")
             return Array.from({ length: 8 }, (_, i) =>
               xy(radii[0], 22.5 + i * 45),
             );
@@ -3004,18 +3065,22 @@
               end,
             ];
           return [
-            ...angles.map((a) => xy(radii[r], a)),
-            ...angles.reverse().map((a) => xy(radii[r - 1] + 0.035, a)),
+            ...angles.map((a) => xy(bounds(r)[1], a)),
+            ...angles.reverse().map((a) => xy(bounds(r)[0], a)),
           ];
         }
         function centre(r, s) {
-          return r
-            ? xy((radii[r] + radii[r - 1]) / 2, s * ANGLE)
+          return r || game.mode === "reverse"
+            ? xy((bounds(r)[0] + bounds(r)[1]) / 2, s * ANGLE)
             : { x: 0, z: 0 };
         }
         function shape(r, s) {
           if (!r)
-            return { fill: "#41735a", side: "#274b39", name: "Central forest" };
+            return {
+              fill: "#41735a",
+              side: "#274b39",
+              name: game.mode === "reverse" ? "Edge habitat" : "Central forest",
+            };
           if (r === ISLAND)
             return {
               fill: "#354d50",
@@ -3149,7 +3214,7 @@
         }
         function fruit(g, p, large = false) {
           const q = project(p, 0.08),
-            u = zoom;
+            u = zoom * (game.mode === "reverse" ? 0.62 : 1);
           const node = svg("g", {
             class: "tile-detail",
             transform: `translate(${q.x},${q.y}) scale(${u})`,
@@ -3427,8 +3492,40 @@
             legal = new Set(
               possible.filter((p) => p.r <= RESOURCE).map((p) => key(p.r, p.s)),
             );
+          if (game.mode === "reverse") {
+            const orchard = svg("g", { "aria-label": "Central food grove" });
+            orchard.append(
+              svg("polygon", {
+                points: polygon(
+                  Array.from({ length: 8 }, (_, i) => xy(1.23, 22.5 + 45 * i)),
+                ),
+                fill: "#345e49",
+              }),
+            );
+            tree(orchard, { x: -0.35, z: -0.35 }, 0.85);
+            tree(orchard, { x: 0.4, z: -0.2 }, 0.7);
+            bush(orchard, { x: 0, z: 0.4 }, 0.65);
+            const label = project({ x: 0, z: 0.75 });
+            orchard.append(
+              svg(
+                "text",
+                {
+                  x: label.x,
+                  y: label.y,
+                  fill: "#e8eed0",
+                  "text-anchor": "middle",
+                  "font-size": 12 * zoom,
+                  "font-weight": 700,
+                },
+                "FOOD GROVE",
+              ),
+            );
+            root.append(orchard);
+          }
           const entries = [
-            { r: 0, s: 0 },
+            ...(game.mode === "reverse"
+              ? Array.from({ length: SECTORS }, (_, s) => ({ r: 0, s }))
+              : [{ r: 0, s: 0 }]),
             ...Array.from({ length: (RESOURCE - 1) * SECTORS }, (_, i) => ({
               r: 1 + Math.floor(i / SECTORS),
               s: i % SECTORS,
@@ -3445,9 +3542,17 @@
               g = svg("g", {
                 class:
                   "tile" +
-                  (legal.has(key(r, s)) ? " legal" : "") +
+                  (legal.has(key(r, s)) &&
+                  (r !== 0 ||
+                    game.mode !== "reverse" ||
+                    game.homeEntries(game.active).includes(s))
+                    ? " legal"
+                    : "") +
                   (game.token &&
                   !game.token.out &&
+                  (r !== 0 ||
+                    game.mode !== "reverse" ||
+                    s === game.homeSector(game.token.owner)) &&
                   key(game.token.r, game.token.s) === key(r, s)
                     ? " current"
                     : ""),
@@ -3485,7 +3590,7 @@
               }),
             );
             const q = project(p);
-            if (r === 0) {
+            if (r === 0 && game.mode !== "reverse") {
               for (const a of [90, 125, 165, 200, 245])
                 bush(g, xy(1.55, a), 0.5);
               [
@@ -3519,6 +3624,40 @@
                 ),
               );
             }
+            if (r === 0 && game.mode === "reverse") {
+              bush(g, p, 0.28);
+              const owner = game.players.find((player) =>
+                game.homeEntries(player.id).includes(s),
+              );
+              if (owner) {
+                g.append(
+                  svg("polygon", {
+                    points: polygon(points),
+                    fill: COLORS[owner.id],
+                    opacity: 0.25,
+                    "pointer-events": "none",
+                  }),
+                );
+                if (s === game.homeSector(owner.id)) {
+                  tree(g, xy(6.38, s * ANGLE + 5), 0.5);
+                  const label = project(p);
+                  g.append(
+                    svg(
+                      "text",
+                      {
+                        x: label.x,
+                        y: label.y + 20 * zoom,
+                        fill: "#fff2cf",
+                        "text-anchor": "middle",
+                        "font-size": 12 * zoom,
+                        "font-weight": 700,
+                      },
+                      `P${owner.id + 1} HOME`,
+                    ),
+                  );
+                }
+              }
+            }
             if (r === RESOURCE) {
               if (!game.harvested.has(s)) fruit(g, p, CORNUCOPIA.has(s));
               else {
@@ -3547,12 +3686,18 @@
                 );
               }
               if (CORNUCOPIA.has(s)) {
-                sprite(g, "hunter", xy(6.78, s * ANGLE + 5), 23);
-              } else if (s % 3 === 0) tree(g, xy(6.24, s * ANGLE + 6), 0.65);
+                sprite(
+                  g,
+                  "hunter",
+                  xy(game.mode === "reverse" ? 1.4 : 6.78, s * ANGLE + 5),
+                  game.mode === "reverse" ? 18 : 23,
+                );
+              } else if (s % 3 === 0 && game.mode !== "reverse")
+                tree(g, xy(6.24, s * ANGLE + 6), 0.65);
             }
             if (ROAD.has(r)) {
               if (r === 5 || r === 9) {
-                const rr = (radii[r] + radii[r - 1]) / 2;
+                const rr = (bounds(r)[0] + bounds(r)[1]) / 2;
                 const a = project(xy(rr, (s - 0.28) * ANGLE)),
                   b = project(xy(rr, (s + 0.28) * ANGLE));
                 g.append(
@@ -3570,8 +3715,8 @@
               if (r === 4 && s === 1) car(g, p, s * ANGLE, "#c27e6b");
               if (r === 10 && s === 9) car(g, p, s * ANGLE, "#6e9aaa");
               // Visible, understated lane boundaries; no radial road grid or arrows.
-              const a = project(xy(radii[r], (s - 0.5) * ANGLE)),
-                b = project(xy(radii[r], (s + 0.5) * ANGLE));
+              const a = project(xy(bounds(r)[1], (s - 0.5) * ANGLE)),
+                b = project(xy(bounds(r)[1], (s + 0.5) * ANGLE));
               g.append(
                 svg("path", {
                   d: `M${a.x},${a.y}L${b.x},${b.y}`,
@@ -3605,7 +3750,12 @@
               ),
             );
             const tokens = game.tokens.filter(
-              (t) => !t.out && key(t.r, t.s) === key(r, s),
+              (t) =>
+                !t.out &&
+                key(t.r, t.s) === key(r, s) &&
+                (r !== 0 ||
+                  game.mode !== "reverse" ||
+                  s === game.homeSector(t.owner)),
             );
             const visibleTokens = r
               ? tokens
@@ -3613,12 +3763,13 @@
                   (t, i) => tokens.findIndex((x) => x.owner === t.owner) === i,
                 );
             visibleTokens.forEach((t, i) => {
-              const off = r
-                ? { x: p.x, z: p.z }
-                : {
-                    x: -0.85 + (i % 4) * 0.55,
-                    z: 0.2 + Math.floor(i / 4) * 0.55,
-                  };
+              const off =
+                r || game.mode === "reverse"
+                  ? { x: p.x, z: p.z }
+                  : {
+                      x: -0.85 + (i % 4) * 0.55,
+                      z: 0.2 + Math.floor(i / 4) * 0.55,
+                    };
               sprite(
                 g,
                 game.players[t.owner].animal.toLowerCase(),
@@ -3691,6 +3842,19 @@
             });
             const choose = () => {
               if (suppressClick || moveMode) return;
+              if (
+                r === 0 &&
+                game.mode === "reverse" &&
+                !game
+                  .homeEntries(
+                    game.phase === "push"
+                      ? game.tokens.find((t) => t.id === game.contest.loser)
+                          .owner
+                      : game.active,
+                  )
+                  .includes(s)
+              )
+                return;
               if (game.phase === "card-target") {
                 const t = tokens.find((t) =>
                   game.backwardTargets().some((x) => x.id === t.id),
@@ -3709,7 +3873,11 @@
             root.append(g);
           }
 
-          if (game.phase === "push" && game.contest.r === RESOURCE) {
+          if (
+            game.phase === "push" &&
+            game.contest.r === RESOURCE &&
+            game.mode !== "reverse"
+          ) {
             const p = project(xy(6.8, game.contest.s * ANGLE));
             const g = svg("g", {
               role: "button",
@@ -3943,6 +4111,8 @@
           $("event-log").textContent = game.log.slice(-8).join("\n");
           if ($("hand-dialog").open) renderHand();
           if (rolling) $("roll").disabled = true;
+          $("board-mode").textContent =
+            game.mode === "reverse" ? "Classic board" : "Reverse board";
           globalThis.qaGame = game;
         }
         let rolling = false,
@@ -4050,7 +4220,23 @@
           $("help-dialog").showModal();
           $("help-dialog").scrollTop = 0;
         };
-        $("settings").onclick = () => $("settings-dialog").showModal();
+        let requestedMode = null;
+        $("board-mode").onclick = () => {
+          requestedMode = game.mode === "reverse" ? "classic" : "reverse";
+          $("reset-title").textContent = "Switch board mode?";
+          $("mode-warning").hidden = false;
+          $("mode-warning").textContent =
+            requestedMode === "reverse"
+              ? "Reverse race: start at the edges, collect food in the centre, and bring it back to your own habitat."
+              : "Classic: start in the central habitat and collect food at the edges.";
+          $("reset-dialog").showModal();
+        };
+        $("settings").onclick = () => {
+          $("mode-select").value = game.mode;
+          $("player-count").value = String(game.players.length);
+          $("target").value = String(game.target);
+          $("settings-dialog").showModal();
+        };
         $("history").onclick = () => $("history-dialog").showModal();
         $("token-designs").onclick = () => {
           $("token-gallery").replaceChildren();
@@ -4088,18 +4274,26 @@
           game = new Game({
             players: Number($("player-count").value),
             target: Number($("target").value),
+            mode: $("mode-select").value,
           });
           $("settings-dialog").close();
           render();
         };
-        $("reset").onclick = () => $("reset-dialog").showModal();
+        $("reset").onclick = () => {
+          requestedMode = null;
+          $("reset-title").textContent = "Start again?";
+          $("mode-warning").hidden = true;
+          $("reset-dialog").showModal();
+        };
         $("confirm-reset").onclick = () => {
           autoPredators = false;
           game = new Game({
             players: game.players.length,
             target: game.target,
+            mode: requestedMode || game.mode,
           });
           $("reset-dialog").close();
+          requestedMode = null;
           render();
         };
         $("rotate-left").onclick = () => {

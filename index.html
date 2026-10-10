@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#071527" />
     <meta
       name="description"
-      content="Fragmented Habitat v21: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
+      content="Fragmented Habitat v22: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
     />
     <title>Fragmented Habitat</title>
     <link
@@ -1239,6 +1239,8 @@
         text-align: center;
       }
       .predator-results {
+        max-height: 90px;
+        overflow: auto;
         font-size: 12px;
         line-height: 1.5;
         padding: 8px;
@@ -1324,9 +1326,7 @@
               ?
             </button>
           </h1>
-          <p class="intro">
-            Cross the landscape for food.<br />Make it home alive.
-          </p>
+          <p class="intro">Cross the landscape.<br />Survive the journey.</p>
         </div>
         <div class="toolbar">
           <button class="btn" id="board-mode">Reverse board</button
@@ -1336,7 +1336,7 @@
         </div>
 
         <footer>
-          VERSION 21 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+          VERSION 22 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
             Recent events
           </button>
         </footer>
@@ -1451,9 +1451,8 @@
     <dialog id="help-dialog">
       <h2>How to play</h2>
       <p>
-        Animals must cross the landscape to get food from resource patches and
-        make it back alive to their habitat. Survival depends on luck and
-        strategy.
+        Choose between a food-gathering journey and a race to colonize a new
+        habitat. In both, survival depends on luck and strategy.
       </p>
       <p>
         <strong>Start:</strong> each player has one animal and 5 food. Choose an
@@ -1464,57 +1463,88 @@
         movement point.
       </p>
       <p>
-        <strong>Add an animal (optional):</strong> before rolling, spend 2 food
-        to add another animal at home. Its parent can be anywhere. You can have
-        up to three living animals, but move only one per turn.
+        <strong>Classic — Add an animal (optional):</strong> before rolling,
+        spend 2 food to add another animal at home. Its parent can be anywhere.
+        You can have up to three living animals, but move only one per turn.
+      </p>
+      <h3>Choose your game</h3>
+      <ul>
+        <li>
+          <strong>Classic — Habitat Fragmentation:</strong> animals start in the
+          central habitat with 5 food per player. Cross the predator lanes and
+          roads, collect fruit at the edge, then bring it back alive. The first
+          player to bank the food target wins; if the patches empty, compare
+          banked food plus carried fruit. You can choose a square, circular or
+          octagonal board in Settings before starting.
+        </li>
+        <li>
+          <strong>Habitat Colonization:</strong> animals start at separate edge
+          bases and make a one-way journey to the central habitat. Once an
+          animal reaches it, it stays there and counts as a settler. It does not
+          need to return. The first player to settle
+          <strong>6 animals</strong> wins. If the habitat fills first, the
+          player with the most settlers wins; ties share the win. Its carrying
+          capacity is <strong>12 animals</strong> by default and can be changed
+          in Settings. Settlers share the habitat safely and cannot be pushed or
+          targeted. There are no food patches, hunters or golden harvests in
+          this mode.
+        </li>
+      </ul>
+      <p>
+        <strong>Colonization recruitment:</strong> add a new animal at your edge
+        base for free before rolling. You can have up to three animals
+        travelling at a time; settled animals do not count toward that limit.
+        Your starting 5 food is used for revival. If you have no travelling
+        animal, recruit one to take your turn.
       </p>
       <p>
-        <strong>Two board modes:</strong> Classic starts in the central habitat
-        and collects food at the edges. Reverse race starts in evenly spaced
-        edge habitats and collects food from one central patch. The whole
-        central patch is one movement space. A successful visit gives 1 fruit,
-        once per animal per trip, and uses one of its 24 shared visits. It has
-        no hunters or golden harvests. Fruit lost after a hit returns to the
-        shared supply and restores one visit. In reverse mode, each player has
-        three marked entry spaces; return through one of your own entries to
-        bank fruit. Both modes use the same roads, predators, cards and winning
-        conditions. Switching modes starts a fresh game. Reverse race is an
-        optional variant.
-      </p>
-      <p>
-        <strong>Reverse-board ecology:</strong> separate habitats can spread
-        animals out and reduce encounters while they are near home. They still
-        converge on one shared food patch, so competition can increase there.
-        Its limited food supply represents carrying capacity: the patch can
-        support only a limited number of feeding visits before it is depleted.
-        More habitats do not create more food. This is a simplified game
-        illustration.
+        <strong>Why carrying capacity matters:</strong> separate bases spread
+        animals out at the start, but everyone is trying to reach the same
+        habitat. That habitat can support only a limited number of settlers, so
+        space becomes valuable. Arriving safely matters as much as choosing your
+        route.
       </p>
       <div class="landscape-rules">
         <h3>The landscape</h3>
         <p>
           <strong>Road:</strong> every time an animal stops on a light gray road
-          space, roll the day/night die. Moon (night or odd) means safe. Sun
-          (day or even) means a car hit. Stopping on another road space later
-          requires a new roll, even if the animal was safe last time. Passing
-          through without stopping needs no roll.
+          space, it has to roll the day/night die.
+        </p>
+        <ul>
+          <li>
+            <strong>Moon (night or odd):</strong> the animal is safe and stays
+            where it is. In the game, night represents lighter traffic.
+          </li>
+          <li>
+            <strong>Sun (day or even):</strong> the animal gets hit by a car.
+            Pay the revival cost to bring it back to its starting habitat or
+            base.
+          </li>
+        </ul>
+        <p>
+          Stopping on another road space later requires a new roll, even if the
+          animal was safe last time. Passing through without stopping needs no
+          roll.
         </p>
         <p>
-          <strong>Safe island:</strong> the dark gray island needs no traffic
-          check. You can move either way along it, or inward/outward to leave
-          it. If you stop on the police officer, you return to base, lose your
-          carried fruit to the resource supply, and pay no food. After the
-          predators move, roll once to move the officer; it also returns any
-          animal on its final space.
+          <strong>Median strip:</strong> the dark gray island needs no traffic
+          check. You can move along it in either direction or cross into a
+          neighbouring lane. A traffic officer patrols this strip clockwise. If
+          you stop on the officer, or it stops on your block, your animal
+          returns to its starting habitat or base without paying food. Any
+          carried fruit returns to its resource patch. After the predators move,
+          roll once to move the officer.
         </p>
         <p>
-          <strong>Predator lanes:</strong> leaving the habitat exposes animals
-          to predators. Four predators patrol each green lane. Player animals
-          have numbered flags; predators do not. After all players have taken a
-          turn, click Move all predators once. The game rolls once per lane and
-          shows the results below the turn heading. All four in a lane move that
-          many spaces clockwise. If one stops on your animal’s square, your
-          animal is hit. You cannot voluntarily move onto a predator.
+          <strong>Predator lanes:</strong> leaving the habitat or base exposes
+          animals to predators. Players have numbered flags; predators do not.
+          After everyone has taken a turn, click Move All Predators to run their
+          turn. In Settings, choose one roll for all predators, one per lane, or
+          one for each predator. You can also change the number per lane from 1
+          to 6; the default is 4. Predators always move clockwise. If one stops
+          on your animal’s square, that animal is hit. You cannot voluntarily
+          step onto a predator, but a rival can push you there. With individual
+          rolls, predators may gather on the same space.
         </p>
         <p>
           <strong>Resource patches (Classic):</strong> patches hold food at the
@@ -1523,8 +1553,7 @@
           keep the fruit; sun/day means a hit. Each patch supplies only the
           first animal that collects from it. It stays empty unless its carried
           fruit is returned after a hit. Each animal collects from one patch per
-          trip. Reverse race instead uses the single central patch and shared
-          visit limit described above.
+          trip. In Colonization, the centre is a settlement habitat rather than a food patch.
         </p>
       </div>
       <h3>Hits, revival and elimination</h3>
@@ -1547,17 +1576,12 @@
           <strong
             >You are eliminated only when you have no animals remaining.</strong
           >
-          Then your cards go to the discard pile.
+          Then your cards return to the deck.
         </li>
         <li>
           An eligible rescue card may be used before you pay. Play Dead keeps
           the animal and its fruit in place. Angel Conservationists revives it
           for free, but its fruit still returns to the patch.
-        </li>
-        <li>
-          The police officer sends the animal back to base. Its carried fruit
-          returns to the resource supply. Your banked food is unchanged and
-          there is no revival cost.
         </li>
       </ul>
       <p>
@@ -1604,7 +1628,7 @@
           car or hunter hit; carried fruit returns to its original patch.
         </li>
       </ul>
-      <h3>How the game ends</h3>
+      <h3>How Classic ends</h3>
       <ul>
         <li>
           <strong>Food target:</strong> the first player to reach the chosen
@@ -1696,8 +1720,42 @@
       >
       <label
         >Board mode<select id="mode-select">
-          <option value="classic">Central habitat · edge food</option>
-          <option value="reverse">Edge habitats · central food</option>
+          <option value="classic">Classic · Habitat Fragmentation</option>
+          <option value="reverse">Habitat Colonization</option>
+        </select></label
+      >
+      <label
+        >Classic board shape<select id="shape-select">
+          <option value="octagon">Octagon</option>
+          <option value="circle">Circle</option>
+          <option value="square">Square</option>
+        </select></label
+      >
+      <label
+        >Predators per lane<select id="predator-count">
+          <option>1</option>
+          <option>2</option>
+          <option>3</option>
+          <option selected>4</option>
+          <option>5</option>
+          <option>6</option>
+        </select></label
+      >
+      <label
+        >Predator rolls<select id="predator-roll-mode">
+          <option value="shared">One roll for all predators</option>
+          <option value="lane" selected>One roll per lane</option>
+          <option value="individual">One roll per predator</option>
+        </select></label
+      >
+      <label
+        >Colonization carrying capacity<select id="capacity">
+          <option>6</option>
+          <option>8</option>
+          <option>10</option>
+          <option selected>12</option>
+          <option>16</option>
+          <option>20</option>
         </select></label
       >
       <div class="toolbar">
@@ -1737,7 +1795,7 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <script id="game-engine">
-      /* Fragmented Habitat v21 — rules engine, independent of the display. */
+      /* Fragmented Habitat v22 — rules engine, independent of the display. */
       (() => {
         "use strict";
         const SECTORS = 24;
@@ -1830,10 +1888,35 @@
         }
         class Game {
           constructor(
-            { players = 2, target = 10, mode = "classic" } = {},
+            {
+              players = 2,
+              target = 10,
+              mode = "classic",
+              shape = "octagon",
+              predatorCount = 4,
+              predatorRollMode = "lane",
+              capacity = 12,
+            } = {},
             rng = Math.random,
           ) {
             this.mode = mode === "reverse" ? "reverse" : "classic";
+            this.boardShape =
+              this.mode === "reverse"
+                ? "octagon"
+                : ["square", "circle", "octagon"].includes(shape)
+                  ? shape
+                  : "octagon";
+            this.predatorCount = Math.max(
+              1,
+              Math.min(6, Number(predatorCount) || 4),
+            );
+            this.predatorRollMode = ["shared", "individual", "lane"].includes(
+              predatorRollMode,
+            )
+              ? predatorRollMode
+              : "lane";
+            this.capacity = Math.max(6, Math.min(42, Number(capacity) || 12));
+            this.colonyTarget = 6;
             this.rng = rng;
             this.target = target;
             this.round = 1;
@@ -1873,11 +1956,11 @@
               const positions = this.randomLanePositions(previous);
               previous = positions;
               return positions.map((s, slot) => ({
-                id: lane * PREDATORS_PER_LANE + slot,
+                id: lane * this.predatorCount + slot,
                 r,
                 s,
                 kind: PREDATOR_KINDS[
-                  (lane * PREDATORS_PER_LANE + slot) % PREDATOR_KINDS.length
+                  (lane * this.predatorCount + slot) % PREDATOR_KINDS.length
                 ],
                 on: true,
                 placed: true,
@@ -1907,7 +1990,7 @@
           randomLanePositions(avoid = []) {
             const layouts = [];
             const visit = (chosen, start) => {
-              if (chosen.length === PREDATORS_PER_LANE) {
+              if (chosen.length === this.predatorCount) {
                 if (SECTORS - chosen.at(-1) + chosen[0] >= 3)
                   layouts.push(chosen);
                 return;
@@ -1917,6 +2000,8 @@
               }
             };
             visit([], 0);
+            if (!layouts.length && avoid.length)
+              return this.randomLanePositions([]);
             const chosen =
               layouts[Math.floor(this.rng() * layouts.length)].slice();
             for (let i = chosen.length - 1; i > 0; i--) {
@@ -1949,7 +2034,57 @@
               (p) => p.r !== 0 || this.homeEntries(owner).includes(s),
             );
           }
+          settlers(owner) {
+            return this.tokens.filter(
+              (t) => t.owner === owner && t.settled && !t.out,
+            );
+          }
+          alive(owner) {
+            return this.animals(owner).length + this.settlers(owner).length;
+          }
+          colonyEnd() {
+            const target = this.players.find(
+              (p) => this.settlers(p.id).length >= this.colonyTarget,
+            );
+            const total = this.tokens.filter((t) => t.settled && !t.out).length;
+            const live = this.players.filter((p) => this.alive(p.id));
+            let ids, reason;
+            if (target) {
+              ids = [target.id];
+              reason = "Six animals colonized the habitat";
+            } else if (
+              total >= this.capacity ||
+              !live.length ||
+              (this.players.length > 1 && live.length === 1)
+            ) {
+              const best = Math.max(
+                ...this.players.map((p) => this.settlers(p.id).length),
+              );
+              ids =
+                best > 0
+                  ? this.players
+                      .filter((p) => this.settlers(p.id).length === best)
+                      .map((p) => p.id)
+                  : [];
+              if (total < this.capacity && live.length === 1 && !ids.length)
+                ids = [live[0].id];
+              reason =
+                total >= this.capacity
+                  ? "Habitat carrying capacity reached"
+                  : "No competing players remain";
+            } else return false;
+            this.winners = ids;
+            this.winner = ids.length === 1 ? ids[0] : null;
+            this.endReason = reason;
+            this.phase = "finished";
+            this.pending = this.pendingDraw = this.contest = null;
+            this.record(
+              `${reason}. ${ids.map((id) => `Player ${id + 1}: ${this.settlers(id).length} settlers`).join(" · ") || "No settlers"}.`,
+            );
+            return true;
+          }
           score(owner) {
+            if (this.mode === "reverse") return this.settlers(owner).length;
             return (
               this.players[owner].food +
               this.animals(owner).reduce((sum, t) => sum + t.cargo, 0)
@@ -1957,6 +2092,7 @@
           }
           checkEnd() {
             if (this.phase === "finished") return true;
+            if (this.mode === "reverse") return this.colonyEnd();
             const live = this.players.filter((p) => this.animals(p.id).length);
             if (this.players.length === 1 && !live.length) {
               this.winners = [];
@@ -2033,15 +2169,13 @@
           finishRound() {
             if (this.checkEnd()) return;
             this.round++;
-            this.active = this.players.findIndex(
-              (p) => this.animals(p.id).length,
-            );
+            this.active = this.players.findIndex((p) => this.alive(p.id));
             if (this.active < 0) {
               this.phase = "finished";
               this.winner = null;
               return;
             }
-            this.selected = this.animals()[0].id;
+            this.selected = this.animals()[0]?.id ?? null;
             this.phase = "roll";
             this.record(`Round ${this.round}. New cards are now ready.`);
           }
@@ -2064,7 +2198,9 @@
             return this.tokens.find((t) => t.id === this.selected);
           }
           animals(owner = this.active) {
-            return this.tokens.filter((t) => t.owner === owner && !t.out);
+            return this.tokens.filter(
+              (t) => t.owner === owner && !t.out && !t.settled,
+            );
           }
           name(t) {
             return `${this.players[t.owner].animal} ${t.number}`;
@@ -2077,7 +2213,7 @@
             return 1 + Math.min(5, Math.floor(this.rng() * 6));
           }
           occupied(r, s, except = []) {
-            return r === 0
+            return r === 0 || (this.mode === "reverse" && r === RESOURCE)
               ? null
               : this.tokens.find(
                   (t) =>
@@ -2094,13 +2230,13 @@
           canSpawn() {
             return (
               this.phase === "roll" &&
-              this.player.food >= 2 &&
+              (this.mode === "reverse" || this.player.food >= 2) &&
               this.animals().length < 3
             );
           }
           spawn() {
             if (!this.canSpawn()) return false;
-            this.player.food -= 2;
+            if (this.mode !== "reverse") this.player.food -= 2;
             const t = {
               id: this.nextId++,
               owner: this.active,
@@ -2120,7 +2256,9 @@
             };
             this.tokens.push(t);
             this.selected = t.id;
-            this.record(`${this.name(t)} joins at home. Cost: 2 food.`);
+            this.record(
+              `${this.name(t)} joins at home. ${this.mode === "reverse" ? "Free colonization recruit." : "Cost: 2 food."}`,
+            );
             return true;
           }
           select(id) {
@@ -2128,6 +2266,7 @@
             if (
               !t ||
               t.out ||
+              t.settled ||
               t.owner !== this.active ||
               !["roll", "move"].includes(this.phase) ||
               this.steps > 0
@@ -2137,7 +2276,13 @@
             return true;
           }
           roll() {
-            if (this.phase !== "roll") return false;
+            if (
+              this.phase !== "roll" ||
+              !this.token ||
+              this.token.out ||
+              this.token.settled
+            )
+              return false;
             this.remaining = this.lastRoll = this.dice();
             this.steps = 0;
             this.phase = "move";
@@ -2159,7 +2304,8 @@
               this.phase !== "move" ||
               this.remaining < 1 ||
               !this.token ||
-              this.token.out
+              this.token.out ||
+              this.token.settled
             )
               return [];
             return this.neighbours(
@@ -2204,6 +2350,24 @@
             return true;
           }
           collect(t) {
+            if (
+              this.mode === "reverse" &&
+              t.r === RESOURCE &&
+              !t.out &&
+              !t.settled
+            ) {
+              t.settled = true;
+              t.s = 0;
+              t.cargo = 0;
+              t.sourcePatch = null;
+              t.loaded = false;
+              this.record(
+                `${this.name(t)} reached the central habitat and stays. Player ${t.owner + 1}: ${this.settlers(t.owner).length}/${this.colonyTarget} settlers.`,
+              );
+              if (!this.checkEnd() && t.id === this.selected) this.endTurn();
+              return;
+            }
+            if (this.mode === "reverse") return;
             if (
               t.r === RESOURCE &&
               RESOURCE_SPACES.includes(t.s) &&
@@ -2371,9 +2535,9 @@
               this.record(
                 `${this.name(t)} cannot be revived and leaves the board. Its carried fruit returns to the supply.`,
               );
-              if (!this.animals(t.owner).length) {
+              if (!this.alive(t.owner)) {
                 owner.eliminated = true;
-                this.discard.push(...owner.hand.map((c) => c.type));
+                this.deck.push(...owner.hand.map((c) => c.type));
                 owner.hand = [];
                 this.record(
                   `Player ${t.owner + 1} has no animals remaining and is eliminated.`,
@@ -2392,11 +2556,10 @@
             this.steps = 0;
             this.remaining = 0;
             let next = this.active + 1;
-            while (next < this.players.length && !this.animals(next).length)
-              next++;
+            while (next < this.players.length && !this.alive(next)) next++;
             if (next < this.players.length) {
               this.active = next;
-              this.selected = this.animals()[0].id;
+              this.selected = this.animals()[0]?.id ?? null;
               this.phase = "roll";
             } else {
               this.predIndex = 0;
@@ -2414,14 +2577,28 @@
           }
           rollPredator() {
             if (this.phase !== "predators") return false;
-            const r = PREDATOR_LANES[this.predIndex],
-              n = (this.lastRoll = this.dice());
-            this.predatorRolls.push({ lane: this.predIndex + 1, roll: n });
-            const lane = this.predators.filter((p) => p.r === r);
-            // Update the whole lane before resolving catches, so spacing is preserved.
+            const n = (this.lastRoll = this.dice());
+            const lane =
+              this.predatorRollMode === "shared"
+                ? this.predators
+                : this.predatorRollMode === "individual"
+                  ? [this.predators[this.predIndex]]
+                  : this.predators.filter(
+                      (p) => p.r === PREDATOR_LANES[this.predIndex],
+                    );
+            this.predatorRolls.push({
+              lane: this.predIndex + 1,
+              roll: n,
+              label:
+                this.predatorRollMode === "shared"
+                  ? "All predators"
+                  : this.predatorRollMode === "individual"
+                    ? `Predator ${this.predIndex + 1}`
+                    : `Lane ${this.predIndex + 1}`,
+            });
             lane.forEach((p) => (p.s = wrap(p.s + n)));
             this.record(
-              `Lane ${this.predIndex + 1}: all four predators moved ${n} spaces clockwise.`,
+              `${this.predatorRolls.at(-1).label}: ${n} spaces clockwise.`,
             );
             const finish = () => {
               if (this.checkEnd()) return;
@@ -2432,7 +2609,14 @@
                 this.record("No animals remain.");
                 return;
               }
-              if (this.predIndex === PREDATOR_LANES.length) {
+              if (
+                this.predIndex ===
+                (this.predatorRollMode === "shared"
+                  ? 1
+                  : this.predatorRollMode === "individual"
+                    ? this.predators.length
+                    : PREDATOR_LANES.length)
+              ) {
                 this.phase = "police";
                 this.record(
                   "Predator lanes finished. Roll once for the island police patrol.",
@@ -2610,6 +2794,7 @@
             return this.tokens.filter(
               (t) =>
                 !t.out &&
+                !t.settled &&
                 t.owner !== this.active &&
                 t.r > 0 &&
                 this.enemyMoves(t).length,
@@ -3094,11 +3279,33 @@
           defs.append(sym);
         }
         $("board").append(defs);
+        function outline(radius) {
+          const n =
+            game.boardShape === "circle"
+              ? 96
+              : game.boardShape === "square"
+                ? 4
+                : 8;
+          const offset =
+            game.boardShape === "square"
+              ? 45
+              : game.boardShape === "circle"
+                ? 0
+                : 22.5;
+          return Array.from({ length: n }, (_, i) =>
+            xy(radius, offset + (i * 360) / n),
+          );
+        }
         function xy(radius, a) {
           const theta = (a * Math.PI) / 180;
-          const local = ((((a + 22.5) % 45) + 45) % 45) - 22.5;
-          const edge =
-            Math.cos(Math.PI / 8) / Math.cos((local * Math.PI) / 180);
+          let edge = 1;
+          if (game.boardShape !== "circle") {
+            const sides = game.boardShape === "square" ? 4 : 8,
+              span = 360 / sides;
+            const local = ((((a + span / 2) % span) + span) % span) - span / 2;
+            edge =
+              Math.cos(Math.PI / sides) / Math.cos((local * Math.PI) / 180);
+          }
           return {
             x: Math.sin(theta) * radius * edge,
             z: -Math.cos(theta) * radius * edge,
@@ -3132,23 +3339,27 @@
             .join(" ");
         }
         function cell(r, s) {
-          if (r === RESOURCE && game.mode === "reverse")
-            return Array.from({ length: 8 }, (_, i) => xy(2.15, 22.5 + i * 45));
-          if (!r && game.mode !== "reverse")
-            return Array.from({ length: 8 }, (_, i) =>
-              xy(radii[0], 22.5 + i * 45),
-            );
+          if (r === RESOURCE && game.mode === "reverse") return outline(2.15);
+          if (!r && game.mode !== "reverse") return outline(radii[0]);
           const half = r === RESOURCE && !Number.isInteger(s) ? 0.25 : 0.5;
           const start = (s - half) * ANGLE,
             end = (s + half) * ANGLE,
-            angles = [
-              start,
-              ...Array.from(
-                { length: 16 },
-                (_, i) => 22.5 + (i - 8) * 45,
-              ).filter((a) => a > start && a < end),
-              end,
-            ];
+            angles =
+              game.boardShape === "circle"
+                ? Array.from(
+                    { length: 7 },
+                    (_, i) => start + ((end - start) * i) / 6,
+                  )
+                : [
+                    start,
+                    ...Array.from(
+                      { length: 40 },
+                      (_, i) =>
+                        (game.boardShape === "square" ? 45 : 22.5) +
+                        (i - 20) * (game.boardShape === "square" ? 90 : 45),
+                    ).filter((a) => a > start && a < end),
+                    end,
+                  ];
           return [
             ...angles.map((a) => xy(bounds(r)[1], a)),
             ...angles.reverse().map((a) => xy(bounds(r)[0], a)),
@@ -3183,7 +3394,7 @@
             return {
               fill: "#82a86b",
               side: "#567b4c",
-              name: `Shared resource patch · ${game.resourceCapacity - game.resourceVisits} visits left`,
+              name: `Central habitat · ${game.tokens.filter((t) => t.settled).length}/${game.capacity} settled`,
             };
           if (r === RESOURCE)
             return CORNUCOPIA.has(s)
@@ -3509,9 +3720,7 @@
           );
         }
         function boardBase(root) {
-          const vertices = Array.from({ length: 8 }, (_, i) =>
-            xy(6.62, 22.5 + i * 45),
-          );
+          const vertices = outline(6.62);
           root.append(
             svg("polygon", {
               points: polygon(vertices, -0.58),
@@ -3521,10 +3730,10 @@
           const faces = vertices
             .map((a, i) => ({
               a,
-              b: vertices[(i + 1) % 8],
+              b: vertices[(i + 1) % vertices.length],
               depth: project({
-                x: (a.x + vertices[(i + 1) % 8].x) / 2,
-                z: (a.z + vertices[(i + 1) % 8].z) / 2,
+                x: (a.x + vertices[(i + 1) % vertices.length].x) / 2,
+                z: (a.z + vertices[(i + 1) % vertices.length].z) / 2,
               }).depth,
             }))
             .sort((a, b) => a.depth - b.depth);
@@ -3561,10 +3770,7 @@
           root.classList.toggle("panning", moveMode);
           root.append(
             svg("polygon", {
-              points: polygon(
-                Array.from({ length: 8 }, (_, i) => xy(6.95, 22.5 + i * 45)),
-                -0.8,
-              ),
+              points: polygon(outline(6.95), -0.8),
               fill: "#02111d",
               opacity: ".5",
               filter: "url(#board-shadow-soft)",
@@ -3741,15 +3947,9 @@
               }
             }
             if (r === RESOURCE && game.mode === "reverse") {
-              for (const a of [45, 110, 180, 245, 310]) {
-                const spot = xy(1.35, a);
-                if (game.resourceVisits < game.resourceCapacity)
-                  fruit(g, spot, false);
-                else bush(g, spot, 0.4);
-              }
-              tree(g, xy(1.45, 340), 0.65);
-              tree(g, xy(1.45, 20), 0.6);
-              const label = project({ x: 0, z: 1.1 });
+              for (const a of [20, 65, 110, 250, 295, 340])
+                tree(g, xy(1.65, a), 0.65);
+              const label = project({ x: 0, z: 1.3 });
               g.append(
                 svg(
                   "text",
@@ -3761,7 +3961,7 @@
                     "font-size": 13 * zoom,
                     "font-weight": 700,
                   },
-                  "SHARED FOOD PATCH",
+                  "COLONIZATION HABITAT",
                 ),
               );
               g.append(
@@ -3774,7 +3974,7 @@
                     "text-anchor": "middle",
                     "font-size": 12 * zoom,
                   },
-                  `${game.resourceCapacity - game.resourceVisits} / ${game.resourceCapacity} visits left`,
+                  `${game.tokens.filter((t) => t.settled).length}/${game.capacity} animals settled`,
                 ),
               );
             }
@@ -3877,19 +4077,26 @@
                   game.mode !== "reverse" ||
                   s === game.homeSector(t.owner)),
             );
-            const visibleTokens = r
-              ? tokens
-              : tokens.filter(
-                  (t, i) => tokens.findIndex((x) => x.owner === t.owner) === i,
-                );
+            const visibleTokens =
+              r && !(r === RESOURCE && game.mode === "reverse")
+                ? tokens
+                : tokens.filter(
+                    (t, i) =>
+                      tokens.findIndex((x) => x.owner === t.owner) === i,
+                  );
             visibleTokens.forEach((t, i) => {
               const off =
-                r || game.mode === "reverse"
-                  ? { x: p.x, z: p.z }
-                  : {
-                      x: -0.85 + (i % 4) * 0.55,
-                      z: 0.2 + Math.floor(i / 4) * 0.55,
-                    };
+                r === RESOURCE && game.mode === "reverse"
+                  ? {
+                      x: -0.8 + (i % 4) * 0.55,
+                      z: -0.4 + Math.floor(i / 4) * 0.6,
+                    }
+                  : r || game.mode === "reverse"
+                    ? { x: p.x, z: p.z }
+                    : {
+                        x: -0.85 + (i % 4) * 0.55,
+                        z: 0.2 + Math.floor(i / 4) * 0.55,
+                      };
               sprite(
                 g,
                 game.players[t.owner].animal.toLowerCase(),
@@ -3954,7 +4161,7 @@
                     fill: "#102637",
                     "font-size": 8 * zoom,
                   },
-                  r
+                  r && !(r === RESOURCE && game.mode === "reverse")
                     ? `${t.number}`
                     : `${tokens.filter((x) => x.owner === t.owner).length}`,
                 ),
@@ -4068,13 +4275,18 @@
             ? ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][game.lastRoll - 1]
             : "⚄";
           $("goal").textContent =
-            `Target: ${game.target} food · ${game.mode === "reverse" ? `${game.resourceCapacity - game.resourceVisits}/${game.resourceCapacity} visits left` : `${RESOURCE_SPACES.length - game.harvested.size} patches left`} · Start: 5 each`;
+            game.mode === "reverse"
+              ? `Goal: 6 settlers · Habitat: ${game.tokens.filter((t) => t.settled).length}/${game.capacity} animals`
+              : `Target: ${game.target} food · ${RESOURCE_SPACES.length - game.harvested.size} patches left · Start: 5 each`;
           const descriptions = {
-            roll: "Choose an animal, then roll.",
+            roll:
+              game.mode === "reverse" && !game.animals().length
+                ? "Recruit a new animal at your base, then roll."
+                : "Choose an animal, then roll.",
             move: `${game.remaining} ${game.remaining === 1 ? "step" : "steps"} left · tap a glowing space`,
             traffic: `${response.animal}: MOON / night = safe · SUN / day = car hit`,
             hunter: `${response.animal}: MOON / night = keep fruit · SUN / day = hunter hit`,
-            predators: `Lane ${game.predIndex + 1} of 6 · four predators share one roll`,
+            predators: `${game.predatorRollMode} rolls · ${game.predatorCount} predators per lane`,
             police:
               "Island police patrol · returns animals to base; carried fruit is lost",
             "contest-choice": "Attacker: choose odd or even.",
@@ -4093,7 +4305,7 @@
           $("predator-results").textContent =
             "Predator rolls · " +
             game.predatorRolls
-              .map((p) => `Lane ${p.lane}: ${p.roll}`)
+              .map((p) => `${p.label || `Lane ${p.lane}`}: ${p.roll}`)
               .join(" · ");
           $("traffic-dice").textContent =
             game.lastTraffic === "sun"
@@ -4142,14 +4354,18 @@
               "police",
               "contest-roll",
             ].includes(game.phase),
+            game.phase !== "roll" ||
+              (!!game.token && !game.token.settled && !game.token.out),
           );
           setButton(
             "spawn",
             game.animals().length >= 3
-              ? "Maximum 3 animals"
-              : game.player.food < 2
-                ? "Add animal · need 2 food"
-                : `Add ${p.animal} · 2 food (optional)`,
+              ? "Maximum 3 travelling animals"
+              : game.mode === "reverse"
+                ? `Recruit ${p.animal} · free (optional)`
+                : game.player.food < 2
+                  ? "Add animal · need 2 food"
+                  : `Add ${p.animal} · 2 food (optional)`,
             () => game.spawn(),
             game.phase === "roll",
             game.canSpawn(),
@@ -4202,13 +4418,16 @@
             row.className =
               "player-row" +
               (p.id === game.active ? " active" : "") +
-              (!game.animals(p.id).length ? " out" : "");
+              (!game.alive(p.id) ? " out" : "");
             row.append(face(p.animal.toLowerCase()));
             const name = document.createElement("div");
             const bold = document.createElement("strong");
             bold.textContent = `Player ${p.id + 1} · ${p.animal}`;
             const small = document.createElement("small");
-            small.textContent = `${game.animals(p.id).length} animals · ${game.animals(p.id).reduce((n, t) => n + t.cargo, 0)} carrying`;
+            small.textContent =
+              game.mode === "reverse"
+                ? `${game.settlers(p.id).length}/6 settled · ${game.animals(p.id).length} travelling`
+                : `${game.animals(p.id).length} animals · ${game.animals(p.id).reduce((n, t) => n + t.cargo, 0)} carrying`;
             name.append(bold, small);
             row.append(name);
             const card = document.createElement("button");
@@ -4238,7 +4457,7 @@
           if ($("hand-dialog").open) renderHand();
           if (rolling) $("roll").disabled = true;
           $("board-mode").textContent =
-            game.mode === "reverse" ? "Classic board" : "Reverse board";
+            game.mode === "reverse" ? "Classic mode" : "Colonization";
           globalThis.qaGame = game;
         }
         let rolling = false,
@@ -4353,7 +4572,7 @@
           $("mode-warning").hidden = false;
           $("mode-warning").textContent =
             requestedMode === "reverse"
-              ? "Reverse race: start at the edges, collect food in the centre, and bring it back to your own habitat."
+              ? "Habitat Colonization: start at the edges and settle animals in the central habitat. First to six settlers wins, or most settlers when capacity is reached."
               : "Classic: start in the central habitat and collect food at the edges.";
           $("reset-dialog").showModal();
         };
@@ -4361,6 +4580,10 @@
           $("mode-select").value = game.mode;
           $("player-count").value = String(game.players.length);
           $("target").value = String(game.target);
+          $("shape-select").value = game.boardShape;
+          $("predator-count").value = String(game.predatorCount);
+          $("predator-roll-mode").value = game.predatorRollMode;
+          $("capacity").value = String(game.capacity);
           $("settings-dialog").showModal();
         };
         $("history").onclick = () => $("history-dialog").showModal();
@@ -4401,6 +4624,10 @@
             players: Number($("player-count").value),
             target: Number($("target").value),
             mode: $("mode-select").value,
+            shape: $("shape-select").value,
+            predatorCount: Number($("predator-count").value),
+            predatorRollMode: $("predator-roll-mode").value,
+            capacity: Number($("capacity").value),
           });
           $("settings-dialog").close();
           render();
@@ -4417,6 +4644,10 @@
             players: game.players.length,
             target: game.target,
             mode: requestedMode || game.mode,
+            shape: game.boardShape,
+            predatorCount: game.predatorCount,
+            predatorRollMode: game.predatorRollMode,
+            capacity: game.capacity,
           });
           $("reset-dialog").close();
           requestedMode = null;

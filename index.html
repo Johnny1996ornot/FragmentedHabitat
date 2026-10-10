@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#071527" />
     <meta
       name="description"
-      content="Fragmented Habitat v18: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
+      content="Fragmented Habitat v19: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
     />
     <title>Fragmented Habitat</title>
     <link
@@ -1213,10 +1213,25 @@
         height: 76px;
         margin: 0 auto 8px;
       }
+      .turn-tools .deck {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 4px;
+        box-sizing: border-box;
+        overflow: hidden;
+      }
       .turn-tools .deck-star {
         font-size: 27px;
+        line-height: 1;
       }
       .turn-tools .deck-label {
+        display: block;
+        line-height: 1.2;
+        white-space: nowrap;
+        margin: 0;
         font-size: 8px;
       }
       .turn-tools .deck-caption {
@@ -1254,6 +1269,10 @@
         .turn-tools .deck-stack {
           width: 35px;
           height: 48px;
+        }
+        .turn-tools .deck {
+          gap: 3px;
+          padding: 3px;
         }
         .turn-tools .deck-star {
           font-size: 18px;
@@ -1317,7 +1336,7 @@
         </div>
 
         <footer>
-          VERSION 18 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+          VERSION 19 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
             Recent events
           </button>
         </footer>
@@ -1368,10 +1387,8 @@
                     disabled
                     aria-label="Draw an earned card"
                   >
-                    <span class="deck-star">✦</span><br /><span
-                      class="deck-label"
-                      >Wild cards</span
-                    >
+                    <span class="deck-star" aria-hidden="true">✦</span
+                    ><span class="deck-label">Wild<br />cards</span>
                   </button>
                 </div>
                 <p id="deck-caption" class="deck-caption"></p>
@@ -1454,11 +1471,24 @@
       <p>
         <strong>Two board modes:</strong> Classic starts in the central habitat
         and collects food at the edges. Reverse race starts in evenly spaced
-        edge habitats and collects food in the centre. In reverse mode, each
-        player has three marked entry spaces; return through one of your own
-        entries to bank fruit. Both modes use the same roads, predators, cards
-        and winning conditions. Switching modes starts a fresh game. Reverse
-        race is an optional variant.
+        edge habitats and collects food from one central patch. The whole
+        central patch is one movement space. A successful visit gives 1 fruit,
+        once per animal per trip, and uses one of its 24 shared visits. It has
+        no hunters or golden harvests. Fruit lost after a hit returns to the
+        shared supply and restores one visit. In reverse mode, each player has
+        three marked entry spaces; return through one of your own entries to
+        bank fruit. Both modes use the same roads, predators, cards and winning
+        conditions. Switching modes starts a fresh game. Reverse race is an
+        optional variant.
+      </p>
+      <p>
+        <strong>Reverse-board ecology:</strong> separate habitats can spread
+        animals out and reduce encounters while they are near home. They still
+        converge on one shared food patch, so competition can increase there.
+        Its limited food supply represents carrying capacity: the patch can
+        support only a limited number of feeding visits before it is depleted.
+        More habitats do not create more food. This is a simplified game
+        illustration.
       </p>
       <div class="landscape-rules">
         <h3>The landscape</h3>
@@ -1486,13 +1516,14 @@
           animal is hit. You cannot voluntarily move onto a predator.
         </p>
         <p>
-          <strong>Resource patches:</strong> patches hold food at the edges in
-          Classic mode and in the centre in Reverse race. An ordinary patch
-          gives 1 fruit to carry home. A golden horn patch gives 3 fruit, but
-          you must face the hunter: moon/night means keep the fruit; sun/day
-          means a hit. Each patch supplies only the first animal that collects
-          from it. It stays empty unless its carried fruit is returned after a
-          hit. Each animal collects from one patch per trip.
+          <strong>Resource patches (Classic):</strong> patches hold food at the
+          edges. An ordinary patch gives 1 fruit to carry home. A golden horn
+          patch gives 3 fruit, but you must face the hunter: moon/night means
+          keep the fruit; sun/day means a hit. Each patch supplies only the
+          first animal that collects from it. It stays empty unless its carried
+          fruit is returned after a hit. Each animal collects from one patch per
+          trip. Reverse race instead uses the single central patch and shared
+          visit limit described above.
         </p>
       </div>
       <h3>Hits, revival and elimination</h3>
@@ -1699,7 +1730,7 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <script id="game-engine">
-      /* Fragmented Habitat v18 — rules engine, independent of the display. */
+      /* Fragmented Habitat v19 — rules engine, independent of the display. */
       (() => {
         "use strict";
         const SECTORS = 24;
@@ -1852,6 +1883,8 @@
             this.contest = null;
             this.pendingDraw = null;
             this.harvested = new Set();
+            this.resourceCapacity = 24;
+            this.resourceVisits = 0;
             this.log = [
               "Predators are randomly spaced. Each player starts with 5 food. Choose an animal and roll.",
             ];
@@ -1894,6 +1927,15 @@
           }
           neighbours(r, s, owner = this.active) {
             if (this.mode !== "reverse") return neighbours(r, s);
+            if (r === RESOURCE)
+              return Array.from({ length: SECTORS }, (_, s) => ({
+                r: RESOURCE - 1,
+                s,
+              }));
+            if (r === RESOURCE - 1)
+              return neighbours(r, s).map((p) =>
+                p.r === RESOURCE ? { r: RESOURCE, s: 0 } : p,
+              );
             if (r === 0)
               return this.homeEntries(owner).map((s) => ({ r: 1, s }));
             return neighbours(r, s).filter(
@@ -1928,7 +1970,9 @@
               reason = "Only one player remains";
             } else if (
               !live.length ||
-              this.harvested.size === RESOURCE_SPACES.length
+              (this.mode === "reverse"
+                ? this.resourceVisits >= this.resourceCapacity
+                : this.harvested.size === RESOURCE_SPACES.length)
             ) {
               const best = Math.max(
                 ...this.players.map((p) => this.score(p.id)),
@@ -1937,7 +1981,9 @@
                 .filter((p) => this.score(p.id) === best)
                 .map((p) => p.id);
               reason = live.length
-                ? "All resource patches are empty"
+                ? this.mode === "reverse"
+                  ? "Shared resource patch depleted"
+                  : "All resource patches are empty"
                 : "No animals remain";
             } else return false;
             this.winners = winners;
@@ -2142,6 +2188,8 @@
               );
               return true;
             }
+            if (this.mode === "reverse" && r === RESOURCE)
+              this.token.entrySector = this.token.s;
             this.token.r = r;
             this.token.s = r ? wrap(s) : 0;
             this.collect(this.token);
@@ -2152,16 +2200,20 @@
               t.r === RESOURCE &&
               RESOURCE_SPACES.includes(t.s) &&
               !t.loaded &&
-              !this.harvested.has(t.s)
+              (this.mode === "reverse"
+                ? this.resourceVisits < this.resourceCapacity
+                : !this.harvested.has(t.s))
             ) {
-              this.harvested.add(t.s);
+              if (this.mode === "reverse") this.resourceVisits++;
+              else this.harvested.add(t.s);
               t.loaded = true;
               t.sourcePatch = t.s;
-              t.cargo = CORNUCOPIA.has(t.s) ? 3 : 1;
+              t.cargo =
+                this.mode === "reverse" ? 1 : CORNUCOPIA.has(t.s) ? 3 : 1;
               this.record(
                 `${this.name(t)} collected ${t.cargo} fruit. Bring it home.`,
               );
-              if (CORNUCOPIA.has(t.s)) {
+              if (this.mode !== "reverse" && CORNUCOPIA.has(t.s)) {
                 this.phase = "hunter";
                 this.pending = {
                   token: t.id,
@@ -2282,7 +2334,12 @@
               t.sourcePatch !== null &&
               t.sourcePatch !== undefined
             ) {
-              this.harvested.delete(t.sourcePatch);
+              if (this.mode === "reverse")
+                this.resourceVisits = Math.max(
+                  0,
+                  this.resourceVisits - t.cargo,
+                );
+              else this.harvested.delete(t.sourcePatch);
               this.record(
                 `${this.name(t)} returned ${t.cargo} fruit to its original resource patch.`,
               );
@@ -2543,7 +2600,9 @@
                   t.r === 1
                     ? 0
                     : t.r === RESOURCE
-                      ? wrap(Math.round(t.s))
+                      ? this.mode === "reverse"
+                        ? (t.entrySector ?? this.homeSector(t.owner))
+                        : wrap(Math.round(t.s))
                       : t.s,
                 ) &&
                 !this.occupied(
@@ -2551,7 +2610,9 @@
                   t.r === 1
                     ? 0
                     : t.r === RESOURCE
-                      ? wrap(Math.round(t.s))
+                      ? this.mode === "reverse"
+                        ? (t.entrySector ?? this.homeSector(t.owner))
+                        : wrap(Math.round(t.s))
                       : t.s,
                 ),
             );
@@ -2620,7 +2681,11 @@
             if (this.phase !== "card-target") return false;
             const t = this.backwardTargets().find((t) => t.id === id);
             if (!t) return false;
-            if (t.r === RESOURCE) t.s = wrap(Math.round(t.s));
+            if (t.r === RESOURCE)
+              t.s =
+                this.mode === "reverse"
+                  ? (t.entrySector ?? this.homeSector(t.owner))
+                  : wrap(Math.round(t.s));
             t.r--;
             if (!t.r) t.s = 0;
             this.collect(t);
@@ -2851,7 +2916,7 @@
           if (game.mode !== "reverse")
             return r ? [radii[r - 1] + 0.035, radii[r]] : [0, radii[0]];
           if (r === 0) return [6.15, 6.55];
-          if (r === RESOURCE) return [1.25, 2.15];
+          if (r === RESOURCE) return [0, 2.15];
           const inner = 2.15 + (13 - r) * (4 / 13);
           return [inner + 0.035, inner + 4 / 13];
         }
@@ -3049,6 +3114,8 @@
             .join(" ");
         }
         function cell(r, s) {
+          if (r === RESOURCE && game.mode === "reverse")
+            return Array.from({ length: 8 }, (_, i) => xy(2.15, 22.5 + i * 45));
           if (!r && game.mode !== "reverse")
             return Array.from({ length: 8 }, (_, i) =>
               xy(radii[0], 22.5 + i * 45),
@@ -3070,6 +3137,7 @@
           ];
         }
         function centre(r, s) {
+          if (r === RESOURCE && game.mode === "reverse") return { x: 0, z: 0 };
           return r || game.mode === "reverse"
             ? xy((bounds(r)[0] + bounds(r)[1]) / 2, s * ANGLE)
             : { x: 0, z: 0 };
@@ -3092,6 +3160,12 @@
               fill: "#839092",
               side: "#53696c",
               name: `Road lane ${[4, 5, 6, 8, 9, 10].indexOf(r) + 1} · sun/moon check`,
+            };
+          if (r === RESOURCE && game.mode === "reverse")
+            return {
+              fill: "#82a86b",
+              side: "#567b4c",
+              name: `Shared resource patch · ${game.resourceCapacity - game.resourceVisits} visits left`,
             };
           if (r === RESOURCE)
             return CORNUCOPIA.has(s)
@@ -3492,36 +3566,6 @@
             legal = new Set(
               possible.filter((p) => p.r <= RESOURCE).map((p) => key(p.r, p.s)),
             );
-          if (game.mode === "reverse") {
-            const orchard = svg("g", { "aria-label": "Central food grove" });
-            orchard.append(
-              svg("polygon", {
-                points: polygon(
-                  Array.from({ length: 8 }, (_, i) => xy(1.23, 22.5 + 45 * i)),
-                ),
-                fill: "#345e49",
-              }),
-            );
-            tree(orchard, { x: -0.35, z: -0.35 }, 0.85);
-            tree(orchard, { x: 0.4, z: -0.2 }, 0.7);
-            bush(orchard, { x: 0, z: 0.4 }, 0.65);
-            const label = project({ x: 0, z: 0.75 });
-            orchard.append(
-              svg(
-                "text",
-                {
-                  x: label.x,
-                  y: label.y,
-                  fill: "#e8eed0",
-                  "text-anchor": "middle",
-                  "font-size": 12 * zoom,
-                  "font-weight": 700,
-                },
-                "FOOD GROVE",
-              ),
-            );
-            root.append(orchard);
-          }
           const entries = [
             ...(game.mode === "reverse"
               ? Array.from({ length: SECTORS }, (_, s) => ({ r: 0, s }))
@@ -3530,7 +3574,9 @@
               r: 1 + Math.floor(i / SECTORS),
               s: i % SECTORS,
             })),
-            ...RESOURCE_SPACES.map((s) => ({ r: RESOURCE, s })),
+            ...(game.mode === "reverse"
+              ? [{ r: RESOURCE, s: 0 }]
+              : RESOURCE_SPACES.map((s) => ({ r: RESOURCE, s }))),
           ].sort(
             (a, b) =>
               project(centre(a.r, a.s)).depth - project(centre(b.r, b.s)).depth,
@@ -3562,7 +3608,12 @@
                 tabindex: legal.has(key(r, s)) ? 0 : -1,
                 "aria-label": `${style.name}, sector ${s + 1}${legal.has(key(r, s)) ? ", available" : ""}`,
               });
-            for (let i = 0; i < (r === RESOURCE ? points.length : 0); i++) {
+            for (
+              let i = 0;
+              i <
+              (r === RESOURCE && game.mode !== "reverse" ? points.length : 0);
+              i++
+            ) {
               const a = points[i],
                 b = points[(i + 1) % points.length];
               g.append(
@@ -3658,7 +3709,45 @@
                 }
               }
             }
-            if (r === RESOURCE) {
+            if (r === RESOURCE && game.mode === "reverse") {
+              for (const a of [45, 110, 180, 245, 310]) {
+                const spot = xy(1.35, a);
+                if (game.resourceVisits < game.resourceCapacity)
+                  fruit(g, spot, false);
+                else bush(g, spot, 0.4);
+              }
+              tree(g, xy(1.45, 340), 0.65);
+              tree(g, xy(1.45, 20), 0.6);
+              const label = project({ x: 0, z: 1.1 });
+              g.append(
+                svg(
+                  "text",
+                  {
+                    x: label.x,
+                    y: label.y,
+                    fill: "#203f2d",
+                    "text-anchor": "middle",
+                    "font-size": 13 * zoom,
+                    "font-weight": 700,
+                  },
+                  "SHARED FOOD PATCH",
+                ),
+              );
+              g.append(
+                svg(
+                  "text",
+                  {
+                    x: label.x,
+                    y: label.y + 17 * zoom,
+                    fill: "#203f2d",
+                    "text-anchor": "middle",
+                    "font-size": 12 * zoom,
+                  },
+                  `${game.resourceCapacity - game.resourceVisits} / ${game.resourceCapacity} visits left`,
+                ),
+              );
+            }
+            if (r === RESOURCE && game.mode !== "reverse") {
               if (!game.harvested.has(s)) fruit(g, p, CORNUCOPIA.has(s));
               else {
                 g.append(
@@ -3944,7 +4033,7 @@
             ? ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][game.lastRoll - 1]
             : "⚄";
           $("goal").textContent =
-            `Target: ${game.target} food · ${RESOURCE_SPACES.length - game.harvested.size} patches left · Start: 5 each`;
+            `Target: ${game.target} food · ${game.mode === "reverse" ? `${game.resourceCapacity - game.resourceVisits}/${game.resourceCapacity} visits left` : `${RESOURCE_SPACES.length - game.harvested.size} patches left`} · Start: 5 each`;
           const descriptions = {
             roll: "Choose an animal, then roll.",
             move: `${game.remaining} ${game.remaining === 1 ? "step" : "steps"} left · tap a glowing space`,

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#071527" />
     <meta
       name="description"
-      content="Fragmented Habitat v11: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
+      content="Fragmented Habitat v12: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
     />
     <title>Fragmented Habitat</title>
     <link
@@ -1029,6 +1029,48 @@
           padding: 6px;
         }
       }
+      .tile.legal .tile-top {
+        stroke: #eacf84;
+        stroke-opacity: 1;
+        stroke-width: 2;
+        filter: none;
+        fill: #d4dca0;
+      }
+      .tile.current .tile-top {
+        stroke: #abdab8;
+        stroke-opacity: 0.65;
+        stroke-width: 1.5;
+      }
+      .tile.legal:hover .tile-top {
+        fill: #e5e6b2;
+      }
+      .scene {
+        background: radial-gradient(
+          ellipse at center,
+          #30514928,
+          transparent 68%
+        );
+      }
+      .deck {
+        border-color: #6f96a4;
+        border-radius: 12px;
+      }
+      .panel {
+        background: #102639ec;
+        box-shadow: 0 12px 30px #020d1c35;
+      }
+      #view-dialog input[type="range"] {
+        width: 65%;
+        margin: 12px;
+        accent-color: #b8d1a2;
+      }
+      #view-dialog output {
+        font: 11px monospace;
+        color: #e4d69d;
+      }
+      .board {
+        will-change: auto;
+      }
     </style>
   </head>
   <body>
@@ -1067,7 +1109,7 @@
           <p id="deck-caption" class="deck-caption"></p>
         </div>
         <footer>
-          VERSION 11 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+          VERSION 12 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
             Recent events
           </button>
         </footer>
@@ -1090,6 +1132,7 @@
             ><button id="zoom-out" class="btn" aria-label="Zoom out">−</button
             ><output id="zoom">100%</output
             ><button id="zoom-in" class="btn" aria-label="Zoom in">+</button
+            ><button id="view-3d" class="btn">3D View</button
             ><button id="view-reset" class="btn">Reset view</button
             ><button
               id="move-board"
@@ -1100,7 +1143,7 @@
             </button>
           </div>
           <p id="rotation-help" class="rotation-help">
-            Drag to rotate · pinch or wheel to zoom
+            Drag ↔ turn · ↕ tilt · pinch to zoom
           </p>
         </div>
       </section>
@@ -1130,8 +1173,7 @@
           <p id="goal" class="goal"></p>
           <p id="turn-help" class="turn-help"></p>
           <div class="control-actions">
-            <button id="finish-setup" class="btn primary"></button
-            ><button id="roll" class="btn primary"></button
+            <button id="roll" class="btn primary"></button
             ><button id="spawn" class="btn"></button
             ><button id="stop" class="btn"></button
             ><button id="pass" class="btn"></button
@@ -1158,88 +1200,136 @@
       <button class="btn" data-close="hand-dialog">Close</button>
     </dialog>
     <dialog id="help-dialog">
-      <h2>A journey through fragmented habitat</h2>
+      <h2>A little forest. A long journey.</h2>
       <p>
-        Start with <strong>5 family food</strong>. Find fruit at the edge and
-        return it to the forest. First to bank 7 food wins; choose a longer
-        target in Settings.
+        Your family starts with <strong>5 food</strong>. Find fruit at the edge
+        and bring it home. First to bank 7 wins; Settings offers longer games.
       </p>
       <p>
-        <strong>Set up:</strong> players take turns placing 18 predators in the
-        glowing lanes. There are three animals in each of six lanes. Click a
-        space to place the next one, or keep your choices and fill the remaining
-        spaces automatically.
+        <strong>Choose and move:</strong> select one animal, roll, then click
+        connected glowing spaces. Stop after at least one step, or use fewer
+        steps than you rolled. You can move inward, outward or sideways;
+        sideways movement on the dark island is clockwise. Once you take a step,
+        you cannot switch animals that turn.
       </p>
       <p>
-        <strong>Your turn:</strong> choose an animal and roll. Move up to that
-        many connected spaces, inward, outward or sideways. Stop after at least
-        one step. Before rolling you may spend 2 food to add an offspring at
-        home, even if the others are away. Maximum three living animals.
+        <strong>Grow a family:</strong> before rolling, spend 2 food to add an
+        offspring at home. Your other animals can be anywhere. Maximum three
+        living animals per family; offspring receive no extra starting food.
       </p>
       <p>
-        <strong>The landscape:</strong> leave the tree-filled habitat, cross
-        three inner green lanes, two road lanes, a safe island, two more road
-        lanes and three outer green lanes. Resource patches are at the edge. The
-        island is safe; movement along it goes clockwise, though you can enter
-        and leave radially.
+        <strong>The board:</strong> the forest is surrounded by three inner
+        green lanes, three light gray road lanes, one dark safe island, three
+        more road lanes, three outer green lanes and fruit gardens. Each lane
+        has 16 spaces. Predators start randomly with at least two empty spaces
+        between them; adjacent green lanes do not start predators directly
+        beside each other.
       </p>
       <p>
-        <strong>Traffic:</strong> stopping on any light gray road space triggers
-        the separate sun/moon die.
-        <strong>Moon = night, safe. Sun = day, car hit.</strong> There are three
-        moon faces and three sun faces. Passing across the road or stopping on
-        the dark island needs no check. Night safety is a simplified game rule.
+        <strong>Roads:</strong> passing across a road is safe. Stop on light
+        gray and roll the separate traffic die:
+        <strong>moon means night and safe; sun means day and a car hit.</strong>
+        The die has three moons and three suns. The dark island needs no traffic
+        roll. Night safety is a simplified game rule; the pictured cars are
+        decoration.
       </p>
       <p>
-        <strong>Predators:</strong> after everyone’s turn, roll once for each
-        green lane. All three predators in that lane move the same number
-        clockwise. They catch animals only on their final spaces. You cannot
-        walk onto a predator.
+        <strong>Police:</strong> stop on the officer’s island space and return
+        to the habitat with your fruit intact. Pay no food; your harvest is
+        banked when you arrive home. Passing the officer without stopping is
+        safe. After the six predator lane rolls, the officer rolls once and
+        moves clockwise. Animals on the officer’s final space are escorted home
+        in the same way.
       </p>
       <p>
-        <strong>Harvest:</strong> green edge patches give 2 fruit; blue
-        cornucopias give 3 and immediately trigger a hunter roll. Odd is safe;
-        even is a hit. Collect once per trip. Return to the centre to bank
-        fruit.
+        <strong>Predators:</strong> after everyone’s turn, roll once per green
+        lane. Its three predators move together clockwise. Only their final
+        spaces cause catches. You cannot walk onto a predator.
       </p>
       <p>
-        <strong>Contest:</strong> challenge an enemy’s space, choose odd or even
-        and roll. The winner keeps that space, pushes the loser one neighbouring
-        space, then clicks the deck to draw a card. Forced road and predator
-        landings count. The outer edge allows off-board pushes.
+        <strong>Harvest:</strong> ordinary gardens give 2 fruit. Golden
+        cornucopias give 3, then immediately ask for a hunter roll: odd is safe,
+        even is a hit. Collect once per trip and return home to bank it.
       </p>
       <p>
-        <strong>Hits and cards:</strong> normally lose carried fruit and spend 1
-        food to revive at home. With no food, the animal leaves the game. Click
-        ▣ beside a player to view held cards. Drawn cards unlock next round and
-        are used manually.
+        <strong>Contest:</strong> challenge another family’s space, choose odd
+        or even and roll. The winner keeps the space, pushes the loser to a
+        neighbour, then clicks the deck to keep one card. Forced landings
+        trigger road checks, predator hits or police returns. At the outer edge
+        you can push an animal off the board.
+      </p>
+      <p>
+        <strong>A hit:</strong> lose carried fruit and spend 1 food to revive at
+        home. With no food, that animal leaves the game. Eligible rescue cards
+        pause a hit so you can use one first.
+      </p>
+      <p>
+        <strong>Cards:</strong> click ▣ beside a player to view or use their
+        held cards. New cards unlock next round and are used manually.
       </p>
       <ul>
-        <li>14 Reroll: replace movement dice before taking a step.</li>
+        <li>14 Reroll: replace movement dice before the first step.</li>
         <li>10 Extra Block: add one movement step.</li>
         <li>
-          6 Enemy Backward: move an enemy one space inward to a free space;
-          landing hazards apply.
+          6 Enemy Backward: move an enemy one space inward; landing effects
+          apply.
         </li>
+        <li>4 Safe Streets: skip one sun/moon check.</li>
         <li>
-          4 Safe Streets: skip one sun/moon check and stay safely on the road.
-        </li>
-        <li>
-          2 Play Dead: survive a predator in place with your fruit. Only that
-          predator rolls again; the other two stay put.
+          2 Play Dead: survive a predator in place with your fruit. Only the
+          attacker rolls again.
         </li>
         <li>
           2 Angel Conservationists: revive at home free after a car or hunter
-          hit; carried fruit is lost.
+          hit, losing carried fruit.
         </li>
       </ul>
       <p>
-        <strong>Think about it:</strong> how did the road change your route,
-        food supply and survival? What would a wildlife bridge change? Predators
-        belong to the ecosystem; the landscape’s barriers make the journey
-        harder.
+        <strong>Look around:</strong> drag sideways to turn, vertically to tilt,
+        and pinch or wheel to zoom. 3D View controls X tilt, Y turn and Z lean.
+        Move Board switches to panning. Reset View restores the camera.
+      </p>
+      <p>
+        Which route helped your family survive? What would a wildlife bridge
+        change? The game introduces how habitat barriers affect movement and
+        access to food.
       </p>
       <button class="btn" data-close="help-dialog">Let’s play</button>
+    </dialog>
+    <dialog id="view-dialog">
+      <h2>Move around the landscape</h2>
+      <p>
+        Adjust all three angles. The board uses one 3D camera; its tiles keep
+        their shape.
+      </p>
+      <label
+        >X · tilt
+        <input
+          id="tilt-angle"
+          type="range"
+          min="25"
+          max="85"
+          value="58"
+        /><output id="tilt-value">58°</output></label
+      ><label
+        >Y · turn
+        <input
+          id="yaw-angle"
+          type="range"
+          min="-180"
+          max="180"
+          value="0"
+        /><output id="yaw-value">0°</output></label
+      ><label
+        >Z · lean
+        <input
+          id="roll-angle"
+          type="range"
+          min="-180"
+          max="180"
+          value="0"
+        /><output id="roll-value">0°</output></label
+      ><button class="btn" data-close="view-dialog">Close</button>
     </dialog>
     <dialog id="settings-dialog">
       <h2>Game settings</h2>
@@ -1300,17 +1390,17 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <script id="game-engine">
-      /* Fragmented Habitat v11 — rules engine, independent of the display. */
+      /* Fragmented Habitat v12 — rules engine, independent of the display. */
       (() => {
         "use strict";
-        const SECTORS = 24;
-        const RESOURCE = 12,
-          ISLAND = 6;
-        const ROAD = new Set([4, 5, 7, 8]);
-        const PREDATOR_LANES = [1, 2, 3, 9, 10, 11];
+        const SECTORS = 16;
+        const RESOURCE = 14,
+          ISLAND = 7;
+        const ROAD = new Set([4, 5, 6, 8, 9, 10]);
+        const PREDATOR_LANES = [1, 2, 3, 11, 12, 13];
         const PREDATOR_KINDS = ["snake", "fox", "coyote", "cat"];
         const PREDATORS_PER_LANE = 3;
-        const CORNUCOPIA = new Set([0, 3, 9, 12, 15, 21]);
+        const CORNUCOPIA = new Set([0, 2, 6, 8, 10, 14]);
         const ANIMALS = [
           "Rat",
           "Squirrel",
@@ -1376,9 +1466,8 @@
             this.target = target;
             this.round = 1;
             this.active = 0;
-            this.phase = "setup";
-            this.setupIndex = 0;
-            this.setupPlayer = 0;
+            this.phase = "roll";
+
             this.lastTraffic = null;
             this.players = Array.from(
               { length: Math.max(1, Math.min(7, players)) },
@@ -1399,24 +1488,27 @@
             this.steps = 0;
             this.remaining = 0;
             this.lastRoll = null;
-            this.predators = PREDATOR_LANES.flatMap((r, lane) =>
-              Array.from({ length: PREDATORS_PER_LANE }, (_, slot) => ({
-                id: lane * PREDATORS_PER_LANE + slot,
+            let previous = [];
+            this.predators = PREDATOR_LANES.flatMap((r, lane) => {
+              if (lane === 3) previous = [];
+              const positions = this.randomLanePositions(previous);
+              previous = positions;
+              return positions.map((s, slot) => ({
+                id: lane * 3 + slot,
                 r,
-                s: slot * 8,
-                kind: PREDATOR_KINDS[
-                  (lane * PREDATORS_PER_LANE + slot) % PREDATOR_KINDS.length
-                ],
+                s,
+                kind: PREDATOR_KINDS[(lane * 3 + slot) % PREDATOR_KINDS.length],
                 on: true,
-                placed: false,
-              })),
-            );
+                placed: true,
+              }));
+            });
+            this.police = { r: ISLAND, s: Math.floor(this.rng() * SECTORS) };
             this.predIndex = 0;
             this.pending = null;
             this.contest = null;
             this.pendingDraw = null;
             this.log = [
-              "Every family starts with 5 food. Take turns choosing the 18 predators’ starting spaces.",
+              "Predators are randomly spaced. Each family starts with 5 food. Choose an animal and roll.",
             ];
             this.deck = Object.entries(CARDS).flatMap(([type, c]) =>
               Array(c.count).fill(type),
@@ -1427,47 +1519,60 @@
               [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
             }
           }
-          setupChoices() {
-            if (this.phase !== "setup") return [];
-            const pred = this.predators[this.setupIndex];
-            return Array.from({ length: SECTORS }, (_, s) => ({
-              r: pred.r,
-              s,
-            })).filter(
-              (pos) =>
-                !this.predators.some(
-                  (p) => p.placed && p.r === pos.r && p.s === pos.s,
-                ),
-            );
+          randomLanePositions(avoid = []) {
+            // Sample legal triples directly: no retries and at least two empty
+            // spaces between neighbouring predators, including around the seam.
+            const triples = [];
+            for (let a = 0; a < SECTORS; a++)
+              for (let b = a + 3; b < SECTORS; b++)
+                for (let c = b + 3; c < SECTORS; c++)
+                  if (
+                    SECTORS - c + a >= 3 &&
+                    ![a, b, c].some((s) => avoid.includes(s))
+                  )
+                    triples.push([a, b, c]);
+            const chosen =
+              triples[Math.floor(this.rng() * triples.length)].slice();
+            for (let i = chosen.length - 1; i > 0; i--) {
+              const j = Math.floor(this.rng() * (i + 1));
+              [chosen[i], chosen[j]] = [chosen[j], chosen[i]];
+            }
+            return chosen;
           }
-          placePredator(r, s) {
-            if (!this.setupChoices().some((p) => key(p.r, p.s) === key(r, s)))
-              return false;
-            const pred = this.predators[this.setupIndex];
-            pred.r = r;
-            pred.s = wrap(s);
-            pred.placed = true;
+          escortHome(t, done) {
+            const cargo = t.cargo;
+            t.r = 0;
+            t.s = 0;
             this.record(
-              `Player ${this.setupPlayer + 1} placed ${pred.kind} ${pred.id + 1} in lane ${PREDATOR_LANES.indexOf(r) + 1}, sector ${s + 1}.`,
+              `Police escorted ${this.name(t)} home safely with ${cargo} fruit. No revival food spent.`,
             );
-            this.setupIndex++;
-            this.setupPlayer = (this.setupPlayer + 1) % this.players.length;
-            if (this.setupIndex === this.predators.length) {
-              this.phase = "roll";
-              this.record("Predator setup complete. Player 1 begins.");
-            }
-            return true;
+            this.collect(t); // Fruit is preserved on the journey, then banked at home.
+            if (this.phase !== "finished") done();
           }
-          finishSetup() {
-            if (this.phase !== "setup") return false;
-            // Keep player choices; fill only remaining slots, preferring even spacing.
-            while (this.phase === "setup") {
-              const pred = this.predators[this.setupIndex];
-              const positions = this.setupChoices();
-              const preferred =
-                positions.find((p) => p.s === pred.s) || positions[0];
-              this.placePredator(preferred.r, preferred.s);
+          finishRound() {
+            this.round++;
+            this.active = this.players.findIndex(
+              (p) => this.family(p.id).length,
+            );
+            if (this.active < 0) {
+              this.phase = "finished";
+              this.winner = null;
+              return;
             }
+            this.selected = this.family()[0].id;
+            this.phase = "roll";
+            this.record(`Round ${this.round}. New cards are now ready.`);
+          }
+          rollPolice() {
+            if (this.phase !== "police") return false;
+            const n = (this.lastRoll = this.dice());
+            this.police.s = wrap(this.police.s + n);
+            this.record(
+              `Police patrol moved ${n} spaces clockwise on the island.`,
+            );
+            const t = this.occupied(ISLAND, this.police.s);
+            if (t) this.escortHome(t, () => this.finishRound());
+            else this.finishRound();
             return true;
           }
           get player() {
@@ -1661,6 +1766,10 @@
           }
           resolveLanding(t, done) {
             if (this.phase === "finished") return;
+            if (t.r === ISLAND && t.s === this.police.s) {
+              this.escortHome(t, done);
+              return;
+            }
             const pred = this.predatorAt(t.r, t.s);
             if (pred) {
               this.hit(t, "predator", done, pred.id);
@@ -1790,13 +1899,10 @@
                 return;
               }
               if (this.predIndex === PREDATOR_LANES.length) {
-                this.round++;
-                this.active = this.players.findIndex(
-                  (p) => this.family(p.id).length,
+                this.phase = "police";
+                this.record(
+                  "Predator lanes finished. Roll once for the island police patrol.",
                 );
-                this.selected = this.family()[0].id;
-                this.phase = "roll";
-                this.record(`Round ${this.round}. New cards are now ready.`);
               } else this.phase = "predators";
             };
             const resolve = (i) => {
@@ -2239,6 +2345,8 @@
         let game = new Game(),
           handOwner = 0,
           angle = 0,
+          viewPitch = 58,
+          viewRoll = 0,
           zoom = 1,
           panX = 0,
           panY = 0,
@@ -2252,10 +2360,11 @@
           "#d5ba68",
           "#82d2ac",
         ];
+        const ANGLE = 360 / SECTORS;
         const radii = [
-          1.65,
-          ...Array.from({ length: 11 }, (_, i) => 2.02 + i * 0.34),
-          6.1,
+          1.8,
+          ...Array.from({ length: 13 }, (_, i) => 2.16 + i * 0.3),
+          6.55,
         ];
         function face(kind, size = 26) {
           const n = svg("svg", {
@@ -2325,6 +2434,21 @@
           "...ggggggg....",
           "....yy yy.....".replaceAll(" ", ""),
         ];
+        PALETTE.c = "#4b88b1";
+        FACES.police = [
+          "....cccccc....",
+          "...cccccccc...",
+          "..cccyyycccc..",
+          "...cccccccc...",
+          "...llllllll...",
+          "...llkllkll...",
+          "...llllllll...",
+          "....llwwll....",
+          "....cccccc....",
+          "...cccyyccc...",
+          "...cccyyccc...",
+          "....cccccc....",
+        ];
         FACES.hunter = [
           "....ssssss....",
           "...ssssssss...",
@@ -2340,6 +2464,15 @@
           "...ssbbbbss...",
         ];
         const defs = svg("defs");
+        const shadow = svg("filter", {
+          id: "board-shadow-soft",
+          x: "-20%",
+          y: "-20%",
+          width: "140%",
+          height: "140%",
+        });
+        shadow.append(svg("feGaussianBlur", { stdDeviation: 12 }));
+        defs.append(shadow);
         const tokenColors = {
           rat: "#b2c6d0",
           squirrel: "#f5b274",
@@ -2354,6 +2487,7 @@
           cat: "#b9c9e2",
           vulture: "#d7bdca",
           hunter: "#bed1a6",
+          police: "#91c4e0",
         };
         for (const [k, color] of Object.entries(tokenColors)) {
           const grad = svg("radialGradient", {
@@ -2400,15 +2534,20 @@
         }
         function project(p, h = 0) {
           const yaw = (angle * Math.PI) / 180,
-            pitch = (70 * Math.PI) / 180;
+            pitch = (viewPitch * Math.PI) / 180,
+            roll = (viewRoll * Math.PI) / 180;
           const x = p.x * Math.cos(yaw) - p.z * Math.sin(yaw),
             z = p.x * Math.sin(yaw) + p.z * Math.cos(yaw);
+          const vertical = z * Math.sin(pitch) - h * Math.cos(pitch);
           return {
-            x: 550 + panX + x * 64 * zoom,
+            x:
+              550 +
+              panX +
+              (x * Math.cos(roll) - vertical * Math.sin(roll)) * 64 * zoom,
             y:
               415 +
               panY +
-              (z * Math.sin(pitch) - h * Math.cos(pitch)) * 64 * zoom,
+              (x * Math.sin(roll) + vertical * Math.cos(roll)) * 64 * zoom,
             depth: z * Math.cos(pitch) + h * Math.sin(pitch),
           };
         }
@@ -2425,8 +2564,8 @@
             return Array.from({ length: 8 }, (_, i) =>
               xy(radii[0], 22.5 + i * 45),
             );
-          const start = (s - 0.5) * 15,
-            end = (s + 0.5) * 15,
+          const start = (s - 0.5) * ANGLE,
+            end = (s + 0.5) * ANGLE,
             angles = [
               start,
               ...Array.from(
@@ -2441,46 +2580,44 @@
           ];
         }
         function centre(r, s) {
-          return r ? xy((radii[r] + radii[r - 1]) / 2, s * 15) : { x: 0, z: 0 };
+          return r
+            ? xy((radii[r] + radii[r - 1]) / 2, s * ANGLE)
+            : { x: 0, z: 0 };
         }
         function shape(r, s) {
           if (!r)
-            return {
-              fill: "#28674d",
-              side: "#163f2d",
-              name: "Central habitat",
-            };
+            return { fill: "#41735a", side: "#274b39", name: "Central forest" };
           if (r === ISLAND)
             return {
-              fill: "#3a5860",
-              side: "#263f46",
-              name: "Safe island · clockwise",
+              fill: "#354d50",
+              side: "#293e40",
+              name: "Safe island · police patrol",
             };
           if (ROAD.has(r))
             return {
-              fill: r % 2 ? "#9daeb8" : "#8599a6",
-              side: "#526774",
-              name: `Road lane ${[4, 5, 7, 8].indexOf(r) + 1} · sun/moon check`,
+              fill: "#839092",
+              side: "#53696c",
+              name: `Road lane ${[4, 5, 6, 8, 9, 10].indexOf(r) + 1} · sun/moon check`,
             };
           if (r === RESOURCE)
             return CORNUCOPIA.has(s)
               ? {
-                  fill: "#459fb6",
-                  side: "#235e77",
-                  name: "Cornucopia · 3 fruit + hunter roll",
+                  fill: "#4c9aa5",
+                  side: "#2c6b72",
+                  name: "Golden cornucopia · 3 fruit + hunter",
                 }
               : {
-                  fill: "#377e57",
-                  side: "#18452e",
-                  name: "Resource patch · 2 fruit",
+                  fill: "#4e8260",
+                  side: "#2c553b",
+                  name: "Fruit garden · 2 fruit",
                 };
           return {
             fill:
               r < 4
-                ? ["", "#94bd77", "#a3ca86", "#8fb66e"][r]
-                : ["#a6c98c", "#90b873", "#a0c580"][r - 9],
-            side: "#557b4c",
-            name: `${r < 4 ? "Inner" : "Outer"} predator lane ${r < 4 ? r : r - 8}`,
+                ? ["", "#b3cba2", "#abc49a", "#b3cba2"][r]
+                : ["#b3cba2", "#abc49a", "#b3cba2"][r - 11],
+            side: "#6c8d64",
+            name: `${r < 4 ? "Inner" : "Outer"} predator lane ${r < 4 ? r : r - 10}`,
           };
         }
         function sprite(group, kind, p, size) {
@@ -2531,67 +2668,292 @@
           );
           group.append(medal);
         }
-        function fruit(g, p, large = false) {
-          const q = project(p, 0.12),
-            u = zoom * (large ? 1.2 : 1);
+        function bush(g, p, size = 1) {
+          const q = project(p, 0.04),
+            u = zoom * size;
           g.append(
-            svg("path", {
-              d: `M${q.x - 12 * u} ${q.y - 1 * u}l${24 * u} 0l${-4 * u} ${11 * u}l${-16 * u} 0Z`,
-              fill: "#b78444",
-              stroke: "#5c472e",
-              "stroke-width": u,
+            svg("ellipse", {
+              cx: q.x,
+              cy: q.y + 3 * u,
+              rx: 13 * u,
+              ry: 5 * u,
+              fill: "#264f40",
+              opacity: ".25",
             }),
           );
-          [
-            [-8, -6, "#f1d067"],
-            [0, -9, "#e77351"],
-            [8, -5, "#efb55d"],
-            [2, -1, "#bb82d5"],
-          ].forEach(([x, y, c]) => {
+          for (const [x, y, r, c] of [
+            [-7, -4, 8, "#568660"],
+            [6, -5, 9, "#67976b"],
+            [0, -10, 9, "#86ae78"],
+          ])
             g.append(
               svg("circle", {
                 cx: q.x + x * u,
                 cy: q.y + y * u,
-                r: 4.2 * u,
+                r: r * u,
                 fill: c,
               }),
             );
+          for (const [x, y] of [
+            [-7, -7],
+            [3, -13],
+            [9, -4],
+          ])
             g.append(
-              svg("path", {
-                d: `M${q.x + x * u} ${q.y + (y - 4) * u}l${3 * u} ${-3 * u}`,
-                stroke: "#b7dd86",
-                "stroke-width": 2 * u,
+              svg("circle", {
+                cx: q.x + x * u,
+                cy: q.y + y * u,
+                r: 2 * u,
+                fill: "#d78177",
               }),
             );
+        }
+        function fruit(g, p, large = false) {
+          const q = project(p, 0.08),
+            u = zoom;
+          const node = svg("g", {
+            class: "tile-detail",
+            transform: `translate(${q.x},${q.y}) scale(${u})`,
           });
+          if (large) {
+            node.append(
+              svg("ellipse", {
+                cx: 0,
+                cy: 8,
+                rx: 20,
+                ry: 7,
+                fill: "#275946",
+                opacity: ".27",
+              }),
+            );
+            node.append(
+              svg("path", {
+                d: "M-22,-17 Q-34,-5 -18,9 Q-5,18 17,3 L9,-10 Q-6,6 -17,-2 Q-25,-10 -22,-17Z",
+                fill: "#e6b45c",
+                stroke: "#ac753a",
+                "stroke-width": 1.3,
+              }),
+            );
+            node.append(
+              svg("path", {
+                d: "M-20,-7 Q-17,8 6,10 M-15,-5 Q-11,5 12,7 M-9,-5 Q-4,0 15,4",
+                fill: "none",
+                stroke: "#f9d891",
+                "stroke-width": 2,
+              }),
+            );
+            node.append(
+              svg("ellipse", {
+                cx: 14,
+                cy: -3,
+                rx: 12,
+                ry: 9,
+                fill: "#805535",
+                stroke: "#f0cd7e",
+                "stroke-width": 2,
+              }),
+            );
+            for (const [x, y, r, c] of [
+              [5, -8, 5, "#e78a6b"],
+              [17, -11, 6, "#f4d36e"],
+              [22, -2, 5, "#c997c7"],
+              [8, 0, 5, "#9cc976"],
+              [18, 5, 4, "#eaa06b"],
+              [0, -5, 4, "#d26d68"],
+            ]) {
+              node.append(
+                svg("circle", { cx: x, cy: y, r, fill: c }),
+                svg("path", {
+                  d: `M${x},${y - r}l3,-3`,
+                  stroke: "#80a65d",
+                  "stroke-width": 1.8,
+                }),
+              );
+            }
+            node.append(
+              svg("path", {
+                d: "M-23,-21l2,4l4,1l-4,2l-2,4l-1,-4l-4,-2l4,-1Z",
+                fill: "#ffedb0",
+              }),
+            );
+          } else {
+            node.append(
+              svg("ellipse", {
+                cx: 0,
+                cy: 4,
+                rx: 14,
+                ry: 6,
+                fill: "#355b40",
+                opacity: ".22",
+              }),
+            );
+            node.append(
+              svg("path", {
+                d: "M-11,-3 Q0,-11 11,-3 L8,9 L-8,9Z",
+                fill: "#c5a274",
+                stroke: "#957549",
+                "stroke-width": 0.8,
+              }),
+            );
+            node.append(
+              svg("path", {
+                d: "M-9,1L9,1 M-8,5L8,5",
+                stroke: "#e5c89b",
+                "stroke-width": 1,
+              }),
+            );
+            for (const [x, y, c] of [
+              [-6, -5, "#de8675"],
+              [1, -8, "#dfbb65"],
+              [7, -4, "#8dbb70"],
+            ])
+              node.append(
+                svg("circle", { cx: x, cy: y, r: 4.5, fill: c }),
+                svg("path", {
+                  d: `M${x},${y - 4}l3,-2`,
+                  stroke: "#67905a",
+                  "stroke-width": 1.4,
+                }),
+              );
+          }
+          g.append(node);
         }
         function tree(g, p, size = 1) {
-          const q = project(p, 0.1),
+          const q = project(p, 0.06),
             u = zoom * size;
-          g.append(
-            svg("rect", {
-              x: q.x - 3 * u,
-              y: q.y - 25 * u,
-              width: 6 * u,
-              height: 28 * u,
-              fill: "#946b48",
+          const n = svg("g", {
+            class: "tile-detail",
+            transform: `translate(${q.x},${q.y}) scale(${u})`,
+          });
+          n.append(
+            svg("ellipse", {
+              cx: 4,
+              cy: 2,
+              rx: 20,
+              ry: 7,
+              fill: "#193c2e",
+              opacity: ".28",
             }),
+            svg("path", { d: "M-3,3L-3,-25L2,-26L4,3Z", fill: "#b29069" }),
           );
-          g.append(
+          for (const [x, y, r, c] of [
+            [0, -28, 16, "#3d7054"],
+            [-12, -28, 13, "#588f62"],
+            [12, -31, 14, "#497f58"],
+            [-2, -40, 14, "#6e9e6b"],
+            [-6, -43, 8, "#8ab47b"],
+          ])
+            n.append(svg("circle", { cx: x, cy: y, r, fill: c }));
+          n.append(
             svg("path", {
-              d: `M${q.x - 19 * u} ${q.y - 17 * u}v${-18 * u}h${8 * u}v${-13 * u}h${22 * u}v${13 * u}h${8 * u}v${18 * u}Z`,
-              fill: "#56a875",
-              stroke: "#245f49",
-              "stroke-width": 2 * u,
+              d: "M-8,-43 Q-15,-39 -15,-33",
+              stroke: "#aed098",
+              "stroke-width": 2.5,
+              fill: "none",
+              opacity: ".65",
+              "stroke-linecap": "round",
+            }),
+          );
+          g.append(n);
+        }
+        function car(g, p, a, color) {
+          const theta = (a * Math.PI) / 180,
+            radial = { x: Math.sin(theta), z: -Math.cos(theta) },
+            tangent = { x: Math.cos(theta), z: Math.sin(theta) };
+          const point = (side, along) => ({
+            x: p.x + radial.x * side + tangent.x * along,
+            z: p.z + radial.z * side + tangent.z * along,
+          });
+          const footprint = [
+            point(-0.11, -0.29),
+            point(0.11, -0.29),
+            point(0.11, 0.29),
+            point(-0.11, 0.29),
+          ];
+          g.append(
+            svg("polygon", {
+              points: polygon(footprint, -0.015),
+              fill: "#263a41",
+              opacity: ".5",
             }),
           );
           g.append(
-            svg("rect", {
-              x: q.x - 8 * u,
-              y: q.y - 41 * u,
-              width: 12 * u,
-              height: 9 * u,
-              fill: "#8acc87",
+            svg("polygon", {
+              points: polygon(footprint, 0.11),
+              fill: color,
+              stroke: "#405c65",
+              "stroke-width": 0.6 * zoom,
+            }),
+          );
+          const roof = [
+            point(-0.075, -0.1),
+            point(0.075, -0.1),
+            point(0.075, 0.17),
+            point(-0.075, 0.17),
+          ];
+          g.append(
+            svg("polygon", {
+              points: polygon(roof, 0.18),
+              fill: "#e3ece3",
+              stroke: color,
+              "stroke-width": 1.5 * zoom,
+            }),
+          );
+          const windshield = [
+            point(-0.075, -0.15),
+            point(0.075, -0.15),
+            point(0.075, -0.08),
+            point(-0.075, -0.08),
+          ];
+          g.append(
+            svg("polygon", {
+              points: polygon(windshield, 0.16),
+              fill: "#41667b",
+            }),
+          );
+        }
+        function boardBase(root) {
+          const vertices = Array.from({ length: 8 }, (_, i) =>
+            xy(6.62, 22.5 + i * 45),
+          );
+          root.append(
+            svg("polygon", {
+              points: polygon(vertices, -0.58),
+              fill: "#233e39",
+            }),
+          );
+          const faces = vertices
+            .map((a, i) => ({
+              a,
+              b: vertices[(i + 1) % 8],
+              depth: project({
+                x: (a.x + vertices[(i + 1) % 8].x) / 2,
+                z: (a.z + vertices[(i + 1) % 8].z) / 2,
+              }).depth,
+            }))
+            .sort((a, b) => a.depth - b.depth);
+          for (const { a, b, depth } of faces)
+            root.append(
+              svg("polygon", {
+                points: [
+                  project(a, -0.04),
+                  project(b, -0.04),
+                  project(b, -0.58),
+                  project(a, -0.58),
+                ]
+                  .map((q) => `${q.x},${q.y}`)
+                  .join(" "),
+                fill: depth > 0 ? "#32584c" : "#284a40",
+                stroke: "#183c34",
+                "stroke-width": 0.5,
+              }),
+            );
+          root.append(
+            svg("polygon", {
+              points: polygon(vertices, -0.04),
+              fill: "#567e62",
+              stroke: "#8ca780",
+              "stroke-width": 1.4 * zoom,
             }),
           );
         }
@@ -2602,35 +2964,35 @@
             .forEach((n) => n.remove());
           root.classList.toggle("panning", moveMode);
           root.append(
-            svg("ellipse", {
-              cx: 550 + panX,
-              cy: 456 + panY,
-              rx: 374 * zoom,
-              ry: 340 * zoom,
-              fill: "#020c1b",
+            svg("polygon", {
+              points: polygon(
+                Array.from({ length: 8 }, (_, i) => xy(6.95, 22.5 + i * 45)),
+                -0.8,
+              ),
+              fill: "#02111d",
               opacity: ".5",
+              filter: "url(#board-shadow-soft)",
             }),
           );
+          boardBase(root);
           root.setAttribute(
             "viewBox",
             innerWidth <= 800 ? "100 0 900 850" : "0 0 1100 850",
           );
           const possible =
-              game.phase === "setup"
-                ? game.setupChoices()
-                : game.phase === "push"
-                  ? game.pushes()
-                  : game.phase === "card-target"
-                    ? game.backwardTargets()
-                    : game.legalMoves(),
+              game.phase === "push"
+                ? game.pushes()
+                : game.phase === "card-target"
+                  ? game.backwardTargets()
+                  : game.legalMoves(),
             legal = new Set(
               possible.filter((p) => p.r <= RESOURCE).map((p) => key(p.r, p.s)),
             );
           const entries = [
             { r: 0, s: 0 },
             ...Array.from({ length: RESOURCE * SECTORS }, (_, i) => ({
-              r: 1 + Math.floor(i / 24),
-              s: i % 24,
+              r: 1 + Math.floor(i / SECTORS),
+              s: i % SECTORS,
             })),
           ].sort(
             (a, b) =>
@@ -2655,7 +3017,7 @@
                 tabindex: legal.has(key(r, s)) ? 0 : -1,
                 "aria-label": `${style.name}, sector ${s + 1}${legal.has(key(r, s)) ? ", available" : ""}`,
               });
-            for (let i = 0; i < points.length; i++) {
+            for (let i = 0; i < (r === RESOURCE ? points.length : 0); i++) {
               const a = points[i],
                 b = points[(i + 1) % points.length];
               g.append(
@@ -2676,13 +3038,16 @@
               svg("polygon", {
                 points: polygon(points),
                 fill: style.fill,
-                stroke: "#143c35",
-                "stroke-width": 1.2 * zoom,
+                stroke: ROAD.has(r) || r === ISLAND ? "none" : "#365f3b",
+                "stroke-opacity": r === RESOURCE ? 0.36 : 0.19,
+                "stroke-width": 0.8 * zoom,
                 class: "tile-top",
               }),
             );
             const q = project(p);
             if (r === 0) {
+              for (const a of [90, 125, 165, 200, 245])
+                bush(g, xy(1.55, a), 0.5);
               [
                 [-1.08, -0.8, 0.85],
                 [-0.55, -1.12, 1.1],
@@ -2697,7 +3062,7 @@
                     project({ x: a[0], z: a[1] }).depth -
                     project({ x: b[0], z: b[1] }).depth,
                 )
-                .forEach(([x, z, size]) => tree(g, { x, z }, size));
+                .forEach(([x, z, size]) => tree(g, { x, z }, size * 1.12));
               g.append(
                 svg(
                   "text",
@@ -2717,48 +3082,80 @@
             if (r === RESOURCE) {
               fruit(g, p, CORNUCOPIA.has(s));
               if (CORNUCOPIA.has(s)) {
-                sprite(g, "hunter", xy(6.35, s * 15 + 3), 23);
+                sprite(g, "hunter", xy(6.78, s * ANGLE + 5), 23);
                 g.append(
                   svg(
                     "text",
                     {
                       x: q.x,
-                      y: q.y + 27 * zoom,
+                      y: q.y + 25 * zoom,
                       "text-anchor": "middle",
                       fill: "#e9fffa",
                       "font-size": 11 * zoom,
                     },
-                    "+3 · hunter",
+                    "CORNUCOPIA",
                   ),
                 );
-              } else if (s % 3 === 0) tree(g, xy(5.86, s * 15 + 4), 0.65);
+              } else if (s % 3 === 0) tree(g, xy(6.24, s * ANGLE + 6), 0.65);
             }
-            if (ROAD.has(r) || r === ISLAND) {
-              const clockwise = r <= ISLAND;
-              const radius = (radii[r] + radii[r - 1]) / 2;
-              const a = project(xy(radius, s * 15 + (clockwise ? -4 : 4))),
-                b = project(xy(radius, s * 15 + (clockwise ? 4 : -4)));
-              const dx = b.x - a.x,
-                dy = b.y - a.y,
-                len = Math.hypot(dx, dy),
-                ux = dx / len,
-                uy = dy / len;
+            if (ROAD.has(r)) {
+              if (r === 5 || r === 9) {
+                for (const delta of [-0.035, 0.035]) {
+                  const rr = (radii[r] + radii[r - 1]) / 2 + delta;
+                  const path = Array.from({ length: 5 }, (_, i) =>
+                    project(xy(rr, (s - 0.5 + i / 4) * ANGLE)),
+                  )
+                    .map((q, i) => `${i ? "L" : "M"}${q.x},${q.y}`)
+                    .join("");
+                  g.append(
+                    svg("path", {
+                      d: path,
+                      fill: "none",
+                      stroke: "#e8c965",
+                      "stroke-width": 1.05 * zoom,
+                      "pointer-events": "none",
+                    }),
+                  );
+                }
+              } else if (s % 2 === 0) {
+                const rr = (radii[r] + radii[r - 1]) / 2;
+                const a = project(xy(rr, (s - 0.25) * ANGLE)),
+                  b = project(xy(rr, (s + 0.25) * ANGLE));
+                g.append(
+                  svg("path", {
+                    d: `M${a.x},${a.y}L${b.x},${b.y}`,
+                    fill: "none",
+                    stroke: "#d6ddda",
+                    "stroke-width": 1.2 * zoom,
+                    opacity: ".72",
+                    "pointer-events": "none",
+                  }),
+                );
+              }
+              if (r === 4 && s === 1) car(g, p, s * ANGLE, "#c27e6b");
+              if (r === 10 && s === 9) car(g, p, s * ANGLE, "#6e9aaa");
+              // Visible, understated lane boundaries; no radial road grid or arrows.
+              const a = project(xy(radii[r], (s - 0.5) * ANGLE)),
+                b = project(xy(radii[r], (s + 0.5) * ANGLE));
               g.append(
                 svg("path", {
-                  d: `M${a.x},${a.y}L${b.x},${b.y}M${b.x - ux * 4 * zoom - uy * 3 * zoom},${b.y - uy * 4 * zoom + ux * 3 * zoom}L${b.x},${b.y}L${b.x - ux * 4 * zoom + uy * 3 * zoom},${b.y - uy * 4 * zoom - ux * 3 * zoom}`,
+                  d: `M${a.x},${a.y}L${b.x},${b.y}`,
                   fill: "none",
-                  stroke: r === ISLAND ? "#b7e4c8" : "#e2e9eb",
-                  "stroke-width": zoom * 0.9,
-                  opacity: ".7",
+                  stroke: "#c2cdca",
+                  "stroke-width": 0.5 * zoom,
+                  opacity: ".3",
                 }),
               );
-              if (r === ISLAND && s % 6 === 0) tree(g, p, 0.3);
             }
+            if (r === ISLAND) {
+              if (s % 4 === 0) tree(g, p, 0.32);
+              else if (s % 2 === 0) bush(g, p, 0.45);
+              if (s === game.police.s) sprite(g, "police", p, 29);
+            }
+            if ((r === 1 || r === 13) && s % 4 === 1) bush(g, p, 0.28);
             const predatorsHere = game.predators.filter(
               (pred) =>
-                pred.on &&
-                (pred.placed || game.phase === "setup") &&
-                key(pred.r, pred.s) === key(r, s),
+                pred.on && pred.placed && key(pred.r, pred.s) === key(r, s),
             );
             predatorsHere.forEach((pred, i) =>
               sprite(
@@ -2768,7 +3165,7 @@
                   x: p.x + (i - (predatorsHere.length - 1) / 2) * 0.28,
                   z: p.z,
                 },
-                predatorsHere.length > 1 ? 15 : 18,
+                predatorsHere.length > 1 ? 19 : 25,
               ),
             );
             const tokens = game.tokens.filter(
@@ -2790,7 +3187,7 @@
                 g,
                 game.players[t.owner].animal.toLowerCase(),
                 off,
-                r ? 20 : 25,
+                r ? 25 : 30,
               );
               const pos = project(off, 0.32);
               g.append(
@@ -2819,9 +3216,7 @@
             });
             const choose = () => {
               if (suppressClick || moveMode) return;
-              if (game.phase === "setup") {
-                act(() => game.placePredator(r, s));
-              } else if (game.phase === "card-target") {
+              if (game.phase === "card-target") {
                 const t = tokens.find((t) =>
                   game.backwardTargets().some((x) => x.id === t.id),
                 );
@@ -2842,8 +3237,8 @@
           const scavenger = svg("g", {
             "aria-label": "Vulture · scavenger mascot",
           });
-          sprite(scavenger, "vulture", xy(6.65, 270), 32);
-          const vp = project(xy(6.65, 270));
+          sprite(scavenger, "vulture", xy(7.05, 270), 32);
+          const vp = project(xy(7.05, 270));
           scavenger.append(
             svg(
               "text",
@@ -2859,7 +3254,7 @@
           );
           root.append(scavenger);
           if (game.phase === "push" && game.contest.r === RESOURCE) {
-            const p = project(xy(6.8, game.contest.s * 15));
+            const p = project(xy(6.8, game.contest.s * ANGLE));
             const g = svg("g", {
               role: "button",
               tabindex: 0,
@@ -2914,21 +3309,20 @@
               ? game.players[game.cardOwner()]
               : p;
           $("round").textContent =
-            game.phase === "setup"
-              ? `SETUP: PLAYER ${game.setupPlayer + 1}`
-              : `ROUND ${game.round}: PLAYER ${p.id + 1} — ${p.animal.toUpperCase()}`;
+            `ROUND ${game.round}: PLAYER ${p.id + 1} — ${p.animal.toUpperCase()}`;
           $("dice").textContent = game.lastRoll
             ? ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][game.lastRoll - 1]
             : "⚄";
           $("goal").textContent =
             `First family to bank ${game.target} food wins · Start: 5 each`;
           const descriptions = {
-            setup: `Player ${game.setupPlayer + 1}: place ${game.predators[game.setupIndex]?.kind} ${game.setupIndex + 1} / 18 in the glowing lane.`,
             roll: "Choose an animal, then roll.",
             move: `${game.remaining} ${game.remaining === 1 ? "step" : "steps"} left · tap a glowing space`,
             traffic: `${response.animal}: MOON / night = safe · SUN / day = car hit`,
             hunter: `${response.animal}: cornucopia hunter roll · odd = keep fruit`,
             predators: `Lane ${game.predIndex + 1} of 6 · three predators share one roll`,
+            police:
+              "Island police patrol · sends animals home with fruit intact",
             "contest-choice": "Attacker: choose odd or even.",
             "contest-roll": "Roll to decide who owns this space.",
             push: "Winner: choose where to push the loser.",
@@ -2959,33 +3353,36 @@
               : "Traffic die: three suns and three moons",
           );
           setButton(
-            "finish-setup",
-            "Keep choices + fill the rest",
-            () => game.finishSetup(),
-            game.phase === "setup",
-          );
-          setButton(
             "roll",
-            game.phase === "predators"
-              ? "Roll lane dice"
-              : game.phase === "traffic"
-                ? "Roll sun / moon die"
-                : game.phase === "hunter"
-                  ? "Roll hunter check"
-                  : game.phase === "contest-roll"
-                    ? "Roll contest dice"
-                    : "Roll movement dice",
+            game.phase === "police"
+              ? "Roll police patrol"
+              : game.phase === "predators"
+                ? "Roll lane dice"
+                : game.phase === "traffic"
+                  ? "Roll sun / moon die"
+                  : game.phase === "hunter"
+                    ? "Roll hunter check"
+                    : game.phase === "contest-roll"
+                      ? "Roll contest dice"
+                      : "Roll movement dice",
             () =>
-              game.phase === "predators"
-                ? game.rollPredator()
-                : ["traffic", "hunter"].includes(game.phase)
-                  ? game.check()
-                  : game.phase === "contest-roll"
-                    ? game.rollContest()
-                    : game.roll(),
-            ["roll", "traffic", "hunter", "predators", "contest-roll"].includes(
-              game.phase,
-            ),
+              game.phase === "police"
+                ? game.rollPolice()
+                : game.phase === "predators"
+                  ? game.rollPredator()
+                  : ["traffic", "hunter"].includes(game.phase)
+                    ? game.check()
+                    : game.phase === "contest-roll"
+                      ? game.rollContest()
+                      : game.roll(),
+            [
+              "roll",
+              "traffic",
+              "hunter",
+              "predators",
+              "police",
+              "contest-roll",
+            ].includes(game.phase),
           );
           setButton(
             "spawn",
@@ -3045,10 +3442,7 @@
             const row = document.createElement("div");
             row.className =
               "player-row" +
-              (p.id ===
-              (game.phase === "setup" ? game.setupPlayer : game.active)
-                ? " active"
-                : "") +
+              (p.id === game.active ? " active" : "") +
               (!game.family(p.id).length ? " out" : "");
             row.append(face(p.animal.toLowerCase()));
             const name = document.createElement("div");
@@ -3145,6 +3539,7 @@
             "coyote",
             "cat",
             "vulture",
+            "police",
           ]) {
             const fig = document.createElement("figure"),
               art = svg("svg", { viewBox: "0 0 72 72" });
@@ -3198,8 +3593,29 @@
           zoom = Math.max(0.55, zoom - 0.1);
           board();
         };
+        $("view-3d").onclick = () => {
+          for (const [id, value] of [
+            ["tilt", viewPitch],
+            ["yaw", ((((angle + 180) % 360) + 360) % 360) - 180],
+            ["roll", viewRoll],
+          ]) {
+            $(id + "-angle").value = value;
+            $(id + "-value").textContent = Math.round(value) + "°";
+          }
+          $("view-dialog").showModal();
+        };
+        for (const id of ["tilt", "yaw", "roll"])
+          $(id + "-angle").oninput = (e) => {
+            const v = Number(e.target.value);
+            if (id === "tilt") viewPitch = v;
+            else if (id === "yaw") angle = v;
+            else viewRoll = v;
+            $(id + "-value").textContent = v + "°";
+            board();
+          };
         $("view-reset").onclick = () => {
-          angle = panX = panY = 0;
+          angle = panX = panY = viewRoll = 0;
+          viewPitch = 58;
           zoom = 1;
           board();
         };
@@ -3220,7 +3636,7 @@
           $("move-board").setAttribute("aria-pressed", moveMode);
           $("rotation-help").textContent = moveMode
             ? "Move mode: drag the board. Click again to rotate."
-            : "Drag to rotate · pinch or wheel to zoom";
+            : "Drag ↔ turn · ↕ tilt · pinch to zoom";
           board();
         };
         function down(e) {
@@ -3259,7 +3675,10 @@
           } else if (moveMode || last.handle) {
             panX += dx / scale();
             panY += dy / scale();
-          } else angle += dx * 0.35;
+          } else {
+            angle += dx * 0.35;
+            viewPitch = Math.max(25, Math.min(85, viewPitch - dy * 0.3));
+          }
           board();
         }
         function up(e) {
@@ -3310,7 +3729,14 @@
         );
         addEventListener("resize", board);
         globalThis.qaRender = render;
-        globalThis.qaCamera = () => ({ angle, zoom, panX, panY, pitch: 70 });
+        globalThis.qaCamera = () => ({
+          angle,
+          zoom,
+          panX,
+          panY,
+          pitch: viewPitch,
+          roll: viewRoll,
+        });
         render();
       })();
     </script>

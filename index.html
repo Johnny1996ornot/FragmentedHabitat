@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#071527" />
     <meta
       name="description"
-      content="Fragmented Habitat v19: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
+      content="Fragmented Habitat v21: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
     />
     <title>Fragmented Habitat</title>
     <link
@@ -1336,7 +1336,7 @@
         </div>
 
         <footer>
-          VERSION 19 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+          VERSION 21 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
             Recent events
           </button>
         </footer>
@@ -1502,9 +1502,10 @@
         <p>
           <strong>Safe island:</strong> the dark gray island needs no traffic
           check. You can move either way along it, or inward/outward to leave
-          it. If you stop on the police officer, you return home with all
-          carried fruit and pay no food. After the predators move, roll once to
-          move the officer; it also returns any animal on its final space.
+          it. If you stop on the police officer, you return to base, lose your
+          carried fruit to the resource supply, and pay no food. After the
+          predators move, roll once to move the officer; it also returns any
+          animal on its final space.
         </p>
         <p>
           <strong>Predator lanes:</strong> leaving the habitat exposes animals
@@ -1540,9 +1541,13 @@
           Pay <strong>2 banked food</strong> to revive the animal at home.
         </li>
         <li>
-          If you cannot pay 2 food, <strong>you are eliminated</strong>. All
-          your animals leave the board, their carried fruit returns to its
-          original patches, and your held cards go to the discard pile.
+          If you cannot pay 2 food, only the hit animal leaves the board. Its
+          carried fruit returns to the supply. You keep playing with your other
+          surviving animals and keep your cards.
+          <strong
+            >You are eliminated only when you have no animals remaining.</strong
+          >
+          Then your cards go to the discard pile.
         </li>
         <li>
           An eligible rescue card may be used before you pay. Play Dead keeps
@@ -1550,8 +1555,9 @@
           for free, but its fruit still returns to the patch.
         </li>
         <li>
-          The police officer’s safe return is different: you keep your fruit and
-          bank it at home, with no revival cost.
+          The police officer sends the animal back to base. Its carried fruit
+          returns to the resource supply. Your banked food is unchanged and
+          there is no revival cost.
         </li>
       </ul>
       <p>
@@ -1581,8 +1587,9 @@
         </li>
         <li><strong>10 Extra Block:</strong> add one movement step.</li>
         <li>
-          <strong>6 Enemy Backward:</strong> move an enemy one square toward the
-          habitat. Landing effects apply.
+          <strong>6 Move Enemy:</strong> choose an enemy, then move it one
+          adjacent square in any direction. Occupied squares are unavailable.
+          Landing consequences apply.
         </li>
         <li>
           <strong>4 Safe Streets:</strong> skip one traffic check. Future stops
@@ -1620,7 +1627,7 @@
         </li>
         <li>
           <strong>Solo play:</strong> reach the target or the highest available
-          depletion score; if you cannot pay revival, you lose.
+          depletion score; you lose only when you have no animals remaining.
         </li>
       </ul>
       <p>
@@ -1730,7 +1737,7 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <script id="game-engine">
-      /* Fragmented Habitat v19 — rules engine, independent of the display. */
+      /* Fragmented Habitat v21 — rules engine, independent of the display. */
       (() => {
         "use strict";
         const SECTORS = 24;
@@ -1765,10 +1772,10 @@
             text: "Add one step to your current movement.",
           },
           back: {
-            name: "Enemy Backward",
+            name: "Move Enemy",
             count: 6,
             icon: "←",
-            text: "Move an enemy one space inward, toward the habitat. Landing hazards apply.",
+            text: "Choose an enemy, then move it one adjacent space in any direction. Landing consequences apply.",
           },
           street: {
             name: "Safe Streets",
@@ -1957,7 +1964,7 @@
               this.endReason = "Player eliminated";
               this.phase = "finished";
               this.pending = this.pendingDraw = this.contest = null;
-              this.record("You cannot pay 2 food. Game over.");
+              this.record("No animals remain. Game over.");
               return true;
             }
             const target = this.players.find((p) => p.food >= this.target);
@@ -2014,12 +2021,13 @@
           }
           escortHome(t, done) {
             const cargo = t.cargo;
+            this.returnFruit(t);
             t.r = 0;
             t.s = 0;
             this.record(
-              `Police escorted ${this.name(t)} home safely with ${cargo} fruit. No revival food spent.`,
+              `Police escorted ${this.name(t)} to base, losing ${cargo} carried fruit. Banked food is unchanged; no revival cost.`,
             );
-            this.collect(t); // Fruit is preserved on the journey, then banked at home.
+            this.collect(t); // Police removes cargo before the return, so no food is banked.
             if (this.phase !== "finished") done();
           }
           finishRound() {
@@ -2359,16 +2367,22 @@
                 `${this.name(t)} revived at home${free ? " for free" : " for 2 food"}.`,
               );
             } else {
-              owner.eliminated = true;
-              for (const animal of this.animals(t.owner)) {
-                this.returnFruit(animal);
-                animal.out = true;
-              }
-              this.discard.push(...owner.hand.map((c) => c.type));
-              owner.hand = [];
+              t.out = true;
               this.record(
-                `Player ${t.owner + 1} cannot pay 2 food and is eliminated. All their animals leave the board.`,
+                `${this.name(t)} cannot be revived and leaves the board. Its carried fruit returns to the supply.`,
               );
+              if (!this.animals(t.owner).length) {
+                owner.eliminated = true;
+                this.discard.push(...owner.hand.map((c) => c.type));
+                owner.hand = [];
+                this.record(
+                  `Player ${t.owner + 1} has no animals remaining and is eliminated.`,
+                );
+              } else {
+                this.record(
+                  `Player ${t.owner + 1} stays in the game with ${this.animals(t.owner).length} surviving animal(s).`,
+                );
+              }
             }
           }
           endTurn() {
@@ -2586,35 +2600,19 @@
                 ? this.tokens.find((t) => t.id === this.pending.token).owner
                 : this.active;
           }
+          enemyMoves(t = this.tokens.find((t) => t.id === this.cardEnemy)) {
+            if (!t || t.out || t.r === 0) return [];
+            return this.neighbours(t.r, t.s, t.owner).filter(
+              (p) => !this.occupied(p.r, p.s, [t.id]),
+            );
+          }
           backwardTargets() {
             return this.tokens.filter(
               (t) =>
                 !t.out &&
                 t.owner !== this.active &&
                 t.r > 0 &&
-                (this.mode !== "reverse" ||
-                  t.r !== 1 ||
-                  this.homeEntries(t.owner).includes(t.s)) &&
-                !this.predatorAt(
-                  t.r - 1,
-                  t.r === 1
-                    ? 0
-                    : t.r === RESOURCE
-                      ? this.mode === "reverse"
-                        ? (t.entrySector ?? this.homeSector(t.owner))
-                        : wrap(Math.round(t.s))
-                      : t.s,
-                ) &&
-                !this.occupied(
-                  t.r - 1,
-                  t.r === 1
-                    ? 0
-                    : t.r === RESOURCE
-                      ? this.mode === "reverse"
-                        ? (t.entrySector ?? this.homeSector(t.owner))
-                        : wrap(Math.round(t.s))
-                      : t.s,
-                ),
+                this.enemyMoves(t).length,
             );
           }
           canCard(owner, index) {
@@ -2678,21 +2676,41 @@
             return true;
           }
           targetEnemy(id) {
-            if (this.phase !== "card-target") return false;
-            const t = this.backwardTargets().find((t) => t.id === id);
-            if (!t) return false;
-            if (t.r === RESOURCE)
-              t.s =
-                this.mode === "reverse"
-                  ? (t.entrySector ?? this.homeSector(t.owner))
-                  : wrap(Math.round(t.s));
-            t.r--;
-            if (!t.r) t.s = 0;
+            if (
+              this.phase !== "card-target" ||
+              !this.backwardTargets().some((t) => t.id === id)
+            )
+              return false;
+            this.cardEnemy = id;
+            this.phase = "card-destination";
+            this.record(
+              `Choose an adjacent space for ${this.name(this.tokens.find((t) => t.id === id))}. Landing consequences apply.`,
+            );
+            return true;
+          }
+          moveEnemy(r, s) {
+            if (
+              this.phase !== "card-destination" ||
+              !this.enemyMoves().some((p) => key(p.r, p.s) === key(r, s))
+            )
+              return false;
+            const t = this.tokens.find((t) => t.id === this.cardEnemy);
+            if (this.mode === "reverse" && r === RESOURCE) t.entrySector = t.s;
+            t.r = r;
+            t.s = r ? wrap(s) : 0;
+            this.cardEnemy = null;
+            const done = () => {
+              if (this.phase !== "finished") this.phase = "move";
+            };
             this.collect(t);
-            if (this.phase !== "finished")
-              this.resolveLanding(t, () => {
-                this.phase = "move";
-              });
+            if (this.phase === "finished") return true;
+            if (this.phase === "hunter") {
+              const previous = this.pending.done;
+              this.pending.done = () => {
+                previous();
+                if (this.phase !== "finished") this.resolveLanding(t, done);
+              };
+            } else this.resolveLanding(t, done);
             return true;
           }
         }
@@ -3560,9 +3578,11 @@
           const possible =
               game.phase === "push"
                 ? game.pushes()
-                : game.phase === "card-target"
-                  ? game.backwardTargets()
-                  : game.legalMoves(),
+                : game.phase === "card-destination"
+                  ? game.enemyMoves()
+                  : game.phase === "card-target"
+                    ? game.backwardTargets()
+                    : game.legalMoves(),
             legal = new Set(
               possible.filter((p) => p.r <= RESOURCE).map((p) => key(p.r, p.s)),
             );
@@ -3591,7 +3611,18 @@
                   (legal.has(key(r, s)) &&
                   (r !== 0 ||
                     game.mode !== "reverse" ||
-                    game.homeEntries(game.active).includes(s))
+                    game
+                      .homeEntries(
+                        game.phase === "card-destination"
+                          ? game.tokens.find((t) => t.id === game.cardEnemy)
+                              .owner
+                          : game.phase === "push"
+                            ? game.tokens.find(
+                                (t) => t.id === game.contest.loser,
+                              ).owner
+                            : game.active,
+                      )
+                      .includes(s))
                     ? " legal"
                     : "") +
                   (game.token &&
@@ -3939,7 +3970,9 @@
                     game.phase === "push"
                       ? game.tokens.find((t) => t.id === game.contest.loser)
                           .owner
-                      : game.active,
+                      : game.phase === "card-destination"
+                        ? game.tokens.find((t) => t.id === game.cardEnemy).owner
+                        : game.active,
                   )
                   .includes(s)
               )
@@ -3949,7 +3982,9 @@
                   game.backwardTargets().some((x) => x.id === t.id),
                 );
                 if (t) act(() => game.targetEnemy(t.id));
-              } else if (game.phase === "push") act(() => game.push(r, s));
+              } else if (game.phase === "card-destination")
+                act(() => game.moveEnemy(r, s));
+              else if (game.phase === "push") act(() => game.push(r, s));
               else act(() => game.move(r, s));
             };
             g.addEventListener("click", choose);
@@ -4041,13 +4076,15 @@
             hunter: `${response.animal}: MOON / night = keep fruit · SUN / day = hunter hit`,
             predators: `Lane ${game.predIndex + 1} of 6 · four predators share one roll`,
             police:
-              "Island police patrol · sends animals home with fruit intact",
+              "Island police patrol · returns animals to base; carried fruit is lost",
             "contest-choice": "Attacker: choose odd or even.",
             "contest-roll": "Roll to decide who owns this space.",
             push: "Winner: choose where to push the loser.",
             draw: `Player ${game.pendingDraw?.owner + 1}: click the deck to draw your card.`,
             rescue: `${response.animal}: use a rescue card or accept the hit.`,
-            "card-target": "Tap an enemy to move it one space toward home.",
+            "card-target": "Choose an enemy animal to move.",
+            "card-destination":
+              "Choose a glowing adjacent space for the enemy. Hazards apply.",
             finished: `${game.endReason || "Game over"}. ${game.winners?.map((id) => `PLAYER ${id + 1} — ${game.players[id].animal}`).join(" & ") || "No winner"} ${game.winners?.length > 1 ? "SHARE THE WIN" : game.winners?.length ? "WINS" : ""}!`,
           };
           $("turn-help").textContent = descriptions[game.phase];

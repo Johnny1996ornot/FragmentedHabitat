@@ -1,2014 +1,3318 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#071527">
-  <meta name="description" content="A local board game for 1–7 players: grow an animal family, cross roads and predator lanes, collect fruit, and bring food home to win.">
-  <title>Fragmented Habitat</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23071527'/%3E%3Cpath d='M3 2h3v3h4V2h3v9h-2v3H5v-3H3Z' fill='%23ecad60'/%3E%3Cpath d='M5 7h2v2H5m4-2h2v2H9m-2 4h2v2H7' fill='%23071527'/%3E%3C/svg%3E">
-  <style>
-    /* One screen, three reserved zones: title/deck, island, player controls. */
-    :root { color-scheme:dark; --night:#071527; --panel:#0c2035; --text:#ebf4f5; --muted:#9bafbe; --mint:#9ddfba; --gold:#ffda83; --cyan:#77d7ed; --line:#284258; }
-    * { box-sizing:border-box; }
-    [hidden] { display:none!important; }
-    html, body { margin:0; width:100%; height:100%; overflow:hidden; }
-    body { color:var(--text); background:radial-gradient(ellipse at 55% 55%,#12334c,var(--night) 78%); font:13px/1.45 system-ui,sans-serif; }
-    body::before { content:""; position:fixed; inset:0; pointer-events:none; background-image:radial-gradient(#79cde32e .8px,transparent .8px); background-size:37px 37px; }
-    button, input, select { font:inherit; }
-    button { cursor:pointer; }
-    button:disabled { cursor:default; }
-    button:focus-visible, input:focus-visible, select:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
-    h1,h2,h3,p { margin:0; }
-    .app { position:relative; display:grid; grid-template-columns:210px minmax(0,1fr) 300px; gap:16px; width:100%; height:100dvh; padding:24px; }
-    .sidebar { z-index:2; min-width:0; display:flex; flex-direction:column; align-items:flex-start; }
-    .eyebrow { font:9px/1.6 ui-monospace,monospace; color:var(--mint); letter-spacing:1.2px; text-transform:uppercase; }
-    h1 { font:700 clamp(27px,2.5vw,40px)/1.12 ui-monospace,monospace; letter-spacing:-1.8px; margin:14px 0; }
-    h1 span { color:var(--mint); }
-    .intro { color:var(--muted); font-size:12px; }
-    .toolbar { display:flex; gap:6px; margin-top:20px; }
-    .btn { border:0; border-radius:7px; padding:9px 12px; background:#203b51; color:var(--text); font-size:11px; font-weight:650; }
-    .btn:hover:not(:disabled) { background:#31576e; }
-    .btn.primary { background:var(--mint); color:#092a25; }
-    .btn.primary:hover:not(:disabled) { background:#c2f7d7; }
-    .btn:disabled { opacity:.45; }
-    .panel { background:#0a1d30ed; border:0; border-radius:14px; padding:16px; box-shadow:0 12px 30px #020d1c55; }
-    .game-hud { align-self:start; z-index:2; min-width:0; display:flex; flex-direction:column; gap:12px; max-height:100%; }
-    .turn-heading { display:flex; gap:10px; align-items:center; justify-content:space-between; }
-    .round-tag { color:var(--gold); font:700 15px/1.4 ui-monospace,monospace; }
-    .dice { display:grid; place-items:center; flex-shrink:0; width:39px; height:39px; border-radius:7px; background:#e9efdf; color:#102639; box-shadow:3px 3px 0 #366076; font:30px/1 system-ui; }
-    .goal { font-size:10px; color:var(--muted); margin:6px 0 12px; }
-    .turn-line h2 { font-size:13px; }
-    .turn-help { color:#c2d0da; font-size:11px; margin-top:6px; }
-    .control-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
-    #roll { width:100%; padding:11px; font-size:12px; }
-    #parity { display:flex; gap:7px; }
-    .family-picks { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
-    .animal-pick { font-size:10px; padding:6px 8px; }
-    .animal-pick[aria-pressed="true"] { background:#1f514a; color:var(--mint); }
-    .status { font-size:10px; color:var(--muted); margin-top:12px; line-height:1.4; }
-    .status.winner { color:var(--gold); }
-    .section-label { color:var(--muted); font:9px ui-monospace,monospace; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
-    .player-row { display:grid; grid-template-columns:28px minmax(0,1fr) 35px 31px; align-items:center; gap:7px; padding:8px 5px; border-radius:8px; }
-    .player-row.active { background:#23463788; }
-    .player-row.out { opacity:.5; }
-    .player-row strong { display:block; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .player-row small { display:block; font-size:9px; color:var(--muted); }
-    .token { position:relative; display:inline-flex; }
-    .pixel-face { width:26px; height:26px; image-rendering:pixelated; }
-    .token sup { position:absolute; right:-2px; bottom:-2px; color:white; background:#79543e; font:9px ui-monospace,monospace; padding:0 2px; }
-    .food { color:var(--gold); font:20px ui-monospace,monospace; text-align:right; }
-    .food small { font:8px system-ui; }
-    .card-icon { display:flex; align-items:center; justify-content:center; gap:2px; background:#1e3b53; border:0; color:var(--mint); border-radius:7px; padding:4px; }
-    .card-icon svg { width:19px; height:19px; }
-    .card-icon svg rect { fill:#17364b; stroke:currentColor; stroke-width:1.5; }
-    .card-icon svg path { fill:none; stroke:currentColor; stroke-width:1.5; }
-    .card-icon span { display:block; font:9px ui-monospace,monospace; }
-    .stage { min-width:0; min-height:0; display:flex; flex-direction:column; position:relative; }
-    .scene { flex:1; min-height:0; position:relative; overflow:hidden; }
-    .board { display:block; width:100%; height:100%; touch-action:none; user-select:none; cursor:grab; overflow:hidden; }
-    .board.dragging, .board.dragging .tile { cursor:grabbing; }
-    .board.panning, .board.panning .tile { cursor:move; }
-    .tile.legal { cursor:pointer; }
-    .tile.legal .tile-top { stroke:var(--gold); stroke-width:2.5; filter:brightness(1.15); }
-    .tile.legal:hover .tile-top { fill:#d0c574; }
-    .tile.current .tile-top { stroke:var(--cyan); stroke-width:2.5; }
-    .tile:focus-visible { outline:none; }
-    .tile:focus-visible .tile-top { stroke:white; stroke-width:4; }
-    .sprite,.tile-detail { pointer-events:none; }
-    .row-number,.lane-label { font:11px ui-monospace,monospace; fill:#bdd3d7; }
-    .board-shadow { opacity:.5; }
-    .camera-controls { align-self:center; flex-shrink:0; text-align:center; padding:8px 0 0; }
-    .view-controls { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:6px; }
-    .view-controls output { font:10px ui-monospace,monospace; color:var(--muted); }
-    .move-handle { touch-action:none; cursor:move; }
-    .move-handle[aria-pressed="true"] { background:var(--mint); color:#092a25; }
-    .rotation-help { font-size:10px; color:var(--muted); margin-top:8px; }
-    .deck-wrap { position:relative; width:130px; margin:auto 0; text-align:center; padding-top:20px; }
-    .deck-stack { position:relative; width:76px; height:100px; margin:0 auto 15px; }
-    .deck-stack::before,.deck-stack::after { content:""; position:absolute; inset:0; background:#182d52; border:1px solid #5976a6; border-radius:7px; transform:rotate(-12deg) translate(-6px,2px); }
-    .deck-stack::after { transform:rotate(8deg) translate(5px,0); }
-    .deck { position:absolute; inset:0; z-index:1; border:1px solid #86aacb; border-radius:7px; background:repeating-linear-gradient(45deg,#1d3e64,#1d3e64 6px,#173452 6px,#173452 12px); color:var(--mint); box-shadow:7px 12px 0 #020c1980; padding:8px; }
-    .deck svg { width:35px; height:35px; display:block; margin:6px auto; }
-    .deck-label { font:9px ui-monospace,monospace; text-transform:uppercase; }
-    .deck:not(:disabled) { border-color:var(--gold); color:var(--gold); box-shadow:0 0 24px #ffda8344; }
-    .deck-caption { font-size:10px; color:var(--muted); }
-    .deck-caption.pending { color:var(--gold); }
-    footer { color:#7491a4; font:9px/1.8 ui-monospace,monospace; }
-    .help-button { width:23px; height:23px; margin-left:7px; vertical-align:middle; border:0; border-radius:50%; color:var(--mint); background:#204255; font:700 13px system-ui; }
-    dialog { width:min(540px,calc(100% - 24px)); max-height:calc(100dvh - 24px); overflow:auto; border:0; border-radius:16px; padding:24px; color:var(--text); background:#0c2137; box-shadow:0 20px 90px #0008; }
-    dialog::backdrop { background:#020a17b8; backdrop-filter:blur(4px); }
-    .help-heading { display:flex; gap:12px; justify-content:space-between; align-items:center; margin-bottom:14px; }
-    dialog h2 { font:700 20px ui-monospace,monospace; }
-    dialog p { color:var(--muted); font-size:12px; margin:10px 0; }
-    .rules strong { color:var(--gold); }
-    .rule-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .rule-cards p { padding:10px; background:#163048; border-radius:8px; margin:0; font-size:11px; }
-    .hand-note { margin-bottom:14px; }
-    .hand-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .card-option { position:relative; padding:16px; background:#162f47; border-radius:12px; }
-    .card-option.ready { background:#1e433d; }
-    .card-option h3 { font-size:13px; margin:8px 0; }
-    .card-glyph { font:28px ui-monospace,monospace; color:var(--cyan); }
-    .card-count { position:absolute; right:14px; top:14px; color:var(--gold); }
-    .card-option small { display:block; color:var(--muted); font-size:11px; margin:8px 0; }
-    .card-option .btn { width:100%; }
-    .settings,.player-field { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0; }
-    label { display:block; font-size:12px; color:#c2d1da; }
-    input,select { display:block; width:100%; margin-top:5px; padding:9px; background:#071728; border:1px solid #3b556d; color:var(--text); border-radius:6px; }
-    .actions { display:flex; gap:9px; margin-top:20px; }
-    #setup-error { color:#ffb597; }
-    @media (max-height:820px) and (min-width:801px) { .app { padding:16px; gap:12px; grid-template-columns:190px minmax(0,1fr) 284px; } .panel { padding:12px; } .game-hud { gap:8px; } .player-row { padding:5px 4px; } .turn-help,.status { font-size:10px; } .goal { margin-bottom:8px; } .family-picks { margin-top:7px; } .control-actions { margin-top:8px; } }
-    @media (max-width:1100px) and (min-width:801px) { .app { grid-template-columns:170px minmax(0,1fr) 270px; padding:16px; gap:10px; } h1 { font-size:27px; } .panel { padding:12px; } .view-controls .btn { padding:8px; } }
-    /* Compact screens keep a board row and a controls row inside the viewport. */
-    @media (max-width:800px) { .app { grid-template-columns:1fr 1fr; grid-template-rows:auto minmax(0,1fr) auto; gap:8px; padding:12px; } .sidebar { grid-column:1 / -1; flex-direction:row; align-items:center; justify-content:space-between; } .intro-block h1 { margin:0; font-size:22px; } .intro-block h1 br { display:none; } .intro-block h1 span { margin-left:5px; } .eyebrow,.intro,footer { display:none; } .toolbar { margin-top:6px; } .toolbar .btn { padding:6px 9px; font-size:10px; } .deck-wrap { margin:0; width:74px; padding:0; } .deck-stack { width:40px; height:54px; margin:0 auto 7px; } .deck { padding:4px; } .deck svg { width:20px; height:20px; margin:0 auto; } .deck-label { font-size:6px; } .deck-caption { font-size:8px; } .stage { grid-column:1 / -1; grid-row:2; } .game-hud { grid-column:1 / -1; grid-row:3; display:grid; grid-template-columns:1fr 1fr; gap:8px; } .panel { padding:10px; border-radius:10px; } .round-tag { font-size:11px; } .dice { width:28px; height:28px; font-size:23px; } .goal { font-size:8px; margin:4px 0; } .turn-line h2 { font-size:10px; } .turn-help,.status { font-size:9px; margin-top:4px; } .control-actions { gap:4px; margin-top:6px; } .btn { font-size:9px; padding:6px 7px; } #roll { font-size:10px; padding:7px; } .family-picks { margin-top:6px; } .animal-pick { font-size:8px; padding:4px; } .player-row { grid-template-columns:20px minmax(0,1fr) 26px 22px; gap:3px; padding:4px 2px; } .pixel-face { width:20px; height:20px; } .player-row strong { font-size:9px; } .player-row small { font-size:7px; } .card-icon { padding:2px; gap:1px; } .card-icon svg { width:14px; height:14px; } .card-icon span { font-size:8px; } .food { font-size:16px; } .food small { font-size:7px; } .section-label { font-size:8px; margin-bottom:4px; } .camera-controls { padding:0; } .view-controls { gap:4px; } .view-controls output { font-size:8px; } .rotation-help { font-size:8px; margin-top:4px; } }
-    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none!important; } }
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#071527" />
+    <meta
+      name="description"
+      content="Fragmented Habitat v11: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
+    />
+    <title>Fragmented Habitat</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23071527'/%3E%3Cpath d='M3 2h3v3h4V2h3v9h-2v3H5v-3H3Z' fill='%23ecad60'/%3E%3Cpath d='M5 7h2v2H5m4-2h2v2H9m-2 4h2v2H7' fill='%23071527'/%3E%3C/svg%3E"
+    />
+    <style>
+      /* One screen, three reserved zones: title/deck, island, player controls. */
+      :root {
+        color-scheme: dark;
+        --night: #071527;
+        --panel: #0c2035;
+        --text: #ebf4f5;
+        --muted: #9bafbe;
+        --mint: #9ddfba;
+        --gold: #ffda83;
+        --cyan: #77d7ed;
+        --line: #284258;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        color: var(--text);
+        background: radial-gradient(
+          ellipse at 55% 55%,
+          #12334c,
+          var(--night) 78%
+        );
+        font:
+          13px/1.45 system-ui,
+          sans-serif;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image: radial-gradient(#79cde32e 0.8px, transparent 0.8px);
+        background-size: 37px 37px;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:disabled {
+        cursor: default;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 3px;
+      }
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+      .app {
+        position: relative;
+        display: grid;
+        grid-template-columns: 210px minmax(0, 1fr) 300px;
+        gap: 16px;
+        width: 100%;
+        height: 100dvh;
+        padding: 24px;
+      }
+      .sidebar {
+        z-index: 2;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .eyebrow {
+        font:
+          9px/1.6 ui-monospace,
+          monospace;
+        color: var(--mint);
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+      }
+      h1 {
+        font:
+          700 clamp(27px, 2.5vw, 40px)/1.12 ui-monospace,
+          monospace;
+        letter-spacing: -1.8px;
+        margin: 14px 0;
+      }
+      h1 span {
+        color: var(--mint);
+      }
+      .intro {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .toolbar {
+        display: flex;
+        gap: 6px;
+        margin-top: 20px;
+      }
+      .btn {
+        border: 0;
+        border-radius: 7px;
+        padding: 9px 12px;
+        background: #203b51;
+        color: var(--text);
+        font-size: 11px;
+        font-weight: 650;
+      }
+      .btn:hover:not(:disabled) {
+        background: #31576e;
+      }
+      .btn.primary {
+        background: var(--mint);
+        color: #092a25;
+      }
+      .btn.primary:hover:not(:disabled) {
+        background: #c2f7d7;
+      }
+      .btn:disabled {
+        opacity: 0.45;
+      }
+      .panel {
+        background: #0a1d30ed;
+        border: 0;
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: 0 12px 30px #020d1c55;
+      }
+      .game-hud {
+        align-self: start;
+        z-index: 2;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 100%;
+      }
+      .turn-heading {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .round-tag {
+        color: var(--gold);
+        font:
+          700 15px/1.4 ui-monospace,
+          monospace;
+      }
+      .dice {
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        width: 39px;
+        height: 39px;
+        border-radius: 7px;
+        background: #e9efdf;
+        color: #102639;
+        box-shadow: 3px 3px 0 #366076;
+        font: 30px/1 system-ui;
+      }
+      .goal {
+        font-size: 10px;
+        color: var(--muted);
+        margin: 6px 0 12px;
+      }
+      .turn-line h2 {
+        font-size: 13px;
+      }
+      .turn-help {
+        color: #c2d0da;
+        font-size: 11px;
+        margin-top: 6px;
+      }
+      .control-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-top: 12px;
+      }
+      #roll {
+        width: 100%;
+        padding: 11px;
+        font-size: 12px;
+      }
+      #parity {
+        display: flex;
+        gap: 7px;
+      }
+      .family-picks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 10px;
+      }
+      .animal-pick {
+        font-size: 10px;
+        padding: 6px 8px;
+      }
+      .animal-pick[aria-pressed="true"] {
+        background: #1f514a;
+        color: var(--mint);
+      }
+      .status {
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 12px;
+        line-height: 1.4;
+      }
+      .status.winner {
+        color: var(--gold);
+      }
+      .section-label {
+        color: var(--muted);
+        font:
+          9px ui-monospace,
+          monospace;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      .player-row {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr) 35px 31px;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 5px;
+        border-radius: 8px;
+      }
+      .player-row.active {
+        background: #23463788;
+      }
+      .player-row.out {
+        opacity: 0.5;
+      }
+      .player-row strong {
+        display: block;
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .player-row small {
+        display: block;
+        font-size: 9px;
+        color: var(--muted);
+      }
+      .token {
+        position: relative;
+        display: inline-flex;
+      }
+      .pixel-face {
+        width: 26px;
+        height: 26px;
+        image-rendering: pixelated;
+      }
+      .token sup {
+        position: absolute;
+        right: -2px;
+        bottom: -2px;
+        color: white;
+        background: #79543e;
+        font:
+          9px ui-monospace,
+          monospace;
+        padding: 0 2px;
+      }
+      .food {
+        color: var(--gold);
+        font:
+          20px ui-monospace,
+          monospace;
+        text-align: right;
+      }
+      .food small {
+        font: 8px system-ui;
+      }
+      .card-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        background: #1e3b53;
+        border: 0;
+        color: var(--mint);
+        border-radius: 7px;
+        padding: 4px;
+      }
+      .card-icon svg {
+        width: 19px;
+        height: 19px;
+      }
+      .card-icon svg rect {
+        fill: #17364b;
+        stroke: currentColor;
+        stroke-width: 1.5;
+      }
+      .card-icon svg path {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.5;
+      }
+      .card-icon span {
+        display: block;
+        font:
+          9px ui-monospace,
+          monospace;
+      }
+      .stage {
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+      .scene {
+        flex: 1;
+        min-height: 0;
+        position: relative;
+        overflow: hidden;
+      }
+      .board {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+        user-select: none;
+        cursor: grab;
+        overflow: hidden;
+      }
+      .board.dragging,
+      .board.dragging .tile {
+        cursor: grabbing;
+      }
+      .board.panning,
+      .board.panning .tile {
+        cursor: move;
+      }
+      .tile > :not(.tile-top) {
+        pointer-events: none;
+      }
+      .tile.legal {
+        cursor: pointer;
+      }
+      .tile.legal .tile-top {
+        stroke: var(--gold);
+        stroke-width: 2.5;
+        filter: brightness(1.15);
+      }
+      .tile.legal:hover .tile-top {
+        fill: #d0c574;
+      }
+      .tile.current .tile-top {
+        stroke: var(--cyan);
+        stroke-width: 2.5;
+      }
+      .tile:focus-visible {
+        outline: none;
+      }
+      .tile:focus-visible .tile-top {
+        stroke: white;
+        stroke-width: 4;
+      }
+      .sprite,
+      .tile-detail {
+        pointer-events: none;
+      }
+      .row-number,
+      .lane-label {
+        font:
+          11px ui-monospace,
+          monospace;
+        fill: #bdd3d7;
+      }
+      .board-shadow {
+        opacity: 0.5;
+      }
+      .camera-controls {
+        align-self: center;
+        flex-shrink: 0;
+        text-align: center;
+        padding: 8px 0 0;
+      }
+      .view-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .view-controls output {
+        font:
+          10px ui-monospace,
+          monospace;
+        color: var(--muted);
+      }
+      .move-handle {
+        touch-action: none;
+        cursor: move;
+      }
+      .move-handle[aria-pressed="true"] {
+        background: var(--mint);
+        color: #092a25;
+      }
+      .rotation-help {
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 8px;
+      }
+      .deck-wrap {
+        position: relative;
+        width: 130px;
+        margin: auto 0;
+        text-align: center;
+        padding-top: 20px;
+      }
+      .deck-stack {
+        position: relative;
+        width: 76px;
+        height: 100px;
+        margin: 0 auto 15px;
+      }
+      .deck-stack::before,
+      .deck-stack::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: #182d52;
+        border: 1px solid #5976a6;
+        border-radius: 7px;
+        transform: rotate(-12deg) translate(-6px, 2px);
+      }
+      .deck-stack::after {
+        transform: rotate(8deg) translate(5px, 0);
+      }
+      .deck {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        border: 1px solid #86aacb;
+        border-radius: 7px;
+        background: repeating-linear-gradient(
+          45deg,
+          #1d3e64,
+          #1d3e64 6px,
+          #173452 6px,
+          #173452 12px
+        );
+        color: var(--mint);
+        box-shadow: 7px 12px 0 #020c1980;
+        padding: 8px;
+      }
+      .deck svg {
+        width: 35px;
+        height: 35px;
+        display: block;
+        margin: 6px auto;
+      }
+      .deck-label {
+        font:
+          9px ui-monospace,
+          monospace;
+        text-transform: uppercase;
+      }
+      .deck:not(:disabled) {
+        border-color: var(--gold);
+        color: var(--gold);
+        box-shadow: 0 0 24px #ffda8344;
+      }
+      .deck-caption {
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .deck-caption.pending {
+        color: var(--gold);
+      }
+      footer {
+        color: #7491a4;
+        font:
+          9px/1.8 ui-monospace,
+          monospace;
+      }
+      .help-button {
+        width: 23px;
+        height: 23px;
+        margin-left: 7px;
+        vertical-align: middle;
+        border: 0;
+        border-radius: 50%;
+        color: var(--mint);
+        background: #204255;
+        font: 700 13px system-ui;
+      }
+      dialog {
+        width: min(540px, calc(100% - 24px));
+        max-height: calc(100dvh - 24px);
+        overflow: auto;
+        border: 0;
+        border-radius: 16px;
+        padding: 24px;
+        color: var(--text);
+        background: #0c2137;
+        box-shadow: 0 20px 90px #0008;
+      }
+      dialog::backdrop {
+        background: #020a17b8;
+        backdrop-filter: blur(4px);
+      }
+      .help-heading {
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      dialog h2 {
+        font:
+          700 20px ui-monospace,
+          monospace;
+      }
+      dialog p {
+        color: var(--muted);
+        font-size: 12px;
+        margin: 10px 0;
+      }
+      .rules strong {
+        color: var(--gold);
+      }
+      .rule-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .rule-cards p {
+        padding: 10px;
+        background: #163048;
+        border-radius: 8px;
+        margin: 0;
+        font-size: 11px;
+      }
+      .hand-note {
+        margin-bottom: 14px;
+      }
+      .hand-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .card-option {
+        position: relative;
+        padding: 16px;
+        background: #162f47;
+        border-radius: 12px;
+      }
+      .card-option.ready {
+        background: #1e433d;
+      }
+      .card-option h3 {
+        font-size: 13px;
+        margin: 8px 0;
+      }
+      .card-glyph {
+        font:
+          28px ui-monospace,
+          monospace;
+        color: var(--cyan);
+      }
+      .card-count {
+        position: absolute;
+        right: 14px;
+        top: 14px;
+        color: var(--gold);
+      }
+      .card-option small {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        margin: 8px 0;
+      }
+      .card-option .btn {
+        width: 100%;
+      }
+      .settings,
+      .player-field {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 14px 0;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        color: #c2d1da;
+      }
+      input,
+      select {
+        display: block;
+        width: 100%;
+        margin-top: 5px;
+        padding: 9px;
+        background: #071728;
+        border: 1px solid #3b556d;
+        color: var(--text);
+        border-radius: 6px;
+      }
+      .actions {
+        display: flex;
+        gap: 9px;
+        margin-top: 20px;
+      }
+      #setup-error {
+        color: #ffb597;
+      }
+      @media (max-height: 820px) and (min-width: 801px) {
+        .app {
+          padding: 16px;
+          gap: 12px;
+          grid-template-columns: 190px minmax(0, 1fr) 284px;
+        }
+        .panel {
+          padding: 12px;
+        }
+        .game-hud {
+          gap: 8px;
+        }
+        .player-row {
+          padding: 5px 4px;
+        }
+        .turn-help,
+        .status {
+          font-size: 10px;
+        }
+        .goal {
+          margin-bottom: 8px;
+        }
+        .family-picks {
+          margin-top: 7px;
+        }
+        .control-actions {
+          margin-top: 8px;
+        }
+      }
+      @media (max-width: 1100px) and (min-width: 801px) {
+        .app {
+          grid-template-columns: 170px minmax(0, 1fr) 270px;
+          padding: 16px;
+          gap: 10px;
+        }
+        h1 {
+          font-size: 27px;
+        }
+        .panel {
+          padding: 12px;
+        }
+        .view-controls .btn {
+          padding: 8px;
+        }
+      }
+      /* Compact screens keep a board row and a controls row inside the viewport. */
+      @media (max-width: 800px) {
+        .app {
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: auto minmax(0, 1fr) auto;
+          gap: 8px;
+          padding: 12px;
+        }
+        .sidebar {
+          grid-column: 1 / -1;
+          flex-direction: row;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .intro-block h1 {
+          margin: 0;
+          font-size: 22px;
+        }
+        .intro-block h1 br {
+          display: none;
+        }
+        .intro-block h1 span {
+          margin-left: 5px;
+        }
+        .eyebrow,
+        .intro,
+        footer {
+          display: none;
+        }
+        .toolbar {
+          margin-top: 6px;
+        }
+        .toolbar .btn {
+          padding: 6px 9px;
+          font-size: 10px;
+        }
+        .deck-wrap {
+          margin: 0;
+          width: 74px;
+          padding: 0;
+        }
+        .deck-stack {
+          width: 40px;
+          height: 54px;
+          margin: 0 auto 7px;
+        }
+        .deck {
+          padding: 4px;
+        }
+        .deck svg {
+          width: 20px;
+          height: 20px;
+          margin: 0 auto;
+        }
+        .deck-label {
+          font-size: 6px;
+        }
+        .deck-caption {
+          font-size: 8px;
+        }
+        .stage {
+          grid-column: 1 / -1;
+          grid-row: 2;
+        }
+        .game-hud {
+          grid-column: 1 / -1;
+          grid-row: 3;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+        .panel {
+          padding: 10px;
+          border-radius: 10px;
+        }
+        .round-tag {
+          font-size: 11px;
+        }
+        .dice {
+          width: 28px;
+          height: 28px;
+          font-size: 23px;
+        }
+        .goal {
+          font-size: 8px;
+          margin: 4px 0;
+        }
+        .turn-line h2 {
+          font-size: 10px;
+        }
+        .turn-help,
+        .status {
+          font-size: 9px;
+          margin-top: 4px;
+        }
+        .control-actions {
+          gap: 4px;
+          margin-top: 6px;
+        }
+        .btn {
+          font-size: 9px;
+          padding: 6px 7px;
+        }
+        #roll {
+          font-size: 10px;
+          padding: 7px;
+        }
+        .family-picks {
+          margin-top: 6px;
+        }
+        .animal-pick {
+          font-size: 8px;
+          padding: 4px;
+        }
+        .player-row {
+          grid-template-columns: 20px minmax(0, 1fr) 26px 22px;
+          gap: 3px;
+          padding: 4px 2px;
+        }
+        .pixel-face {
+          width: 20px;
+          height: 20px;
+        }
+        .player-row strong {
+          font-size: 9px;
+        }
+        .player-row small {
+          font-size: 7px;
+        }
+        .card-icon {
+          padding: 2px;
+          gap: 1px;
+        }
+        .card-icon svg {
+          width: 14px;
+          height: 14px;
+        }
+        .card-icon span {
+          font-size: 8px;
+        }
+        .food {
+          font-size: 16px;
+        }
+        .food small {
+          font-size: 7px;
+        }
+        .section-label {
+          font-size: 8px;
+          margin-bottom: 4px;
+        }
+        .camera-controls {
+          padding: 0;
+        }
+        .view-controls {
+          gap: 4px;
+        }
+        .view-controls output {
+          font-size: 8px;
+        }
+        .rotation-help {
+          font-size: 8px;
+          margin-top: 4px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          transition: none !important;
+        }
+      }
 
-  </style>
-</head>
-<body>
-  <!-- 05. One screen: title/deck, board, and upper-right controls -->
-  <main class="app" id="game">
-    <aside class="sidebar">
-      <header class="intro-block">
-        <p class="eyebrow">Small animals. A big crossing.</p>
-        <h1>Fragmented<br><span>Habitat.</span><button class="help-button" id="open-help" aria-label="How to play" title="How to play">?</button></h1>
-        <p class="intro">Find fruit. Cross safely.<br>Bring it home.</p>
-        <div class="toolbar"><button class="btn" id="settings-button">Settings</button><button class="btn" id="new-game">Reset game</button></div>
-      </header>
+      .held-card {
+        background: #17334a;
+        padding: 16px;
+        border-radius: 12px;
+        margin: 12px 0;
+        display: grid;
+        gap: 8px;
+      }
+      .held-card p,
+      dialog p {
+        color: #bacdd7;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      dialog p {
+        margin: 12px 0;
+      }
+      .held-card small {
+        color: #ffda83;
+      }
+      .held-card button {
+        justify-self: start;
+      }
+      #event-log {
+        white-space: pre-wrap;
+        font: 12px/1.7 system-ui;
+        color: #c9dbe2;
+      }
+      dialog label {
+        display: block;
+        margin: 16px 0;
+      }
+      dialog select {
+        margin-left: 14px;
+        padding: 7px;
+        background: #17334a;
+        color: white;
+        border: 0;
+        border-radius: 5px;
+      }
+      dialog ul {
+        padding-left: 18px;
+        color: #c1d7db;
+        font-size: 12px;
+        line-height: 1.7;
+      }
+      .out-button {
+        cursor: pointer;
+      }
+      .deck-star {
+        font-size: 38px;
+      }
+      @media (max-width: 800px) {
+        .deck-star {
+          font-size: 21px;
+        }
+        .deck-caption {
+          line-height: 1.2;
+        }
+        .intro-block {
+          min-width: 0;
+        }
+        .intro-block h1 {
+          font-size: 19px;
+        }
+        .sidebar .toolbar {
+          gap: 3px;
+        }
+        .deck-stack {
+          width: 32px;
+        }
+        .deck-wrap {
+          width: 48px;
+          flex-shrink: 0;
+        }
+        .sidebar {
+          gap: 6px;
+        }
+        .sidebar .toolbar {
+          flex-shrink: 0;
+        }
+        h1 {
+          letter-spacing: -1px;
+        }
+      }
+      .dice-pair {
+        display: flex;
+        gap: 7px;
+        flex-shrink: 0;
+      }
+      .die-item {
+        text-align: center;
+      }
+      .die-item small {
+        display: block;
+        font:
+          7px/1.8 ui-monospace,
+          monospace;
+        color: #9eb7c4;
+      }
+      .traffic-dice {
+        font-size: 17px;
+        background: #f8d588;
+        color: #80551c;
+        box-shadow: 3px 3px 0 #816134;
+      }
+      .traffic-dice.night {
+        background: #516b9b;
+        color: #eef2ff;
+        box-shadow: 3px 3px 0 #293c60;
+        font-size: 27px;
+      }
+      .round-tag {
+        font-size: 13px;
+      }
+      .token-gallery {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin: 15px 0;
+      }
+      .token-gallery figure {
+        margin: 0;
+        text-align: center;
+        color: #adc6d0;
+        font-size: 10px;
+      }
+      .token-gallery svg {
+        width: 68px;
+        height: 68px;
+        overflow: visible;
+      }
+      .model-note {
+        font-size: 10px;
+        color: #a2bbc6;
+        margin-top: 10px;
+      }
+      @media (max-width: 800px) {
+        .dice-pair {
+          gap: 5px;
+        }
+        .round-tag {
+          font-size: 10px;
+        }
+        .traffic-dice {
+          font-size: 12px;
+        }
+        .traffic-dice.night {
+          font-size: 22px;
+        }
+        .die-item small {
+          font-size: 6px;
+        }
+      }
+      .player-row .pixel-face {
+        background: radial-gradient(
+          circle at 30% 25%,
+          #fff5dc,
+          #a8c3c7 65%,
+          #45616e
+        );
+        border-radius: 50%;
+        box-shadow: 1px 2px 0 #032033;
+        padding: 2px;
+      }
+      @media (max-width: 800px) {
+        .intro-block h1 {
+          font-size: 17px;
+        }
+        .toolbar .btn {
+          font-size: 9px;
+          padding: 6px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <aside class="sidebar">
+        <div class="eyebrow">A little world. A risky journey.</div>
+        <div class="intro-block">
+          <h1>
+            Fragmented<br /><span>Habitat</span
+            ><button id="help" class="help-button" aria-label="How to play">
+              ?
+            </button>
+          </h1>
+          <p class="intro">
+            Explore a divided landscape.<br />Bring your family home.
+          </p>
+        </div>
+        <div class="toolbar">
+          <button class="btn" id="settings">Settings</button
+          ><button class="btn" id="reset">Reset</button
+          ><button class="btn" id="token-designs">Tokens</button>
+        </div>
         <div class="deck-wrap">
           <div class="deck-stack">
-            <button class="deck" id="draw-card" disabled aria-describedby="deck-caption" aria-label="Draw an earned card">
-              <span class="deck-label">Habitat</span>
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2h3v3h4V2h3v9h-2v3H5v-3H3Z" fill="currentColor"/><path d="M5 7h2v2H5m4-2h2v2H9m-2 4h2v2H7" fill="#10283b"/></svg>
-              <span class="deck-label" id="deck-count">17 cards</span>
+            <button
+              id="deck"
+              class="deck"
+              disabled
+              aria-label="Draw an earned card"
+            >
+              <span class="deck-star">✦</span><br /><span class="deck-label"
+                >Wild cards</span
+              >
             </button>
           </div>
-          <p class="deck-caption" id="deck-caption">Win a contest<br>to draw a card.</p>
+          <p id="deck-caption" class="deck-caption"></p>
         </div>
-
-      <footer>FRAGMENTED HABITAT · v9<br>1–7 players · Shared screen</footer>
-    </aside>
-    <section class="stage" aria-label="Raised game board">
-      <div class="scene"><svg class="board" id="board" viewBox="0 0 1140 780" role="group" aria-label="Six rows of forest, field, road, and fruit squares"></svg></div>
-      <div class="camera-controls">
-        <div class="view-controls" aria-label="Board controls">
-          <button class="btn move-handle" id="move-board" aria-pressed="false" title="Drag this handle, or click it then drag the board">✥ Move board</button>
-          <button class="btn" id="rotate-left" aria-label="Rotate board left">↶</button><button class="btn" id="rotate-right" aria-label="Rotate board right">↷</button>
-          <button class="btn" id="zoom-out" aria-label="Zoom board out">−</button><button class="btn" id="zoom-in" aria-label="Zoom board in">+</button>
-          <button class="btn" id="reset-view">Reset view</button><output id="view-angle" aria-label="Board rotation">0°</output><output id="zoom-label" aria-label="Board zoom">100%</output>
+        <footer>
+          VERSION 11 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+            Recent events
+          </button>
+        </footer>
+      </aside>
+      <section class="stage" aria-label="Octagonal game board">
+        <div class="scene">
+          <svg
+            id="board"
+            class="board"
+            viewBox="0 0 1100 850"
+            aria-label="Fragmented Habitat interactive board"
+          ></svg>
         </div>
-        <p class="rotation-help" id="camera-help">Drag to rotate · Pinch to zoom · Gold squares to move</p>
-      </div>
-    </section>
-    <aside class="game-hud" aria-label="Turn controls, dice and family food">
-      <section class="panel turn-panel" aria-label="Current turn">
-        <div class="turn-heading"><h2 class="round-tag" id="round-title">ROUND 1: PLAYER 1 — RAT</h2><div class="dice" id="dice" aria-label="Dice not rolled">?</div></div>
-        <p class="goal" id="goal-label"></p>
-        <div class="turn-line">
-          
-          <h2 id="turn-title"></h2>
-        </div>
-        <p class="turn-help" id="turn-help"></p>
-        <div class="control-actions">
-          <button class="btn primary" id="roll">Roll movement dice</button>
-          <button class="btn" id="spawn">Offspring · 2 food</button>
-          <button class="btn" id="stop" hidden>Stop here</button>
-          <button class="btn" id="undo" hidden>Undo step</button>
-          <button class="btn" id="cancel-card" hidden>Keep card</button>
-          <div id="parity" hidden>
-            <button class="btn" id="odd">Choose odd</button>
-            <button class="btn" id="even">Choose even</button>
+        <div class="camera-controls">
+          <div class="view-controls">
+            <button id="rotate-left" class="btn" aria-label="Rotate left">
+              ↶</button
+            ><button id="rotate-right" class="btn" aria-label="Rotate right">
+              ↷</button
+            ><button id="zoom-out" class="btn" aria-label="Zoom out">−</button
+            ><output id="zoom">100%</output
+            ><button id="zoom-in" class="btn" aria-label="Zoom in">+</button
+            ><button id="view-reset" class="btn">Reset view</button
+            ><button
+              id="move-board"
+              class="btn move-handle"
+              aria-pressed="false"
+            >
+              ✥ Move board
+            </button>
           </div>
+          <p id="rotation-help" class="rotation-help">
+            Drag to rotate · pinch or wheel to zoom
+          </p>
         </div>
-        <div class="family-picks" id="family-picks" aria-label="Choose an animal"></div>
-        <p class="status" id="status" role="status" aria-live="polite"></p>
       </section>
-      <section class="panel roster" id="roster" aria-label="Animal families"></section>
-    </aside>
-  </main>
-  <dialog id="hand-dialog" aria-labelledby="hand-title"><div class="help-heading"><h2 id="hand-title">Player cards</h2><button class="btn" id="close-hand">Close ×</button></div><section id="card-hand" aria-label="Player card hand"></section></dialog>
-  <dialog id="help-dialog" aria-labelledby="help-title">
-    <div class="help-heading"><h2 id="help-title">How to play</h2><button class="btn" id="close-help">Close ×</button></div>
-    <div class="rules">
-      <p><strong>Bring food home.</strong> Start with 3 food. Visit the fruit patch for 2 more, then return to the forest to bank it. First to 7 wins.</p>
-      <p><strong>Roll, choose, move.</strong> One die per family. Move one animal up, down, left or right along gold squares, then finish your turn. Add another animal for 2 food before rolling, wherever your existing animals are. The new animal starts in the forest; choose which family member to move. Maximum three living animals.</p>
-      <p><strong>Watch the road.</strong> Stopping on light gray means a traffic roll: odd is safe, even is a hit. Passing through is safe; the dark strip needs no check.</p>
-      <p><strong>Watch the predators.</strong> After all players, roll for each fox or tiger. They stay in their green lane and bounce at its edges. Only their final square catches you. You cannot step onto a predator.</p>
-      <p><strong>Compete for a square.</strong> Enter an enemy's square, choose odd or even and roll. The winner pushes the loser one square, then clicks the deck for a card. Forced road landings need traffic checks; a predator or OUT push causes a hit.</p>
-      <p><strong>A hit costs 1 food.</strong> Lose carried fruit and return home. With no food to revive, that animal is removed.</p>
-      <p><strong>Your cards are beside your name.</strong> Click the card icon to view them, Use to play, or Close to keep them. New cards unlock next round.</p>
-      <div class="rule-cards"><p><strong>↻ Reroll ×7</strong><br>Replace a movement roll before stepping.</p><p><strong>+1 Extra block ×5</strong><br>Add one movement step.</p><p><strong>← Enemy backward ×3</strong><br>Move an enemy one block toward home.</p><p><strong>◇ Safe Streets ×2</strong><br>Skip one road check, before rolling.</p></div>
-    </div>
-  </dialog>
-  <ol id="event-log" hidden></ol>
-
-  <!-- 07. Settings change the current group and reset in one explicit action -->
-  <dialog id="settings-dialog" aria-labelledby="settings-title">
-    <h2 id="settings-title">Make it your game.</h2>
-    <p>Change the group here. Applying settings starts a fresh game with everyone back at home.</p>
-    <form id="setup-form">
-      <div class="settings">
-        <label>Players<select id="player-count"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></label>
-        <label>Food needed to win<select id="target"><option selected>7</option><option>9</option><option>11</option></select></label>
+      <aside class="game-hud">
+        <section class="panel">
+          <div class="turn-heading">
+            <h2 id="round" class="round-tag"></h2>
+            <div class="dice-pair">
+              <div class="die-item">
+                <div
+                  id="dice"
+                  class="dice"
+                  aria-label="Last numbered dice roll"
+                ></div>
+                <small>MOVE</small>
+              </div>
+              <div class="die-item">
+                <div
+                  id="traffic-dice"
+                  class="dice traffic-dice"
+                  aria-label="Traffic sun and moon die"
+                ></div>
+                <small>TRAFFIC</small>
+              </div>
+            </div>
+          </div>
+          <p id="goal" class="goal"></p>
+          <p id="turn-help" class="turn-help"></p>
+          <div class="control-actions">
+            <button id="finish-setup" class="btn primary"></button
+            ><button id="roll" class="btn primary"></button
+            ><button id="spawn" class="btn"></button
+            ><button id="stop" class="btn"></button
+            ><button id="pass" class="btn"></button
+            ><button id="rescue" class="btn"></button
+            ><button id="accept" class="btn"></button>
+            <div id="parity" hidden>
+              <button id="odd" class="btn">Odd</button
+              ><button id="even" class="btn">Even</button>
+            </div>
+          </div>
+          <div id="family" class="family-picks"></div>
+          <p id="status" class="status" aria-live="polite"></p>
+        </section>
+        <section class="panel">
+          <p class="section-label">Families · held cards · banked food</p>
+          <div id="roster"></div>
+        </section>
+      </aside>
+    </main>
+    <dialog id="hand-dialog">
+      <h2 id="hand-title"></h2>
+      <p class="modal-intro">Keep cards here. New cards unlock next round.</p>
+      <div id="hand-list"></div>
+      <button class="btn" data-close="hand-dialog">Close</button>
+    </dialog>
+    <dialog id="help-dialog">
+      <h2>A journey through fragmented habitat</h2>
+      <p>
+        Start with <strong>5 family food</strong>. Find fruit at the edge and
+        return it to the forest. First to bank 7 food wins; choose a longer
+        target in Settings.
+      </p>
+      <p>
+        <strong>Set up:</strong> players take turns placing 18 predators in the
+        glowing lanes. There are three animals in each of six lanes. Click a
+        space to place the next one, or keep your choices and fill the remaining
+        spaces automatically.
+      </p>
+      <p>
+        <strong>Your turn:</strong> choose an animal and roll. Move up to that
+        many connected spaces, inward, outward or sideways. Stop after at least
+        one step. Before rolling you may spend 2 food to add an offspring at
+        home, even if the others are away. Maximum three living animals.
+      </p>
+      <p>
+        <strong>The landscape:</strong> leave the tree-filled habitat, cross
+        three inner green lanes, two road lanes, a safe island, two more road
+        lanes and three outer green lanes. Resource patches are at the edge. The
+        island is safe; movement along it goes clockwise, though you can enter
+        and leave radially.
+      </p>
+      <p>
+        <strong>Traffic:</strong> stopping on any light gray road space triggers
+        the separate sun/moon die.
+        <strong>Moon = night, safe. Sun = day, car hit.</strong> There are three
+        moon faces and three sun faces. Passing across the road or stopping on
+        the dark island needs no check. Night safety is a simplified game rule.
+      </p>
+      <p>
+        <strong>Predators:</strong> after everyone’s turn, roll once for each
+        green lane. All three predators in that lane move the same number
+        clockwise. They catch animals only on their final spaces. You cannot
+        walk onto a predator.
+      </p>
+      <p>
+        <strong>Harvest:</strong> green edge patches give 2 fruit; blue
+        cornucopias give 3 and immediately trigger a hunter roll. Odd is safe;
+        even is a hit. Collect once per trip. Return to the centre to bank
+        fruit.
+      </p>
+      <p>
+        <strong>Contest:</strong> challenge an enemy’s space, choose odd or even
+        and roll. The winner keeps that space, pushes the loser one neighbouring
+        space, then clicks the deck to draw a card. Forced road and predator
+        landings count. The outer edge allows off-board pushes.
+      </p>
+      <p>
+        <strong>Hits and cards:</strong> normally lose carried fruit and spend 1
+        food to revive at home. With no food, the animal leaves the game. Click
+        ▣ beside a player to view held cards. Drawn cards unlock next round and
+        are used manually.
+      </p>
+      <ul>
+        <li>14 Reroll: replace movement dice before taking a step.</li>
+        <li>10 Extra Block: add one movement step.</li>
+        <li>
+          6 Enemy Backward: move an enemy one space inward to a free space;
+          landing hazards apply.
+        </li>
+        <li>
+          4 Safe Streets: skip one sun/moon check and stay safely on the road.
+        </li>
+        <li>
+          2 Play Dead: survive a predator in place with your fruit. Only that
+          predator rolls again; the other two stay put.
+        </li>
+        <li>
+          2 Angel Conservationists: revive at home free after a car or hunter
+          hit; carried fruit is lost.
+        </li>
+      </ul>
+      <p>
+        <strong>Think about it:</strong> how did the road change your route,
+        food supply and survival? What would a wildlife bridge change? Predators
+        belong to the ecosystem; the landscape’s barriers make the journey
+        harder.
+      </p>
+      <button class="btn" data-close="help-dialog">Let’s play</button>
+    </dialog>
+    <dialog id="settings-dialog">
+      <h2>Game settings</h2>
+      <p>Applying settings starts a fresh game.</p>
+      <label
+        >Players
+        <select id="player-count">
+          <option>1</option>
+          <option selected>2</option>
+          <option>3</option>
+          <option>4</option>
+          <option>5</option>
+          <option>6</option>
+          <option>7</option>
+        </select></label
+      ><label
+        >Food to win
+        <select id="target">
+          <option selected>7</option>
+          <option>10</option>
+          <option>15</option>
+          <option>20</option>
+        </select></label
+      >
+      <div class="toolbar">
+        <button id="apply-settings" class="btn primary">Start fresh game</button
+        ><button class="btn" data-close="settings-dialog">Cancel</button>
       </div>
-      <div id="player-fields"></div>
-      <p id="setup-error" role="alert"></p>
-      <div class="actions"><button class="btn primary" type="submit">Apply &amp; reset</button><button class="btn" id="cancel-settings" type="button">Keep playing</button></div>
-    </form>
-  </dialog>
-  <dialog id="restart-dialog" aria-labelledby="restart-title">
-    <h2 id="restart-title">Start fresh?</h2>
-    <p>Keep the same players and goal. Everyone returns to the forest with 3 food, and the cards are shuffled again.</p>
-    <div class="actions"><button class="btn" id="cancel-restart">Keep playing</button><button class="btn primary" id="confirm-restart">Reset game</button></div>
-  </dialog>
-  <!-- 08. Game engine: rules and state, independent of the interface -->
-  <script id="game-engine">
-    (() => {
-      'use strict';
-      const ANIMALS = [{
-        name: 'Rat',
-        icon: 'rat',
-        color: '#744b46'
-      }, {
-        name: 'Squirrel',
-        icon: 'squirrel',
-        color: '#a55b29'
-      }, {
-        name: 'Raccoon',
-        icon: 'raccoon',
-        color: '#546776'
-      }, {
-        name: 'Rabbit',
-        icon: 'rabbit',
-        color: '#865779'
-      }, {
-        name: 'Capybara',
-        icon: 'capybara',
-        color: '#7c6b39'
-      }, {
-        name: 'Tarsier',
-        icon: 'tarsier',
-        color: '#477167'
-      }, {
-        name: 'Beetle',
-        icon: 'beetle',
-        color: '#4e6c36'
-      }];
-      const ROWS = 6,
-        LAST = 16,
-        FOOD = 2;
-      const CARDS = {
-        reroll: {
-          name: 'Reroll',
-          count: 7
-        },
-        step: {
-          name: 'Extra block',
-          count: 5
-        },
-        back: {
-          name: 'Enemy backward',
-          count: 3
-        },
-        street: {
-          name: 'Safe Streets',
-          count: 2
+    </dialog>
+    <dialog id="reset-dialog">
+      <h2>Start again?</h2>
+      <p>
+        This clears all food, cards and positions. Each family restarts with 5
+        food.
+      </p>
+      <div class="toolbar">
+        <button id="confirm-reset" class="btn primary">Reset game</button
+        ><button class="btn" data-close="reset-dialog">Cancel</button>
+      </div>
+    </dialog>
+    <dialog id="design-dialog">
+      <h2>Little wildlife, big journeys</h2>
+      <p>
+        Glossy token concepts for Fragmented Habitat. Rounded rims, soft colours
+        and bright eyes give each animal a friendly silhouette.
+      </p>
+      <div class="token-gallery" id="token-gallery"></div>
+      <p>
+        The vulture is a scavenger mascot, not an attacking predator. These are
+        digital concepts; physical samples can explore enamel-style wooden
+        tokens or illustrated acrylic discs.
+      </p>
+      <button class="btn" data-close="design-dialog">Close</button>
+    </dialog>
+    <dialog id="history-dialog">
+      <h2>Recent events</h2>
+      <pre id="event-log"></pre>
+      <button class="btn" data-close="history-dialog">Close</button>
+    </dialog>
+    <script id="game-engine">
+      /* Fragmented Habitat v11 — rules engine, independent of the display. */
+      (() => {
+        "use strict";
+        const SECTORS = 24;
+        const RESOURCE = 12,
+          ISLAND = 6;
+        const ROAD = new Set([4, 5, 7, 8]);
+        const PREDATOR_LANES = [1, 2, 3, 9, 10, 11];
+        const PREDATOR_KINDS = ["snake", "fox", "coyote", "cat"];
+        const PREDATORS_PER_LANE = 3;
+        const CORNUCOPIA = new Set([0, 3, 9, 12, 15, 21]);
+        const ANIMALS = [
+          "Rat",
+          "Squirrel",
+          "Raccoon",
+          "Rabbit",
+          "Capybara",
+          "Tarsier",
+          "Beetle",
+        ];
+        const CARDS = {
+          reroll: {
+            name: "Reroll",
+            count: 14,
+            icon: "↻",
+            text: "Replace your movement roll before taking your first step.",
+          },
+          step: {
+            name: "Extra Block",
+            count: 10,
+            icon: "+1",
+            text: "Add one step to your current movement.",
+          },
+          back: {
+            name: "Enemy Backward",
+            count: 6,
+            icon: "←",
+            text: "Move an enemy one space inward, toward the habitat. Landing hazards apply.",
+          },
+          street: {
+            name: "Safe Streets",
+            count: 4,
+            icon: "▰",
+            text: "Skip one traffic check. Stay on the road safely.",
+          },
+          dead: {
+            name: "Play Dead",
+            count: 2,
+            icon: "☾",
+            text: "Survive a predator on the same space, keeping your fruit. That predator rolls and moves again.",
+          },
+          angel: {
+            name: "Angel Conservationists",
+            count: 2,
+            icon: "✦",
+            text: "After a car or hunter hit, revive at home for free. Carried fruit is lost.",
+          },
+        };
+        const wrap = (n) => ((n % SECTORS) + SECTORS) % SECTORS;
+        const key = (r, s) => (r === 0 ? "0:0" : `${r}:${wrap(s)}`);
+        function neighbours(r, s, forced = false) {
+          if (r === 0)
+            return Array.from({ length: SECTORS }, (_, s) => ({ r: 1, s }));
+          return [
+            ...(r !== ISLAND || forced ? [{ r, s: wrap(s - 1) }] : []),
+            { r, s: wrap(s + 1) },
+            { r: r - 1, s: r === 1 ? 0 : s },
+            ...(r < RESOURCE ? [{ r: r + 1, s }] : []),
+          ];
         }
-      };
-    
-      function tile(c) {
-        if (c === 0) return 'home';
-        if (c === LAST) return 'patch';
-        if (c === 8) return 'haven';
-        if (c >= 5 && c <= 11) return 'road';
-        if (c === 1 || c === 15) return 'forest';
-        if (c === 2 || c === 14) return 'scrub';
-        if (c === 4 || c === 12) return 'edge';
-        return 'grass';
-      }
-    
-      function sanctuary(c) {
-        return c === 0 || c === LAST;
-      }
-      class Game {
-        constructor(config, rng = () => Math.floor(Math.random() * 6) + 1, shuffleRng = Math.random) {
-          this.rng = rng;
-          this.shuffleRng = shuffleRng;
-          this.discard = [];
-          this.deck = [];
-          for (const [type, card] of Object.entries(CARDS))
-            for (let i = 0; i < card.count; i++) this.deck.push(type);
-          this.shuffle(this.deck);
-          this.target = config.target || 7;
-          this.players = config.players.map((p, i) => ({
-            ...p,
-            id: i,
-            food: 3,
-            hand: []
-          }));
-          this.tokens = this.players.map(p => ({
-            id: p.id,
-            owner: p.id,
-            number: 1,
-            c: 0,
-            r: p.id % ROWS,
-            cargo: 0,
-            loaded: false,
-            out: false
-          }));
-          this.nextId = this.tokens.length;
-          this.predators = [{
-            name: 'West tiger',
-            icon: 'tiger',
-            c: 3,
-            r: ROWS,
-            dir: -1
-          }, {
-            name: 'West fox',
-            icon: 'fox',
-            c: 4,
-            r: ROWS,
-            dir: -1
-          }, {
-            name: 'Outer west fox',
-            icon: 'fox',
-            c: 2,
-            r: ROWS,
-            dir: -1
-          }, {
-            name: 'East fox',
-            icon: 'fox',
-            c: 12,
-            r: ROWS,
-            dir: -1
-          }, {
-            name: 'East tiger',
-            icon: 'tiger',
-            c: 13,
-            r: ROWS,
-            dir: -1
-          }];
-          this.pendingDraw = null;
-          this.round = 1;
-          this.active = 0;
-          this.selected = this.tokens[0].id;
-          this.phase = 'roll';
-          this.remaining = 0;
-          this.steps = 0;
-          this.moved = false;
-          this.die = null;
-          this.predatorIndex = 0;
-          this.history = [];
-          this.log = [];
-          this.message = 'Roll once, then choose which animal to move.';
-          this.winner = null;
-          this.contest = null;
-          this.trafficToken = null;
-          this.trafficContext = null;
-        }
-        // Randomness, players, and board occupancy.
-        shuffle(a) {
-          for (let i = a.length - 1; i > 0; i--) {
-            const j = Math.floor(this.shuffleRng() * (i + 1));
-            [a[i], a[j]] = [a[j], a[i]];
+        class Game {
+          constructor({ players = 2, target = 7 } = {}, rng = Math.random) {
+            this.rng = rng;
+            this.target = target;
+            this.round = 1;
+            this.active = 0;
+            this.phase = "setup";
+            this.setupIndex = 0;
+            this.setupPlayer = 0;
+            this.lastTraffic = null;
+            this.players = Array.from(
+              { length: Math.max(1, Math.min(7, players)) },
+              (_, id) => ({ id, animal: ANIMALS[id], food: 5, hand: [] }),
+            );
+            this.tokens = this.players.map((p) => ({
+              id: p.id + 1,
+              owner: p.id,
+              number: 1,
+              r: 0,
+              s: 0,
+              cargo: 0,
+              loaded: false,
+              out: false,
+            }));
+            this.nextId = this.tokens.length + 1;
+            this.selected = 1;
+            this.steps = 0;
+            this.remaining = 0;
+            this.lastRoll = null;
+            this.predators = PREDATOR_LANES.flatMap((r, lane) =>
+              Array.from({ length: PREDATORS_PER_LANE }, (_, slot) => ({
+                id: lane * PREDATORS_PER_LANE + slot,
+                r,
+                s: slot * 8,
+                kind: PREDATOR_KINDS[
+                  (lane * PREDATORS_PER_LANE + slot) % PREDATOR_KINDS.length
+                ],
+                on: true,
+                placed: false,
+              })),
+            );
+            this.predIndex = 0;
+            this.pending = null;
+            this.contest = null;
+            this.pendingDraw = null;
+            this.log = [
+              "Every family starts with 5 food. Take turns choosing the 18 predators’ starting spaces.",
+            ];
+            this.deck = Object.entries(CARDS).flatMap(([type, c]) =>
+              Array(c.count).fill(type),
+            );
+            this.discard = [];
+            for (let i = this.deck.length - 1; i > 0; i--) {
+              const j = Math.floor(rng() * (i + 1));
+              [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+            }
           }
-          return a;
-        }
-        get player() {
-          return this.players[this.active];
-        }
-        get token() {
-          return this.tokens.find(t => t.id === this.selected);
-        }
-        get alive() {
-          return this.tokens.filter(t => !t.out);
-        }
-        family(owner = this.active) {
-          return this.tokens.filter(t => !t.out && t.owner === owner);
-        }
-        name(t) {
-          return `${this.players[t.owner].name}’s ${ANIMALS[this.players[t.owner].animal].name} ${t.number}`;
-        }
-        record(m) {
-          this.message = m;
-          this.log.unshift(m);
-          this.log = this.log.slice(0, 50);
-        }
-        dice() {
-          const n = this.rng();
-          if (!Number.isInteger(n) || n < 1 || n > 6) throw Error('Dice must return 1–6');
-          this.die = n;
-          return n;
-        }
-        predatorAt(c, r) {
-          return this.predators.find(p => p.c === c && p.r === r);
-        }
-        occupant(c, r, except = []) {
-          return sanctuary(c) ? null : this.alive.find(t => t.c === c && t.r === r && !except
-            .includes(t.id));
-        }
-        select(id) {
-          const t = this.tokens.find(t => t.id === id);
-          if (!t || t.out || t.owner !== this.active || !['roll', 'move'].includes(this.phase) || (
-              this.phase === 'move' && this.moved)) return false;
-          this.selected = id;
-          this.history = [];
-          this.record(`${this.name(t)} selected. One animal uses this turn’s roll.`);
-          return true;
-        }
-        // Buy offspring before rolling. Existing animals may be anywhere on the board.
-        canSpawn() {
-          return this.phase === 'roll' && this.player.food >= 2 && this.family().length < 3;
-        }
-        spawn() {
-          if (!this.canSpawn()) return false;
-          this.player.food -= 2;
-          const number = 1 + Math.max(...this.tokens.filter(t => t.owner === this.active).map(t => t
-            .number));
-          const t = {
-            id: this.nextId++,
-            owner: this.active,
-            number,
-            c: 0,
-            r: this.active % ROWS,
-            cargo: 0,
-            loaded: false,
-            out: false
-          };
-          this.tokens.push(t);
-          this.selected = t.id;
-          this.record(
-            `${this.player.name} spent 2 food for offspring ${number}. Choose one animal to move this turn.`
-          );
-          return true;
-        }
-        // Movement, arrival, and undo. Hazards resolve only at the relevant landing.
-        roll() {
-          if (this.phase === 'traffic') return this.traffic();
-          if (this.phase === 'predators') return this.predatorTurn();
-          if (this.phase === 'contest-roll') return this.resolveContest();
-          if (this.phase !== 'roll') return false;
-          const n = this.dice();
-          this.remaining = n;
-          this.budget = n;
-          this.movementDie = n;
-          this.cardSteps = 0;
-          this.steps = 0;
-          this.moved = false;
-          this.history = [];
-          this.phase = 'move';
-          this.record(
-            `${this.player.name} rolled ${n}. ${this.remaining} steps: choose an animal and route.`
-          );
-          return n;
-        }
-        canMove(c, r) {
-          if (this.phase !== 'move' || this.remaining < 1 || r < 0 || r >= ROWS || c < 0 || c >
-            LAST || this.predatorAt(c, r)) return false;
-          const t = this.token;
-          if (!t || t.out) return false;
-          if (t.c === 0 && !this.moved && c === 0) return r !== t.r;
-          if (Math.abs(t.c - c) + Math.abs(t.r - r) !== 1) return false;
-          const other = this.occupant(c, r, [t.id]);
-          if (other?.owner === this.active) return false;
-          return !other || this.hasContestPush(t, other);
-        }
-        hasContestPush(a, d) {
-          return this.pushOptions(a, d, a).length > 0 && this.pushOptions(a, d, d).length > 0;
-        }
-        move(c, r) {
-          if (!this.canMove(c, r)) return false;
-          const t = this.token;
-          if (t.c === 0 && !this.moved && c === 0) {
-            t.r = r;
-            this.message = `${this.name(t)} will enter from row ${r+1}.`;
+          setupChoices() {
+            if (this.phase !== "setup") return [];
+            const pred = this.predators[this.setupIndex];
+            return Array.from({ length: SECTORS }, (_, s) => ({
+              r: pred.r,
+              s,
+            })).filter(
+              (pos) =>
+                !this.predators.some(
+                  (p) => p.placed && p.r === pos.r && p.s === pos.s,
+                ),
+            );
+          }
+          placePredator(r, s) {
+            if (!this.setupChoices().some((p) => key(p.r, p.s) === key(r, s)))
+              return false;
+            const pred = this.predators[this.setupIndex];
+            pred.r = r;
+            pred.s = wrap(s);
+            pred.placed = true;
+            this.record(
+              `Player ${this.setupPlayer + 1} placed ${pred.kind} ${pred.id + 1} in lane ${PREDATOR_LANES.indexOf(r) + 1}, sector ${s + 1}.`,
+            );
+            this.setupIndex++;
+            this.setupPlayer = (this.setupPlayer + 1) % this.players.length;
+            if (this.setupIndex === this.predators.length) {
+              this.phase = "roll";
+              this.record("Predator setup complete. Player 1 begins.");
+            }
             return true;
           }
-          const other = this.occupant(c, r, [t.id]);
-          if (other) {
-            this.history = [];
+          finishSetup() {
+            if (this.phase !== "setup") return false;
+            // Keep player choices; fill only remaining slots, preferring even spacing.
+            while (this.phase === "setup") {
+              const pred = this.predators[this.setupIndex];
+              const positions = this.setupChoices();
+              const preferred =
+                positions.find((p) => p.s === pred.s) || positions[0];
+              this.placePredator(preferred.r, preferred.s);
+            }
+            return true;
+          }
+          get player() {
+            return this.players[this.active];
+          }
+          get token() {
+            return this.tokens.find((t) => t.id === this.selected);
+          }
+          family(owner = this.active) {
+            return this.tokens.filter((t) => t.owner === owner && !t.out);
+          }
+          name(t) {
+            return `${this.players[t.owner].animal} ${t.number}`;
+          }
+          record(message) {
+            this.log.push(message);
+            if (this.log.length > 40) this.log.shift();
+          }
+          dice() {
+            return 1 + Math.min(5, Math.floor(this.rng() * 6));
+          }
+          occupied(r, s, except = []) {
+            return r === 0
+              ? null
+              : this.tokens.find(
+                  (t) =>
+                    !t.out &&
+                    !except.includes(t.id) &&
+                    key(t.r, t.s) === key(r, s),
+                );
+          }
+          predatorAt(r, s) {
+            return this.predators.find(
+              (p) => p.on && p.placed && key(p.r, p.s) === key(r, s),
+            );
+          }
+          canSpawn() {
+            return (
+              this.phase === "roll" &&
+              this.player.food >= 2 &&
+              this.family().length < 3
+            );
+          }
+          spawn() {
+            if (!this.canSpawn()) return false;
+            this.player.food -= 2;
+            const t = {
+              id: this.nextId++,
+              owner: this.active,
+              number:
+                1 +
+                Math.max(
+                  ...this.tokens
+                    .filter((t) => t.owner === this.active)
+                    .map((t) => t.number),
+                ),
+              r: 0,
+              s: 0,
+              cargo: 0,
+              loaded: false,
+              out: false,
+            };
+            this.tokens.push(t);
+            this.selected = t.id;
+            this.record(`${this.name(t)} joins at home. Cost: 2 food.`);
+            return true;
+          }
+          select(id) {
+            const t = this.tokens.find((t) => t.id === id);
+            if (
+              !t ||
+              t.out ||
+              t.owner !== this.active ||
+              !["roll", "move"].includes(this.phase) ||
+              this.steps > 0
+            )
+              return false;
+            this.selected = id;
+            return true;
+          }
+          roll() {
+            if (this.phase !== "roll") return false;
+            this.remaining = this.lastRoll = this.dice();
+            this.steps = 0;
+            this.phase = "move";
+            this.record(
+              `${this.name(this.token)} rolled ${this.lastRoll}. Choose the glowing spaces.`,
+            );
+            return true;
+          }
+          canContest(enemy) {
+            return (
+              enemy.r === RESOURCE ||
+              neighbours(enemy.r, enemy.s).some(
+                (p) => !this.occupied(p.r, p.s, [enemy.id, this.selected]),
+              )
+            );
+          }
+          legalMoves() {
+            if (
+              this.phase !== "move" ||
+              this.remaining < 1 ||
+              !this.token ||
+              this.token.out
+            )
+              return [];
+            return neighbours(this.token.r, this.token.s).filter(
+              (p) =>
+                !this.predatorAt(p.r, p.s) &&
+                (!this.occupied(p.r, p.s) ||
+                  (this.occupied(p.r, p.s).owner !== this.active &&
+                    this.canContest(this.occupied(p.r, p.s)))),
+            );
+          }
+          move(r, s) {
+            if (!this.legalMoves().some((p) => key(p.r, p.s) === key(r, s)))
+              return false;
+            const enemy = this.occupied(r, s);
             this.remaining--;
             this.steps++;
-            this.moved = true;
-            this.contest = {
-              attacker: t.id,
-              defender: other.id,
-              choice: null,
-              winner: null,
-              loser: null,
-              dest: {
-                c,
-                r
-              }
-            };
-            this.phase = 'contest-choice';
-            this.record(
-              `${this.name(t)} challenges ${this.name(other)}. Attacker chooses odd or even; defender gets the other.`
-            );
+            if (enemy) {
+              this.contest = {
+                attacker: this.token.id,
+                defender: enemy.id,
+                r,
+                s,
+                parity: null,
+                winner: null,
+                loser: null,
+              };
+              this.phase = "contest-choice";
+              this.record(
+                `Contest for a space! ${this.name(this.token)} chooses odd or even. The winner earns a card.`,
+              );
+              return true;
+            }
+            this.token.r = r;
+            this.token.s = r ? wrap(s) : 0;
+            this.collect(this.token);
             return true;
           }
-          this.history.push({
-            token: {
-              ...t
-            },
-            food: this.player.food,
-            remaining: this.remaining,
-            steps: this.steps,
-            moved: this.moved
-          });
-          t.c = c;
-          t.r = r;
-          this.remaining--;
-          this.steps++;
-          this.moved = true;
-          this.arrive(t);
-          if (this.phase !== 'finished') this.message =
-            `${this.name(t)}: ${this.remaining} steps left. Stop here or keep moving.`;
-          return true;
-        }
-        arrive(t) {
-          const owner = this.players[t.owner];
-          if (t.c === LAST && !t.loaded) {
-            t.cargo += FOOD;
-            t.loaded = true;
-            this.record(`${this.name(t)} picked up 2 food. Bring it home.`);
-          }
-          if (t.c === 0) {
-            if (t.cargo) {
-              owner.food += t.cargo;
+          collect(t) {
+            if (t.r === RESOURCE && !t.loaded) {
+              t.loaded = true;
+              t.cargo = CORNUCOPIA.has(t.s) ? 3 : 2;
+              this.record(
+                `${this.name(t)} collected ${t.cargo} fruit. Bring it home.`,
+              );
+              if (CORNUCOPIA.has(t.s)) {
+                this.phase = "hunter";
+                this.pending = {
+                  token: t.id,
+                  done: () => {
+                    this.phase = "move";
+                    if (t.id === this.selected && (t.out || t.r === 0)) {
+                      this.remaining = 0;
+                      if (!this.contest) this.endTurn();
+                    }
+                  },
+                  extra: true,
+                };
+                this.record(
+                  "Cornucopia: roll once for the hunter. Odd keeps your fruit; even means a hit.",
+                );
+              }
+            } else if (t.r === 0) {
+              if (t.cargo) {
+                this.players[t.owner].food += t.cargo;
+                this.record(`${this.name(t)} banked ${t.cargo} food.`);
+              }
               t.cargo = 0;
-              this.record(`${this.name(t)} banked food. Total: ${owner.food}.`);
-              if (owner.food >= this.target) {
-                this.winner = owner.id;
-                this.phase = 'finished';
-                this.record(`${owner.name} wins with ${owner.food} banked food!`);
+              t.loaded = false;
+              if (this.players[t.owner].food >= this.target) {
+                this.winner = t.owner;
+                this.phase = "finished";
+                this.record(
+                  `Player ${t.owner + 1} — ${this.players[t.owner].animal} wins with ${this.players[t.owner].food} food!`,
+                );
               }
             }
-            t.loaded = false;
           }
-        }
-        undo() {
-          if (this.phase !== 'move' || !this.history.length) return false;
-          const s = this.history.pop();
-          Object.assign(this.token, s.token);
-          this.player.food = s.food;
-          this.remaining = s.remaining;
-          this.steps = s.steps;
-          this.moved = s.moved;
-          this.record(`Last step undone. ${this.remaining} steps left.`);
-          return true;
-        }
-        // A completed contest earns one draw. Pause play so the winner can click the deck.
-        awardCard(owner) {
-          if (this.pendingDraw || this.phase === 'finished' || !this.family(owner).length)
-            return false;
-          if (!this.deck.length && !this.discard.length) {
-            this.record('All cards are being held. There is no card to draw this time.');
-            return false;
-          }
-          this.pendingDraw = {
-            owner,
-            earnedRound: this.round,
-            resumePhase: this.phase
-          };
-          this.phase = 'draw';
-          this.record(
-            `${this.players[owner].name} earned a card. Click the floating deck to draw it.`);
-          return true;
-        }
-        canDraw() {
-          return this.phase === 'draw' && !!this.pendingDraw;
-        }
-        drawCard(owner = this.pendingDraw?.owner) {
-          if (!this.canDraw() || owner !== this.pendingDraw.owner) return false;
-          const reward = this.pendingDraw;
-          if (!this.deck.length && this.discard.length) this.deck = this.shuffle(this.discard
-            .splice(0));
-          const type = this.deck.pop();
-          this.players[owner].hand.push({
-            type,
-            availableRound: reward.earnedRound + 1
-          });
-          this.pendingDraw = null;
-          this.phase = reward.resumePhase;
-          this.record(
-            `${this.players[owner].name} drew ${CARDS[type].name}. Open the card icon beside their name; ready from round ${reward.earnedRound + 1}.`
-          );
-          return type;
-        }
-        cardOwner() {
-          return this.phase === 'draw' ? this.pendingDraw.owner : this.phase === 'traffic' ? this
-            .tokens.find(t => t.id === this.trafficToken).owner : this.active;
-        }
-        // Held cards require both an unlocked round and the right moment.
-        canCard(type) {
-          const owner = this.cardOwner();
-          if (!this.players[owner].hand.some(card => card.type === type && card.availableRound <=
-              this.round)) return false;
-          if (type === 'street') return this.phase === 'traffic';
-          if (this.phase !== 'move') return false;
-          if (type === 'reroll') return !this.moved;
-          if (type === 'step') return true;
-          if (type === 'back') return this.enemyTargets().length > 0;
-          return false;
-        }
-        enemyTargets() {
-          return this.alive.filter(t => t.owner !== this.active && t.c > 0 && t.c < LAST && !this
-            .occupant(t.c - 1, t.r, [t.id]));
-        }
-        spendCard(type, owner = this.active) {
-          const hand = this.players[owner].hand,
-            i = hand.findIndex(card => card.type === type && card.availableRound <= this.round);
-          if (i < 0) return false;
-          hand.splice(i, 1);
-          this.discard.push(type);
-          this.history = [];
-          return true;
-        }
-        useCard(type) {
-          if (!this.canCard(type)) return false;
-          const owner = this.cardOwner();
-          if (type === 'back') {
-            this.phase = 'card-target';
-            this.record(
-              'Choose an enemy animal to move one square toward habitat. Occupied destinations are blocked.'
-            );
+          stop() {
+            if (this.phase !== "move" || this.steps < 1) return false;
+            this.resolveLanding(this.token, () => this.endTurn());
             return true;
           }
-          this.spendCard(type, owner);
-          if (type === 'reroll') {
-            const old = this.movementDie,
-              n = this.dice();
-            this.movementDie = n;
-            this.budget = n + this.cardSteps;
-            this.remaining = this.budget;
-            this.record(`${this.player.name} used Reroll: ${old} replaced by ${n}.`);
-          } else if (type === 'step') {
-            this.cardSteps++;
-            this.budget++;
-            this.remaining++;
-            this.record(`${this.player.name} used Extra block: +1 movement.`);
-          } else if (type === 'street') {
-            const context = this.trafficContext;
-            this.trafficToken = null;
-            this.trafficContext = null;
-            this.contest = null;
+          pass() {
+            if (this.phase !== "move" || this.legalMoves().length) return false;
+            this.resolveLanding(this.token, () => this.endTurn());
+            return true;
+          }
+          resolveLanding(t, done) {
+            if (this.phase === "finished") return;
+            const pred = this.predatorAt(t.r, t.s);
+            if (pred) {
+              this.hit(t, "predator", done, pred.id);
+              return;
+            }
+            if (ROAD.has(t.r)) {
+              this.phase = "traffic";
+              this.pending = { token: t.id, done };
+              this.record(
+                `${this.name(t)} stopped on the road. Roll the sun/moon die or use Safe Streets.`,
+              );
+              return;
+            }
+            done();
+          }
+          check() {
+            if (!["traffic", "hunter"].includes(this.phase)) return false;
+            const cause = this.phase === "traffic" ? "car" : "hunter";
+            const p = this.pending;
+            this.pending = null;
+            const roll = this.dice();
+            if (cause === "car") this.lastTraffic = roll % 2 ? "moon" : "sun";
+            else this.lastRoll = roll;
             this.record(
-              `${this.players[owner].name} used Safe Streets: this landing skips the traffic check.`
+              cause === "car"
+                ? `Traffic die: ${roll % 2 ? "MOON — night, safe" : "SUN — day, car hit"}.`
+                : `Hunter check: ${roll} — ${roll % 2 ? "safe" : "hit"}.`,
             );
-            if (context === 'stop') this.nextPlayer();
-            else this.phase = 'move';
+            if (roll % 2) p.done();
+            else
+              this.hit(
+                this.tokens.find((t) => t.id === p.token),
+                cause,
+                p.done,
+              );
+            return true;
           }
-          return true;
-        }
-        canTarget(c, r) {
-          return this.phase === 'card-target' && this.enemyTargets().some(t => t.c === c && t.r ===
-            r);
-        }
-        moveEnemy(c, r) {
-          if (!this.canTarget(c, r)) return false;
-          const t = this.enemyTargets().find(t => t.c === c && t.r === r);
-          this.spendCard('back');
-          this.phase = 'move';
-          t.c--;
-          this.record(`${this.name(t)} moved one square toward habitat by Enemy backward.`);
-          this.arrive(t);
-          if (this.phase === 'finished') return true;
-          const hazard = this.predatorAt(t.c, t.r);
-          if (hazard) {
-            this.hit(t, hazard.name);
-            this.checkEnd();
-          } else if (tile(t.c) === 'road') {
-            this.phase = 'traffic';
-            this.trafficToken = t.id;
-            this.trafficContext = 'card';
-            this.record(`${this.name(t)} landed on the road: immediate traffic check.`);
+          hit(t, cause, done, predId = null) {
+            this.phase = "rescue";
+            this.pending = { token: t.id, cause, done, predId };
+            this.record(`${this.name(t)} was caught by a ${cause}.`);
+            const types =
+              cause === "predator"
+                ? ["dead"]
+                : ["car", "hunter"].includes(cause)
+                  ? ["angel"]
+                  : [];
+            if (
+              !this.players[t.owner].hand.some(
+                (c) => c.availableRound <= this.round && types.includes(c.type),
+              )
+            )
+              this.acceptHit();
           }
-          return true;
-        }
-        cancelCard() {
-          if (this.phase !== 'card-target') return false;
-          this.phase = 'move';
-          this.record('Enemy backward cancelled; card kept.');
-          return true;
-        }
-        canStop() {
-          if (this.phase !== 'move') return false;
-          if (this.steps > 0) return true;
-          for (let r = 0; r < ROWS; r++)
-            for (let c = 0; c <= LAST; c++)
-              if (this.canMove(c, r)) return false;
-          return true;
-        }
-        stop() {
-          if (!this.canStop()) return false;
-          this.history = [];
-          const t = this.token;
-          if (tile(t.c) === 'road') {
-            this.phase = 'traffic';
-            this.trafficToken = t.id;
-            this.trafficContext = 'stop';
-            this.record(`${this.name(t)} stopped on the road. Roll odd to stay safe.`);
-          } else {
-            this.record(`${this.name(t)} ended its turn safely.`);
-            this.nextPlayer();
+          acceptHit() {
+            if (this.phase !== "rescue") return false;
+            const p = this.pending;
+            this.pending = null;
+            this.applyHit(this.tokens.find((t) => t.id === p.token));
+            p.done();
+            return true;
           }
-          return true;
-        }
-        // Hits, traffic checks, and revival use the shared banked food.
-        hit(t, cause) {
-          if (t.out) return;
-          const p = this.players[t.owner];
-          if (p.food > 0) {
-            p.food--;
+          applyHit(t, free = false) {
             t.cargo = 0;
             t.loaded = false;
-            t.c = 0;
-            this.record(
-              `${cause} hit ${this.name(t)}. Revived at home for 1 food; ${p.food} left.`);
-          } else {
-            t.out = true;
-            t.cargo = 0;
-            this.record(`${cause} hit ${this.name(t)}. No food: this animal is out.`);
-            if (!this.family(t.owner).length && p.hand.length) {
-              this.discard.push(...p.hand.splice(0).map(card => card.type));
-              this.record(`${p.name}’s family is out; its held cards go to the discard pile.`);
+            const owner = this.players[t.owner];
+            if (free || owner.food > 0) {
+              if (!free) owner.food--;
+              t.r = 0;
+              t.s = 0;
+              this.record(
+                `${this.name(t)} revived at home${free ? " for free" : " for 1 food"}.`,
+              );
+            } else {
+              t.out = true;
+              this.record(
+                `${this.name(t)} has no food to revive and leaves the game.`,
+              );
+              if (!this.family(t.owner).length) {
+                this.discard.push(...owner.hand.map((c) => c.type));
+                owner.hand = [];
+              }
             }
           }
-        }
-        traffic() {
-          if (this.phase !== 'traffic') return false;
-          const t = this.tokens.find(t => t.id === this.trafficToken),
-            p = this.players[t.owner],
-            context = this.trafficContext,
-            n = this.dice();
-          let hit = false;
-          if (n % 2 === 0) {
-            this.hit(t, `Traffic (${n}, even)`);
-            hit = true;
-          } else this.record(`${this.name(t)} rolled ${n} (odd): safe.`);
-          this.trafficToken = null;
-          this.trafficContext = null;
-          if (context === 'stop' || (hit && t.id === this.selected)) {
+          endTurn() {
+            if (this.phase === "finished") return;
+            this.pending = null;
             this.contest = null;
-            this.nextPlayer();
-          } else {
-            this.contest = null;
-            this.phase = 'move';
-            this.checkEnd();
-          }
-          return n;
-        }
-        // Contests decide a winner, then the winner chooses an adjacent push.
-        chooseParity(choice) {
-          if (this.phase !== 'contest-choice' || !['odd', 'even'].includes(choice)) return false;
-          this.contest.choice = choice;
-          this.phase = 'contest-roll';
-          this.record(
-            `Attacker chose ${choice}. Defender gets ${choice==='odd'?'even':'odd'}. Roll the contest die.`
-          );
-          return true;
-        }
-        resolveContest() {
-          if (this.phase !== 'contest-roll') return false;
-          const n = this.dice(),
-            a = this.tokens.find(t => t.id === this.contest.attacker),
-            d = this.tokens.find(t => t.id === this.contest.defender),
-            won = (n % 2 === 0 ? 'even' : 'odd') === this.contest.choice;
-          this.contest.winner = won ? a.id : d.id;
-          this.contest.loser = won ? d.id : a.id;
-          this.phase = 'push';
-          this.record(
-            `${this.name(won?a:d)} wins the contest (${n}) and earns a card. Choose a push square, then click the deck to draw.`
-          );
-          return n;
-        }
-        pushOptions(a, d, winner) {
-          const loser = winner.id === a.id ? d : a,
-            origin = loser.id === d.id ? {
-              c: d.c,
-              r: d.r
-            } : {
-              c: a.c,
-              r: a.r
-            },
-            winnerPos = {
-              c: d.c,
-              r: d.r
-            };
-          return [
-            [1, 0],
-            [-1, 0],
-            [0, 1],
-            [0, -1]
-          ].map(([dx, dy]) => ({
-            c: origin.c + dx,
-            r: origin.r + dy
-          })).filter(s => s.c >= -1 && s.c <= LAST + 1 && s.r >= -1 && s.r <= ROWS && !(s.c ===
-            winnerPos.c && s.r === winnerPos.r) && !this.occupant(s.c, s.r, [a.id, d.id]));
-        }
-        canPush(c, r) {
-          if (this.phase !== 'push') return false;
-          const a = this.tokens.find(t => t.id === this.contest.attacker),
-            d = this.tokens.find(t => t.id === this.contest.defender),
-            w = this.tokens.find(t => t.id === this.contest.winner);
-          return this.pushOptions(a, d, w).some(s => s.c === c && s.r === r);
-        }
-        push(c, r) {
-          if (!this.canPush(c, r)) return false;
-          const x = this.contest,
-            a = this.tokens.find(t => t.id === x.attacker),
-            d = this.tokens.find(t => t.id === x.defender),
-            loser = this.tokens.find(t => t.id === x.loser),
-            winner = this.tokens.find(t => t.id === x.winner);
-          if (x.winner === a.id) {
-            a.c = x.dest.c;
-            a.r = x.dest.r;
-          }
-          if (c < 0 || c > LAST || r < 0 || r >= ROWS) {
-            this.hit(loser, 'Off-board push');
-            this.contest = null;
-            if (loser.id === this.selected) this.nextPlayer();
-            else {
-              this.phase = 'move';
-              this.checkEnd();
-            }
-            this.awardCard(winner.owner);
-            return true;
-          }
-          loser.c = c;
-          loser.r = r;
-          this.record(`${this.name(loser)} was pushed one square.`);
-          this.arrive(a);
-          if (this.phase === 'finished') return true;
-          this.arrive(loser);
-          if (this.phase === 'finished') return true;
-          const predator = this.predatorAt(c, r);
-          if (predator) {
-            this.hit(loser, predator.name);
-            this.contest = null;
-            if (loser.id === this.selected) this.nextPlayer();
-            else {
-              this.phase = 'move';
-              this.checkEnd();
-            }
-          } else if (tile(c) === 'road') {
-            this.phase = 'traffic';
-            this.trafficToken = loser.id;
-            this.trafficContext = 'push';
-            this.record(
-              `${this.name(loser)} was pushed onto the road. Roll an immediate traffic check.`);
-          } else {
-            this.contest = null;
-            this.phase = 'move';
-          }
-          this.awardCard(winner.owner);
-          return true;
-        }
-        // End-of-turn flow: all families, then each predator, then the next round.
-        checkEnd() {
-          if (!this.alive.length) {
-            this.phase = 'finished';
-            this.winner = null;
-            this.record('All animals are out. No winner this time.');
-            return true;
-          }
-          return false;
-        }
-        nextPlayer() {
-          if (this.checkEnd()) return;
-          let next = this.active + 1;
-          while (next < this.players.length && !this.family(next).length) next++;
-          this.history = [];
-          this.remaining = 0;
-          this.steps = 0;
-          this.moved = false;
-          if (next < this.players.length) {
-            this.active = next;
-            this.selected = this.family(next)[0].id;
-            this.phase = 'roll';
-          } else {
-            this.phase = 'predators';
-            this.predatorIndex = 0;
-          }
-        }
-        predatorTurn() {
-          if (this.phase !== 'predators') return false;
-          const p = this.predators[this.predatorIndex],
-            n = this.dice();
-          for (let i = 0; i < n; i++) {
-            if (p.r < ROWS && (p.r + p.dir < 0 || p.r + p.dir >= ROWS)) p.dir *= -1;
-            p.r += p.dir;
-            if (p.r === 0) p.dir = 1;
-            else if (p.r === ROWS - 1) p.dir = -1;
-          }
-          this.record(
-            `${p.name} rolled ${n}, stopped at row ${p.r+1}, facing ${p.dir===1?'down':'up'}.`);
-          for (const t of this.alive)
-            if (t.c === p.c && t.r === p.r) this.hit(t, p.name);
-          if (this.checkEnd()) return n;
-          this.predatorIndex++;
-          if (this.predatorIndex === this.predators.length) {
-            this.round++;
-            this.active = this.players.findIndex(p => this.family(p.id).length);
-            this.selected = this.family()[0].id;
-            this.phase = 'roll';
             this.steps = 0;
-            this.moved = false;
+            this.remaining = 0;
+            let next = this.active + 1;
+            while (next < this.players.length && !this.family(next).length)
+              next++;
+            if (next < this.players.length) {
+              this.active = next;
+              this.selected = this.family()[0].id;
+              this.phase = "roll";
+            } else {
+              this.predIndex = 0;
+              this.phase = "predators";
+              this.record(
+                "Everyone has moved. Roll once per predator lane; all three animals move together.",
+              );
+            }
+            if (!this.tokens.some((t) => !t.out)) {
+              this.phase = "finished";
+              this.winner = null;
+              this.record("No animals remain. Reset to try again.");
+            }
           }
-          return n;
+          rollPredator() {
+            if (this.phase !== "predators") return false;
+            const r = PREDATOR_LANES[this.predIndex],
+              n = (this.lastRoll = this.dice());
+            const lane = this.predators.filter((p) => p.r === r);
+            // Update the whole lane before resolving catches, so spacing is preserved.
+            lane.forEach((p) => (p.s = wrap(p.s + n)));
+            this.record(
+              `Lane ${this.predIndex + 1}: all three predators moved ${n} spaces clockwise.`,
+            );
+            const finish = () => {
+              this.predIndex++;
+              if (!this.tokens.some((t) => !t.out)) {
+                this.phase = "finished";
+                this.winner = null;
+                this.record("No animals remain.");
+                return;
+              }
+              if (this.predIndex === PREDATOR_LANES.length) {
+                this.round++;
+                this.active = this.players.findIndex(
+                  (p) => this.family(p.id).length,
+                );
+                this.selected = this.family()[0].id;
+                this.phase = "roll";
+                this.record(`Round ${this.round}. New cards are now ready.`);
+              } else this.phase = "predators";
+            };
+            const resolve = (i) => {
+              if (i === lane.length) {
+                finish();
+                return;
+              }
+              const pred = lane[i],
+                victim = this.occupied(pred.r, pred.s);
+              if (victim)
+                this.hit(victim, "predator", () => resolve(i + 1), pred.id);
+              else resolve(i + 1);
+            };
+            resolve(0);
+            return true;
+          }
+          movePredator(p, n, done) {
+            // Play Dead gives only the attacking predator an extra roll. Other
+            // predators stay put; it can pass them but cannot finish on one.
+            const original = p.s;
+            p.s = wrap(p.s + n);
+            if (
+              this.predators.some(
+                (other) =>
+                  other.id !== p.id && other.r === p.r && other.s === p.s,
+              )
+            ) {
+              p.s = original;
+              this.record(
+                `${p.kind} ${p.id + 1} rolled ${n}, but its destination was occupied. Play Dead kept the animal safe.`,
+              );
+              done();
+              return;
+            }
+            this.record(
+              `${p.kind} ${p.id + 1} rolled ${n}${p.s === original ? " but its destination was occupied" : " and moved clockwise"}.`,
+            );
+            const victim = this.occupied(p.r, p.s);
+            if (victim) this.hit(victim, "predator", done, p.id);
+            else done();
+          }
+          chooseParity(parity) {
+            if (
+              this.phase !== "contest-choice" ||
+              !["odd", "even"].includes(parity)
+            )
+              return false;
+            this.contest.parity = parity;
+            this.phase = "contest-roll";
+            return true;
+          }
+          rollContest() {
+            if (this.phase !== "contest-roll") return false;
+            const c = this.contest;
+            const n = (this.lastRoll = this.dice());
+            const attackerWins = (n % 2 ? "odd" : "even") === c.parity;
+            c.winner = attackerWins ? c.attacker : c.defender;
+            c.loser = attackerWins ? c.defender : c.attacker;
+            this.phase = "push";
+            this.record(
+              `${this.name(this.tokens.find((t) => t.id === c.winner))} won (${n}). Choose a glowing space to push the loser, then draw a card.`,
+            );
+            return true;
+          }
+          pushes() {
+            if (this.phase !== "push") return [];
+            const c = this.contest;
+            return [
+              ...neighbours(c.r, c.s, true),
+              ...(c.r === RESOURCE ? [{ r: RESOURCE + 1, s: c.s }] : []),
+            ].filter(
+              (p) =>
+                p.r === RESOURCE + 1 ||
+                !this.occupied(p.r, p.s, [c.winner, c.loser]),
+            );
+          }
+          push(r, s) {
+            if (!this.pushes().some((p) => key(p.r, p.s) === key(r, s)))
+              return false;
+            const c = this.contest;
+            const winner = this.tokens.find((t) => t.id === c.winner),
+              loser = this.tokens.find((t) => t.id === c.loser);
+            winner.r = c.r;
+            winner.s = c.s;
+            const after = () => {
+              this.collect(winner);
+              if (this.phase === "finished") return;
+              if (this.phase === "hunter") {
+                const done = this.pending.done;
+                this.pending.done = () => {
+                  done();
+                  this.awardCard(winner.owner);
+                };
+              } else this.awardCard(winner.owner);
+            };
+            if (r === RESOURCE + 1) {
+              this.hit(loser, "edge", after);
+            } else {
+              loser.r = r;
+              loser.s = r ? wrap(s) : 0;
+              this.collect(loser);
+              if (this.phase === "finished") return;
+              if (this.phase === "hunter") {
+                const done = this.pending.done;
+                this.pending.done = () => {
+                  done();
+                  this.resolveLanding(loser, after);
+                };
+              } else this.resolveLanding(loser, after);
+            }
+            return true;
+          }
+          awardCard(owner) {
+            this.contest = null;
+            const resume = () => {
+              if (!this.token || this.token.out || this.token.r === 0)
+                this.endTurn();
+              else this.phase = "move";
+            };
+            if (!this.family(owner).length) {
+              resume();
+              return;
+            }
+            this.pendingDraw = {
+              owner,
+              availableRound: this.round + 1,
+              resume,
+            };
+            this.phase = "draw";
+            this.record(
+              `Player ${owner + 1} won the contest. Click the floating deck to keep one card.`,
+            );
+          }
+          drawCard() {
+            if (this.phase !== "draw") return false;
+            const p = this.pendingDraw;
+            if (!this.deck.length) {
+              this.deck = this.discard.splice(0);
+              for (let i = this.deck.length - 1; i > 0; i--) {
+                const j = Math.floor(this.rng() * (i + 1));
+                [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+              }
+            }
+            if (this.deck.length) {
+              const type = this.deck.pop();
+              this.players[p.owner].hand.push({
+                type,
+                availableRound: p.availableRound,
+              });
+              this.record(
+                `${this.players[p.owner].animal} kept ${CARDS[type].name}. Ready in round ${p.availableRound}.`,
+              );
+            } else
+              this.record(
+                "Every card is currently held. No card is available to draw.",
+              );
+            this.pendingDraw = null;
+            p.resume();
+            return true;
+          }
+          cardOwner() {
+            return this.pendingDraw
+              ? this.pendingDraw.owner
+              : this.pending
+                ? this.tokens.find((t) => t.id === this.pending.token).owner
+                : this.active;
+          }
+          backwardTargets() {
+            return this.tokens.filter(
+              (t) =>
+                !t.out &&
+                t.owner !== this.active &&
+                t.r > 0 &&
+                !this.predatorAt(t.r - 1, t.r === 1 ? 0 : t.s) &&
+                !this.occupied(t.r - 1, t.r === 1 ? 0 : t.s),
+            );
+          }
+          canCard(owner, index) {
+            const c = this.players[owner]?.hand[index];
+            if (
+              !c ||
+              c.availableRound > this.round ||
+              owner !== this.cardOwner()
+            )
+              return false;
+            return c.type === "reroll"
+              ? this.phase === "move" && this.steps === 0
+              : c.type === "step"
+                ? this.phase === "move"
+                : c.type === "back"
+                  ? this.phase === "move" && this.backwardTargets().length > 0
+                  : c.type === "street"
+                    ? this.phase === "traffic"
+                    : c.type === "dead"
+                      ? this.phase === "rescue" &&
+                        this.pending.cause === "predator"
+                      : c.type === "angel"
+                        ? this.phase === "rescue" &&
+                          ["car", "hunter"].includes(this.pending.cause)
+                        : false;
+          }
+          useCard(owner, index) {
+            if (!this.canCard(owner, index)) return false;
+            const c = this.players[owner].hand.splice(index, 1)[0];
+            this.discard.push(c.type);
+            this.record(
+              `${this.players[owner].animal} used ${CARDS[c.type].name}.`,
+            );
+            if (c.type === "reroll") {
+              this.remaining = this.lastRoll = this.dice();
+            } else if (c.type === "step") {
+              this.remaining++;
+            } else if (c.type === "back") {
+              this.phase = "card-target";
+            } else if (c.type === "street") {
+              const p = this.pending;
+              this.pending = null;
+              p.done();
+            } else if (c.type === "angel") {
+              const p = this.pending;
+              this.pending = null;
+              this.applyHit(
+                this.tokens.find((t) => t.id === p.token),
+                true,
+              );
+              p.done();
+            } else if (c.type === "dead") {
+              const p = this.pending;
+              this.pending = null;
+              this.movePredator(
+                this.predators[p.predId],
+                (this.lastRoll = this.dice()),
+                p.done,
+              );
+            }
+            return true;
+          }
+          targetEnemy(id) {
+            if (this.phase !== "card-target") return false;
+            const t = this.backwardTargets().find((t) => t.id === id);
+            if (!t) return false;
+            t.r--;
+            if (!t.r) t.s = 0;
+            this.collect(t);
+            if (this.phase !== "finished")
+              this.resolveLanding(t, () => {
+                this.phase = "move";
+              });
+            return true;
+          }
         }
-      }
-      globalThis.FragmentedHabitat = {
-        Game,
-        ANIMALS,
-        tile,
-        ROWS,
-        LAST,
-        CARDS
-      };
-    })();
-  </script>
-  <!-- 09. Pixel art and interface: rendering, settings, and user actions -->
-  <script>
-    (() => {
-      'use strict';
-
-      const {
-        Game,
-        ANIMALS,
-        CARDS,
-        ROWS,
-        LAST,
-        tile
-      } = FragmentedHabitat;
-      const $ = (id) => document.getElementById(id);
-      const SVG_NS = 'http://www.w3.org/2000/svg';
-      let config = {
-        target: 7,
-        players: [{
-          name: 'Player 1',
-          animal: 0
-        }, {
-          name: 'Player 2',
-          animal: 1
-        }],
-      };
-      let game = new Game(config);
-      // Camera orientation belongs to the view, not the game state.
-      let viewAngle = 0;
-      const viewPitch = 38;
-      let viewPanX = 0,
-        viewPanY = 0;
-      let moveMode = false;
-      let viewedHandOwner = null;
-      let viewZoom = 1;
-      const pointers = new Map();
-      let pinch = null;
-      const CAMERA_UNIT = 46;
-      let drag = null;
-      let suppressClickUntil = 0;
-      let rotationFrame = null;
-      const DRAG_THRESHOLD = 6;
-
-      // Each letter is one colored square. No fonts, images, or online assets are needed.
+        globalThis.FragmentedHabitat = {
+          Game,
+          CARDS,
+          ANIMALS,
+          SECTORS,
+          RESOURCE,
+          ISLAND,
+          ROAD,
+          PREDATOR_LANES,
+          PREDATOR_KINDS,
+          PREDATORS_PER_LANE,
+          CORNUCOPIA,
+          neighbours,
+          key,
+          wrap,
+        };
+      })();
+    </script>
+    <script>
       const PALETTE = {
-        d: '#172635',
-        b: '#79543e',
-        o: '#d88b46',
-        l: '#ffc77f',
-        w: '#f4ecce',
-        n: '#fffef4',
-        g: '#8998a2',
-        a: '#bdc4c4',
-        p: '#e1a0ac',
-        e: '#756274',
-        k: '#0a1520',
-        s: '#70af7b',
-        t: '#a3d9aa',
-        r: '#df704d',
-        y: '#ffda83',
+        d: "#172635",
+        b: "#79543e",
+        o: "#d88b46",
+        l: "#ffc77f",
+        w: "#f4ecce",
+        n: "#fffef4",
+        g: "#8998a2",
+        a: "#bdc4c4",
+        p: "#e1a0ac",
+        e: "#756274",
+        k: "#0a1520",
+        s: "#70af7b",
+        t: "#a3d9aa",
+        r: "#df704d",
+        y: "#ffda83",
       };
       const FACES = {
         rat: [
-          '..pp......pp..', '.pbbp....pbbp.', '.pbbp....pbbp.', '..bbbggggbbb..',
-          '..bggggggggb..', '..bggnggnggb..', '..bggkggkggb..', '...gggggggg...',
-          '.wwgggppgggww.', '...wwppppww...', '....wwppww....', '.....wwww.....',
+          "..pp......pp..",
+          ".pbbp....pbbp.",
+          ".pbbp....pbbp.",
+          "..bbbggggbbb..",
+          "..bggggggggb..",
+          "..bggnggnggb..",
+          "..bggkggkggb..",
+          "...gggggggg...",
+          ".wwgggppgggww.",
+          "...wwppppww...",
+          "....wwppww....",
+          ".....wwww.....",
         ],
         squirrel: [
-          '..bb......bb..', '..blb....blb..', '..bolb..blob..', '..boooooooob..',
-          '..bolloollob..', '..bonloolnob..', '..boklookkob..', '...oolllloo...',
-          '....llkkll....', '...wllkkllw...', '....wwllww....', '.....wwww.....',
+          "..bb......bb..",
+          "..blb....blb..",
+          "..bolb..blob..",
+          "..boooooooob..",
+          "..bolloollob..",
+          "..bonloolnob..",
+          "..boklookkob..",
+          "...oolllloo...",
+          "....llkkll....",
+          "...wllkkllw...",
+          "....wwllww....",
+          ".....wwww.....",
         ],
         raccoon: [
-          '..gg......gg..', '..gag....gag..', '..gagg..ggag..', '..gaaaaaaaag..',
-          '..gggaaaaggg..', '..gkkgaggkkg..', '..gknkaknkgg..', '...gkgaagkg...',
-          '....aaekaa....', '....wwkkww....', '.....wwww.....', '......aa......',
+          "..gg......gg..",
+          "..gag....gag..",
+          "..gagg..ggag..",
+          "..gaaaaaaaag..",
+          "..gggaaaaggg..",
+          "..gkkgaggkkg..",
+          "..gknkaknkgg..",
+          "...gkgaagkg...",
+          "....aaekaa....",
+          "....wwkkww....",
+          ".....wwww.....",
+          "......aa......",
         ],
         rabbit: [
-          '...aa....aa...', '...ap....pa...', '...ap....pa...', '...ap....pa...',
-          '..aaa....aaa..', '..aaaaaaaaaa..', '..aanaaaanaa..', '..aakaaakaaa..',
-          '...aaaaaaaa...', '....wwppww....', '.....wppw.....', '......ww......',
+          "...aa....aa...",
+          "...ap....pa...",
+          "...ap....pa...",
+          "...ap....pa...",
+          "..aaa....aaa..",
+          "..aaaaaaaaaa..",
+          "..aanaaaanaa..",
+          "..aakaaakaaa..",
+          "...aaaaaaaa...",
+          "....wwppww....",
+          ".....wppw.....",
+          "......ww......",
         ],
         capybara: [
-          '..bb......bb..', '..blbbbbbbblb..', '..bllllllllb..', '..bllllllllb..',
-          '..bllkllkllb..', '..bllllllllb..', '..bllooolllb..', '..blooookoolb.',
-          '...boookooob..', '...bwwwwwwwb..', '....bbbbbb....', '.....bbbb.....',
+          "..bb......bb..",
+          "..blbbbbbbblb..",
+          "..bllllllllb..",
+          "..bllllllllb..",
+          "..bllkllkllb..",
+          "..bllllllllb..",
+          "..bllooolllb..",
+          "..blooookoolb.",
+          "...boookooob..",
+          "...bwwwwwwwb..",
+          "....bbbbbb....",
+          ".....bbbb.....",
         ],
         tarsier: [
-          '.bb........bb.', '.blb......blb.', '.blbbbbbbbblb.', '..boooooooob..',
-          '..bolllolllb..', '..bolkllklob..', '..bolnllnlob..', '...ollkkllo...',
-          '...wllkkllw...', '....wllllw....', '.....wwww.....', '......bb......',
+          ".bb........bb.",
+          ".blb......blb.",
+          ".blbbbbbbbblb.",
+          "..boooooooob..",
+          "..bolllolllb..",
+          "..bolkllklob..",
+          "..bolnllnlob..",
+          "...ollkkllo...",
+          "...wllkkllw...",
+          "....wllllw....",
+          ".....wwww.....",
+          "......bb......",
         ],
         beetle: [
-          '..k........k..', '...k......k...', '....kkkkkk....', '...kttttttk...',
-          '..ksttkkttsk..', '..kstskkstsk..', '.kksssssssskk.', '..kssksskssk..',
-          '.kksskssksskk.', '..kssksskssk..', '...kssssssk...', '....kkkkkk....',
+          "..k........k..",
+          "...k......k...",
+          "....kkkkkk....",
+          "...kttttttk...",
+          "..ksttkkttsk..",
+          "..kstskkstsk..",
+          ".kksssssssskk.",
+          "..kssksskssk..",
+          ".kksskssksskk.",
+          "..kssksskssk..",
+          "...kssssssk...",
+          "....kkkkkk....",
         ],
         fox: [
-          '.oo........oo.', '.oloo....oolo.', '.ollob..bollo.', '..oooooooooo..',
-          '..oooooooooo..', '..ookooookoo..', '..oonoooonoo..', '...owoooowo...',
-          '....wwkkww....', '.....wkkw.....', '......ww......', '......ww......',
+          ".oo........oo.",
+          ".oloo....oolo.",
+          ".ollob..bollo.",
+          "..oooooooooo..",
+          "..oooooooooo..",
+          "..ookooookoo..",
+          "..oonoooonoo..",
+          "...owoooowo...",
+          "....wwkkww....",
+          ".....wkkw.....",
+          "......ww......",
+          "......ww......",
         ],
         tiger: [
-          '..oo......oo..', '..okooooooko..', '..oookkkkooo..', '..ookoookooo..',
-          '..oookookooo..', '..oknooknoko..', '..okkoookkoo..', '...olwwwwlo...',
-          '..kllwkkwllk..', '...llwkkwll...', '....wwwwww....', '.....wwww.....',
+          "..oo......oo..",
+          "..okooooooko..",
+          "..oookkkkooo..",
+          "..ookoookooo..",
+          "..oookookooo..",
+          "..oknooknoko..",
+          "..okkoookkoo..",
+          "...olwwwwlo...",
+          "..kllwkkwllk..",
+          "...llwkkwll...",
+          "....wwwwww....",
+          ".....wwww.....",
         ],
       };
 
-      function svgNode(name, attributes = {}, text = '') {
-        const node = document.createElementNS(SVG_NS, name);
-        for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value);
-        if (text) node.textContent = text;
-        return node;
-      }
-
-      function pixelFace(kind) {
-        const face = svgNode('svg', {
-          viewBox: '0 0 16 16',
-          class: 'pixel-face',
-          'aria-hidden': 'true'
-        });
-        face.append(svgNode('use', {
-          href: `#pixel-${kind}`
-        }));
-        return face;
-      }
-
-      function token(animal) {
-        const player = game.players[animal.owner];
-        const element = document.createElement('span');
-        element.className = 'token';
-        element.style.setProperty('--token', ANIMALS[player.animal].color);
-        element.append(pixelFace(ANIMALS[player.animal].icon));
-        const number = document.createElement('sup');
-        number.textContent = animal.number;
-        element.append(number);
-        element.setAttribute('aria-label', game.name(animal));
-        return element;
-      }
-
-      // Orthographic camera: two perpendicular screen axes with one uniform world scale.
-      // This uses the camera geometry of the portfolio, without shearing the landscape
-      // or automatically changing the zoom as the camera orbits.
-      function rawProject(column, row, height = 0) {
-        const yaw = (viewAngle + 40) * Math.PI / 180;
-        const elevation = viewPitch * Math.PI / 180;
-        const x = column - 8.5;
-        const z = row - 3;
-        const across = x * Math.cos(yaw) - z * Math.sin(yaw);
-        const away = x * Math.sin(yaw) + z * Math.cos(yaw);
-        return {
-          x: across,
-          y: away * Math.sin(elevation) - height * Math.cos(elevation),
-          depth: away * Math.cos(elevation) + height * Math.sin(elevation)
+      (() => {
+        "use strict";
+        const {
+          Game,
+          CARDS,
+          ANIMALS,
+          SECTORS,
+          RESOURCE,
+          ISLAND,
+          ROAD,
+          PREDATOR_LANES,
+          CORNUCOPIA,
+          key,
+          wrap,
+        } = FragmentedHabitat;
+        const $ = (id) => document.getElementById(id),
+          NS = "http://www.w3.org/2000/svg";
+        const svg = (tag, attrs = {}, text = "") => {
+          const n = document.createElementNS(NS, tag);
+          for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+          if (text) n.textContent = text;
+          return n;
         };
-      }
-
-      function project(column, row, height = 0) {
-        const p = rawProject(column, row, height);
-        return {
-          x: 560 + viewPanX + p.x * CAMERA_UNIT * viewZoom,
-          y: 380 + viewPanY + p.y * CAMERA_UNIT * viewZoom
+        let game = new Game(),
+          handOwner = 0,
+          angle = 0,
+          zoom = 1,
+          panX = 0,
+          panY = 0,
+          moveMode = false;
+        const COLORS = [
+          "#efbe73",
+          "#e49156",
+          "#93b8c5",
+          "#e6c8d9",
+          "#bba877",
+          "#d5ba68",
+          "#82d2ac",
+        ];
+        const radii = [
+          1.65,
+          ...Array.from({ length: 11 }, (_, i) => 2.02 + i * 0.34),
+          6.1,
+        ];
+        function face(kind, size = 26) {
+          const n = svg("svg", {
+            viewBox: "0 0 16 16",
+            width: size,
+            height: size,
+            class: "pixel-face",
+            "aria-hidden": "true",
+          });
+          n.append(svg("use", { href: "#pixel-" + kind }));
+          return n;
+        }
+        // Hunters sit beside the six blue cornucopias; they do not patrol.
+        FACES.snake = [
+          "....ssssss....",
+          "..ssttttttss..",
+          ".ssttttttttss.",
+          ".stttttttttts.",
+          ".stnkt tkn t s.".replaceAll(" ", ""),
+          ".stttttttttts.",
+          "..ssttttttss..",
+          "...ssssssss...",
+          ".....prp......",
+          ".....prp......",
+          "....ssssss....",
+          "...ssssssss...",
+        ];
+        FACES.coyote = [
+          "..bb......bb..",
+          "..bpb....bpb..",
+          "..bolb..blob..",
+          "..bllllllllb..",
+          "..bllllllllb..",
+          "..blknllnk lb..".replaceAll(" ", ""),
+          "...looooool...",
+          "....lowwol....",
+          "....wwkkww....",
+          ".....wkkw.....",
+          "......ww......",
+          "......bb......",
+        ];
+        FACES.cat = [
+          "..gg......gg..",
+          "..gpg....gpg..",
+          "..gagg..ggag..",
+          "..gaaaaaaaag..",
+          "..gaaaaaaaag..",
+          "..gan aa nang..".replaceAll(" ", ""),
+          "..gakaaak aag..".replaceAll(" ", ""),
+          "...aaa pp aaa..".replaceAll(" ", ""),
+          ".wwaaappaaww..",
+          "...wwppppww...",
+          "....wwaaww....",
+          ".....wwww.....",
+        ];
+        FACES.vulture = [
+          ".....rrrr.....",
+          "....rllrrr....",
+          "....rnkrro....",
+          ".....rrroo....",
+          ".....www......",
+          "...ggwwwgg....",
+          "..gggwwwggg...",
+          ".ggggwwwgggg..",
+          ".gggggwggggg..",
+          "..ggggggggg...",
+          "...ggggggg....",
+          "....yy yy.....".replaceAll(" ", ""),
+        ];
+        FACES.hunter = [
+          "....ssssss....",
+          "...ssssssss...",
+          "..ssssssssss..",
+          "...llllllll...",
+          "...llkllkll...",
+          "...llllllll...",
+          "....llbbll....",
+          "....bbbbbb....",
+          ".....wwww.....",
+          "....ssssss....",
+          "...ssssssss...",
+          "...ssbbbbss...",
+        ];
+        const defs = svg("defs");
+        const tokenColors = {
+          rat: "#b2c6d0",
+          squirrel: "#f5b274",
+          raccoon: "#a6c9d2",
+          rabbit: "#f2d5e4",
+          capybara: "#dfc38d",
+          tarsier: "#edd892",
+          beetle: "#9fe0bd",
+          snake: "#9ddd9c",
+          fox: "#ffb776",
+          coyote: "#dec691",
+          cat: "#b9c9e2",
+          vulture: "#d7bdca",
+          hunter: "#bed1a6",
         };
-      }
-
-      function setRotation(angle) {
-        viewAngle = ((angle % 360) + 360) % 360;
-        // Tilt is locked: vertical dragging never flattens or stretches the island.
-        $('view-angle').textContent = `${Math.round(viewAngle) % 360}°`;
-        buildBoard();
-      }
-
-      function setZoom(zoom) {
-        viewZoom = Math.max(.6, Math.min(2.4, zoom));
-        $('zoom-label').textContent = `${Math.round(viewZoom * 100)}%`;
-        buildBoard();
-      }
-      // Only the edges facing the viewer need vertical side faces.
-      function raisedSides(parent, corners, height, front, side) {
-        corners.forEach((start, index) => {
-          const end = corners[(index + 1) % corners.length];
-          if (end.x >= start.x) return;
-          parent.append(svgNode('polygon', {
-            points: points(start, end, {
-              x: end.x,
-              y: end.y + height * viewZoom * Math.cos(viewPitch * Math.PI / 180)
-            }, {
-              x: start.x,
-              y: start.y + height * viewZoom * Math.cos(viewPitch * Math.PI / 180)
+        for (const [k, color] of Object.entries(tokenColors)) {
+          const grad = svg("radialGradient", {
+            id: "gloss-" + k,
+            cx: "32%",
+            cy: "22%",
+            r: "82%",
+          });
+          grad.append(
+            svg("stop", { offset: "0%", "stop-color": "#fff9e9" }),
+            svg("stop", { offset: "40%", "stop-color": color }),
+            svg("stop", { offset: "100%", "stop-color": "#536f79" }),
+          );
+          defs.append(grad);
+        }
+        for (const [k, rows] of Object.entries(FACES)) {
+          const sym = svg("symbol", { id: "pixel-" + k, viewBox: "0 0 16 16" });
+          rows.forEach((row, y) =>
+            [...row].forEach((c, x) => {
+              if (PALETTE[c])
+                sym.append(
+                  svg("rect", {
+                    x: x + 1,
+                    y: y + 2,
+                    width: 1,
+                    height: 1,
+                    fill: PALETTE[c],
+                  }),
+                );
             }),
-            fill: index % 2 ? side : front,
-            stroke: '#081925',
-            'stroke-opacity': '.35'
-          }));
-        });
-      }
-
-      function points(...vertices) {
-        return vertices.map(p => `${p.x},${p.y}`).join(' ');
-      }
-
-      function groundCorners(c, r) {
-        return [project(c, r), project(c + 1, r), project(c + 1, r + 1), project(c, r + 1)];
-      }
-
-      function sprite(kind, x, y, size = 33) {
-        const scaled = size * viewZoom;
-        return svgNode('use', {
-          href: `#pixel-${kind}`,
-          x: x + size / 2 - scaled / 2,
-          y: y + size - scaled,
-          width: scaled,
-          height: scaled,
-          class: 'sprite'
-        });
-      }
-
-      // Every block uses real world coordinates and the same camera as the tile grid.
-      // width, height, and depth are physical dimensions, not screen offsets.
-      function cuboid(column, row, width, height, depth, top, front, side, base = .08) {
-        const group = svgNode('g', {
-          class: 'tile-detail'
-        });
-        const footprint = [
-          [column - width / 2, row - depth / 2],
-          [column + width / 2, row - depth / 2],
-          [column + width / 2, row + depth / 2],
-          [column - width / 2, row + depth / 2]
-        ];
-        const upper = footprint.map(([c, r]) => project(c, r, base + height));
-        const lower = footprint.map(([c, r]) => project(c, r, base));
-        upper.forEach((start, index) => {
-          const next = (index + 1) % 4;
-          if (upper[next].x >= start.x) return;
-          group.append(svgNode('polygon', {
-            points: points(start, upper[next], lower[next], lower[index]),
-            fill: index % 2 ? side : front
-          }));
-        });
-        group.append(svgNode('polygon', {
-          points: points(...upper),
-          fill: top
-        }));
-        return group;
-      }
-
-      function tree(column, row, fruit = false, small = false) {
-        const group = svgNode('g', {
-          class: 'tile-detail'
-        });
-        const size = small ? .28 : .42;
-        group.append(cuboid(column, row, .11, .4, .11, '#987646', '#684a31', '#493b2e'));
-        group.append(cuboid(column, row, size, .35, size, fruit ? '#70bd71' : '#69c58e',
-          fruit ? '#368255' : '#2b9269', '#22604a', .36));
-        group.append(cuboid(column, row, size * .8, .22, size * .8, '#94d494', '#54a771', '#2a7756',
-          .69));
-        if (fruit)
-          for (const [dx, dz, base, color] of [
-              [-.18, -.12, .48, '#ffae64'],
-              [.18, .12, .54, '#ed6a62'],
-              [-.12, .18, .57, '#ffe094'],
-              [.12, -.18, .59, '#ed6a62']
-            ]) {
-            group.append(cuboid(column + dx, row + dz, .09, .09, .09, color, color, color, base));
-          }
-        return group;
-      }
-
-      function fruitBasket(column, row) {
-        const group = svgNode('g', {
-          class: 'tile-detail'
-        });
-        group.append(cuboid(column, row, .32, .16, .25, '#dab372', '#9a6843', '#674732'));
-        for (const [dx, dz, color] of [
-            [-.08, -.06, '#f47e6c'],
-            [.08, .06, '#ffcc72'],
-            [-.08, .06, '#eabcf4'],
-            [.08, -.06, '#ec6962']
-          ]) {
-          group.append(cuboid(column + dx, row + dz, .09, .08, .09, color, color, color, .25));
+          );
+          defs.append(sym);
         }
-        return group;
-      }
-
-      function car(column, row) {
-        const group = svgNode('g', {
-          class: 'tile-detail'
-        });
-        group.append(cuboid(column, row, .42, .18, .29, '#8cd9ed', '#419dbc', '#21627d', .1));
-        group.append(cuboid(column, row, .23, .13, .23, '#c2f5ef', '#7ab8ca', '#3a8197', .28));
-        for (const dx of [-.14, .14])
-          for (const dz of [-.14, .14]) {
-            group.append(cuboid(column + dx, row + dz, .09, .1, .07, '#081826', '#081826', '#081826',
-              .04));
-          }
-        return group;
-      }
-
-      function makeDefinitions() {
-        const definitions = svgNode('defs');
-        for (const [kind, rows] of Object.entries(FACES)) {
-          const symbol = svgNode('symbol', {
-            id: `pixel-${kind}`,
-            viewBox: '0 0 16 16',
-            'shape-rendering': 'crispEdges'
-          });
-          rows.forEach((row, y) => [...row].forEach((letter, x) => {
-            if (PALETTE[letter]) symbol.append(svgNode('rect', {
-              x: x + 1,
-              y: y + 2,
-              width: 1,
-              height: 1,
-              fill: PALETTE[letter]
-            }));
-          }));
-          definitions.append(symbol);
-        }
-        const glow = svgNode('radialGradient', {
-          id: 'island-glow'
-        });
-        glow.append(svgNode('stop', {
-          offset: '0%',
-          'stop-color': '#3aa5bd',
-          'stop-opacity': '.22'
-        }));
-        glow.append(svgNode('stop', {
-          offset: '100%',
-          'stop-color': '#3aa5bd',
-          'stop-opacity': '0'
-        }));
-        definitions.append(glow);
-        return definitions;
-      }
-
-      function buildBoard() {
-        const board = $('board');
-        board.replaceChildren(makeDefinitions());
-        board.append(svgNode('ellipse', {
-          cx: 560,
-          cy: 420,
-          rx: 460,
-          ry: 225,
-          fill: 'url(#island-glow)'
-        }));
-        // A quiet ground grid and shadow separate the floating board from the background.
-        const ground = svgNode('g', {
-          stroke: '#267391',
-          'stroke-opacity': '.16',
-          'stroke-width': 1
-        });
-        for (let i = -4; i < 25; i++) {
-          const p = project(i, -2),
-            q = project(i, 12);
-          ground.append(svgNode('line', {
-            x1: p.x,
-            y1: p.y + 115,
-            x2: q.x,
-            y2: q.y + 115
-          }));
-        }
-        for (let i = -2; i < 13; i++) {
-          const p = project(-3, i),
-            q = project(22, i);
-          ground.append(svgNode('line', {
-            x1: p.x,
-            y1: p.y + 115,
-            x2: q.x,
-            y2: q.y + 115
-          }));
-        }
-        board.append(ground);
-        const boundary = [project(-.15, -.15), project(17.15, -.15), project(17.15, 6.15), project(-
-          .15, 6.15)];
-        const shadow = boundary.map(p => ({
-          x: p.x + 13,
-          y: p.y + 76
-        }));
-        board.append(svgNode('polygon', {
-          points: points(...shadow),
-          fill: '#010815',
-          class: 'board-shadow'
-        }));
-        raisedSides(board, boundary, 24, '#173e46', '#0d2b36');
-        board.append(svgNode('polygon', {
-          points: points(...boundary),
-          fill: '#31575b'
-        }));
-
-        const colors = {
-          home: ['#54aa7b', '#2c6851', '#1e4c40'],
-          patch: ['#80ad57', '#4b753c', '#335632'],
-          forest: ['#4e9263', '#306343', '#224d39'],
-          scrub: ['#689e68', '#446b49', '#30523e'],
-          grass: ['#85af77', '#537948', '#3b5d3a'],
-          edge: ['#aac68a', '#6b8857', '#4a6543'],
-          road: ['#9aa9b1', '#667682', '#4a5b69'],
-          haven: ['#425b66', '#2c414d', '#20323e'],
-        };
-        const cells = [];
-        for (let r = -1; r <= ROWS; r++)
-          for (let c = -1; c <= LAST + 1; c++) cells.push({
-            c,
-            r
-          });
-        cells.sort((a, b) => rawProject(a.c, a.r).depth - rawProject(b.c, b.r).depth);
-        for (const {
-            c,
-            r
-          }
-          of cells) {
-          const outside = r < 0 || r >= ROWS || c < 0 || c > LAST;
-          const legal = game.phase === 'push' ? game.canPush(c, r) : game.phase === 'card-target' ?
-            game.canTarget(c, r) : !outside && game.canMove(c, r);
-          const predator = game.predatorAt(c, r);
-          if (outside && !legal && !predator && !(r === ROWS && [6, 10].includes(c))) continue;
-          const centerOfTile = project(c + .5, r + .5);
-          const corners = groundCorners(c, r).map(point => ({
-            x: centerOfTile.x + (point.x - centerOfTile.x) * .96,
-            y: centerOfTile.y + (point.y - centerOfTile.y) * .96
-          }));
-          const center = centerOfTile;
-          const animals = outside ? [] : game.alive.filter(t => t.c === c && t.r === r);
-          const kind = outside ? 'outside' : tile(c);
-          const current = !outside && game.token && !game.token.out && game.token.c === c && game
-            .token.r === r;
-          const group = svgNode('g', {
-            class: `tile ${kind}${legal?' legal':''}${current?' current':''}`,
-            'data-c': c,
-            'data-r': r,
-            role: 'button',
-            tabindex: legal ? '0' : '-1',
-            'aria-disabled': String(!legal),
-            'aria-label': `${kind}, row ${r+1}, column ${c}. ${animals.map(t=>game.name(t)).join(', ')} ${predator?.name||''}${legal?(outside?' Push OUT, then draw your contest card':game.phase==='push'?' Push here':game.phase==='card-target'?' Select enemy':' Move here'):''}`,
-          });
-          if (!outside) {
-            const [top, front, side] = colors[kind];
-            raisedSides(group, corners, 10, front, side);
-            group.append(svgNode('polygon', {
-              points: points(...corners),
-              fill: top,
-              stroke: '#173d3f',
-              'stroke-width': .7,
-              class: 'tile-top'
-            }));
-            if (game.predators.some(predator => predator.c === c)) {
-              const left = project(c + .35, r + .58),
-                tip = project(c + .5, r + .32),
-                right = project(c + .65, r + .58);
-              group.append(svgNode('polyline', {
-                points: points(left, tip, right),
-                fill: 'none',
-                stroke: '#dce9ae',
-                'stroke-width': 1.5,
-                opacity: '.55',
-                class: 'tile-detail'
-              }));
-            }
-            if (kind === 'road' && [6, 10].includes(c)) {
-              const start = project(c + .5, r + .33),
-                end = project(c + .5, r + .67);
-              group.append(svgNode('line', {
-                x1: start.x,
-                y1: start.y,
-                x2: end.x,
-                y2: end.y,
-                stroke: '#e8e8d5',
-                'stroke-width': 2,
-                class: 'tile-detail'
-              }));
-            }
-            if (kind === 'haven') {
-              group.append(svgNode('polygon', {
-                points: points(project(c + .5, r + .3), project(c + .7, r + .5), project(c + .5,
-                  r + .7), project(c + .3, r + .5)),
-                fill: 'none',
-                stroke: '#96d7cb',
-                'stroke-width': 1,
-                class: 'tile-detail'
-              }));
-            }
-            // Decorations are offset away from standing animals and never intercept a click.
-            if (c === 0 || c === 1 && r % 2 === 0) group.append(tree(c + .32, r + .4,
-              false, c === 1));
-            if (c === LAST) {
-              group.append(tree(c + .62, r + .34, true));
-              group.append(fruitBasket(c + .3, r + .7));
-            }
-            if ([2, 14, 15].includes(c) && !animals.length && !predator && (c + r) % 3 === 0) {
-              group.append(cuboid(c + .45, r + .5, .15, .15, .15, '#b0cf88', '#6d965d', '#4d734f'));
-            }
-          } else {
-            group.append(svgNode('polygon', {
-              points: points(...corners),
-              fill: legal ? '#81634766' : '#18384988',
-              stroke: legal ? '#ffda83' : '#3a6676',
-              'stroke-dasharray': legal ? '' : '3 4',
-              class: 'tile-top'
-            }));
-            if (legal) group.append(svgNode('text', {
-              x: center.x,
-              y: center.y + 4,
-              fill: '#ffe69f',
-              'text-anchor': 'middle',
-              'font-size': 12,
-              'font-family': 'monospace',
-              class: 'tile-detail'
-            }, 'OUT'));
-          }
-          animals.slice(0, 2).forEach((animal, index) => {
-            const offset = animals.length > 1 ? (index === 0 ? -10 : 9) : 0;
-            group.append(sprite(ANIMALS[game.players[animal.owner].animal].icon, center.x - 15 +
-              offset, center.y - 28, 30));
-            group.append(svgNode('rect', {
-              x: center.x + 6 + offset,
-              y: center.y - 1,
-              width: 10,
-              height: 11,
-              fill: ANIMALS[game.players[animal.owner].animal].color,
-              stroke: '#f4eccc',
-              'stroke-width': .7,
-              class: 'tile-detail'
-            }));
-            group.append(svgNode('text', {
-              x: center.x + 11 + offset,
-              y: center.y + 7,
-              'text-anchor': 'middle',
-              fill: '#fff',
-              'font-size': 8,
-              class: 'tile-detail'
-            }, String(animal.number)));
-            if (animal.cargo) group.append(svgNode('circle', {
-              cx: center.x - 9 + offset,
-              cy: center.y + 4,
-              r: 3,
-              fill: '#ffda83',
-              class: 'tile-detail'
-            }));
-          });
-          if (animals.length > 2) group.append(svgNode('text', {
-            x: center.x,
-            y: center.y + 16,
-            'text-anchor': 'middle',
-            fill: '#fff',
-            'font-size': 9,
-            class: 'tile-detail'
-          }, `+${animals.length-2}`));
-          if (predator) {
-            const direction = project(c, r + predator.dir),
-              origin = project(c, r);
-            const sector = (Math.round(Math.atan2(direction.y - origin.y, direction.x - origin.x) / (
-              Math.PI / 4)) + 8) % 8;
-            const arrow = ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'][sector];
-            group.append(sprite(predator.icon, center.x - 16, center.y - 28, 33));
-            group.append(svgNode('text', {
-              x: center.x + 22,
-              y: center.y - 3,
-              fill: '#fff1bd',
-              'font-size': 13,
-              class: 'tile-detail'
-            }, arrow));
-          }
-          if (r === ROWS && [6, 10].includes(c)) group.append(car(c + .5, r + .5));
-          const activate = () => {
-            if (!legal) return;
-            act(() => game.phase === 'push' ? game.push(c, r) : game.phase === 'card-target' ? game
-              .moveEnemy(c, r) : game.move(c, r));
+        $("board").append(defs);
+        function xy(radius, a) {
+          const theta = (a * Math.PI) / 180;
+          const local = ((((a + 22.5) % 45) + 45) % 45) - 22.5;
+          const edge =
+            Math.cos(Math.PI / 8) / Math.cos((local * Math.PI) / 180);
+          return {
+            x: Math.sin(theta) * radius * edge,
+            z: -Math.cos(theta) * radius * edge,
           };
-          group.addEventListener('click', () => {
-            if (moveMode || performance.now() < suppressClickUntil) return;
-            activate();
-          });
-          group.addEventListener('keydown', event => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              activate();
-            }
-          });
-          board.append(group);
         }
-        // Labels stay upright at the edge; predator lanes are also marked on every tile.
-        for (let r = 0; r < ROWS; r++) {
-          const p = project(-.8, r + .5);
-          board.append(svgNode('text', {
-            x: p.x,
-            y: p.y,
-            'text-anchor': 'middle',
-            class: 'row-number'
-          }, String(r + 1)));
-        }
-        for (const [c, label] of [
-            [0, 'FOREST'],
-            [8, 'REFUGE'],
-            [16, 'FRUIT +2']
-          ]) {
-          const p = project(c, -.8);
-          board.append(svgNode('text', {
-            x: p.x,
-            y: p.y,
-            'text-anchor': 'middle',
-            class: 'lane-label'
-          }, label));
-        }
-      }
-
-      function renderTurn() {
-        const phase = game.phase;
-        const turnOwner = game.players[game.cardOwner()];
-        $('round-title').textContent = phase === 'predators' ? `ROUND ${game.round}: PREDATORS` : phase === 'finished' ? `ROUND ${game.round}: GAME OVER` : `ROUND ${game.round}: ${turnOwner.name.toUpperCase()} — ${ANIMALS[turnOwner.animal].name.toUpperCase()}`;
-        $('goal-label').textContent = `First to ${game.target} food at home wins.`;
-        $('dice').textContent = game.die === null ? '?' : ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][game
-          .die
-        ];
-        $('dice').setAttribute('aria-label', game.die === null ? 'Dice not rolled' :
-          `Dice: ${game.die}`);
-        $('roll').hidden = !['roll', 'traffic', 'predators', 'contest-roll'].includes(phase);
-        $('spawn').hidden = phase !== 'roll';
-        $('spawn').disabled = !game.canSpawn();
-        const species = ANIMALS[game.player.animal].name;
-        $('spawn').textContent = game.family().length >= 3 ? 'Maximum 3 animals' : game.player.food < 2 ? 'Add animal · need 2 food' : `Add ${species} · 2 food`;
-        $('spawn').title = game.family().length >= 3 ? 'Your family already has three living animals.' : game.player.food < 2 ? `You have ${game.player.food} food; adding an animal costs 2.` : `Add another ${species} at the forest. Your existing animals can be anywhere.`;
-        $('stop').hidden = phase !== 'move';
-        $('stop').disabled = !game.canStop();
-        $('stop').textContent = !game.steps && game.canStop() ? 'Pass turn' : game.remaining === 0 ?
-          'Finish turn' : 'Stop here';
-        $('undo').hidden = phase !== 'move' || !game.history.length;
-        $('cancel-card').hidden = phase !== 'card-target';
-        $('parity').hidden = phase !== 'contest-choice';
-        const titles = {
-          predators: () => `${game.predators[game.predatorIndex].name}`,
-          push: () =>
-            `${game.players[game.tokens.find(t=>t.id===game.contest.winner).owner].name} won — choose a push`,
-          draw: () => `${game.players[game.pendingDraw.owner].name} won a card`,
-          traffic: () =>
-            `Traffic check`,
-          finished: () => game.winner === null ? 'The crossing is over' : `${game.players[game.winner].name} wins!`,
-        };
-        $('turn-title').textContent = titles[phase] ? titles[phase]() :
-          `${game.player.name} / ${ANIMALS[game.player.animal].name} ${game.token.number}`;
-        const help = {
-          roll: 'Choose an animal, then roll.',
-          move: `${game.remaining} of ${game.budget} steps left. ${game.moved?'Choose a gold square, or stop here.':'Choose your animal and starting row, then follow the gold squares.'}`,
-          traffic: 'Odd means safe. Even means a car hit. Use a ready Safe Streets card before rolling to skip this check.',
-          predators: 'Roll for this predator. It follows its green lane and turns around at the edge. Only its final square hits.',
-          'contest-choice': 'You are the attacker: choose odd or even. The defender gets the other choice.',
-          'contest-roll': 'Roll once to decide who wins the square and gets to push the other animal.',
-          push: 'Push the loser to a gold square, then draw a card.',
-          draw: 'You won a card. Click the glowing deck; use it next round.',
-          'card-target': 'Choose a highlighted enemy. It moves one square toward the forest. Click Keep card to cancel.',
-          finished: game.winner === null ? 'No animals remain. Reset to try again.' : 'Enough food made it home. Reset to play another crossing.',
-        };
-        $('turn-help').textContent = help[phase];
-        $('roll').textContent = phase === 'traffic' ? 'Check traffic' : phase === 'predators' ?
-          `Roll / ${game.predators[game.predatorIndex].name}` : phase === 'contest-roll' ?
-          'Roll for the contest' : 'Roll movement dice';
-        $('status').textContent = game.message;
-        $('status').className = `status${phase==='finished'?' winner':''}`;
-        const picks = $('family-picks');
-        picks.replaceChildren();
-        picks.hidden = !['roll', 'move'].includes(phase);
-        if (!picks.hidden)
-          for (const animal of game.family()) {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'btn animal-pick';
-            button.setAttribute('aria-pressed', String(animal.id === game.selected));
-            button.disabled = phase === 'move' && game.moved;
-            button.textContent =
-              ` ${ANIMALS[game.player.animal].name} ${animal.number}${animal.cargo?` / carrying ${animal.cargo}`:animal.c===0?' / home':''}`.trim();
-            button.addEventListener('click', () => act(() => game.select(animal.id)));
-            picks.append(button);
-          }
-      }
-
-      const CARD_DETAILS = {
-        reroll: {
-          glyph: '↻',
-          description: 'Replace your roll before the first step.',
-          timing: 'Roll first; use before stepping.'
-        },
-        step: {
-          glyph: '+1',
-          description: 'Add one step to this movement turn.',
-          timing: 'Use during your movement turn.'
-        },
-        back: {
-          glyph: '←',
-          description: 'Move an enemy one square toward home.',
-          timing: 'Needs a movement turn and a free enemy destination.'
-        },
-        street: {
-          glyph: '◇',
-          description: 'Make one road landing safe.',
-          timing: 'Use before your traffic roll.'
-        },
-      };
-
-      // Cards belong to profiles. The overlay renders only cards actually held.
-      function renderHand() {
-        const hand = $('card-hand');
-        const ownerId = viewedHandOwner ?? game.cardOwner();
-        const owner = game.players[ownerId];
-        $('hand-title').textContent = `${owner.name}’s cards`;
-        hand.replaceChildren();
-        const note = document.createElement('p');
-        note.className = 'hand-note';
-        note.textContent = owner.hand.length ? 'Use a ready card, or close to keep it. New cards unlock next round.' : 'No cards yet. Win a contest, push the loser, then click the deck.';
-        const row = document.createElement('div');
-        row.className = 'hand-row';
-        for (const [type, card] of Object.entries(CARDS)) {
-          const held = owner.hand.filter(c => c.type === type);
-          if (!held.length) continue;
-          const ready = held.filter(c => c.availableRound <= game.round).length;
-          const available = ownerId === game.cardOwner() && game.canCard(type);
-          const box = document.createElement('div');
-          box.className = `card-option${available ? ' ready' : ''}`;
-          const glyph = document.createElement('span');
-          glyph.className = 'card-glyph';
-          glyph.textContent = CARD_DETAILS[type].glyph;
-          const total = document.createElement('span');
-          total.className = 'card-count';
-          total.textContent = `×${held.length}`;
-          const name = document.createElement('h3');
-          name.textContent = card.name;
-          const description = document.createElement('small');
-          description.textContent = CARD_DETAILS[type].description;
-          const button = document.createElement('button');
-          button.id = `use-card-${type}`;
-          button.type = 'button';
-          button.className = 'btn';
-          button.textContent = `Use ${card.name}`;
-          button.disabled = !available;
-          button.addEventListener('click', () => {
-            // Close before the effect so movement/target selection stays on the board.
-            $('hand-dialog').close();
-            viewedHandOwner = null;
-            act(() => game.useCard(type));
-          });
-          const availability = document.createElement('small');
-          availability.className = 'availability';
-          availability.textContent = !ready ? `Unlocks in round ${Math.min(...held.map(c => c.availableRound))}.` : available ? 'Ready to use.' : ownerId !== game.cardOwner() ? 'Wait for your turn.' : CARD_DETAILS[type].timing;
-          box.append(glyph, total, name, description, button, availability);
-          row.append(box);
-        }
-        hand.append(note, row);
-        const draw = game.canDraw();
-        $('draw-card').disabled = !draw;
-        $('deck-count').textContent = draw ? 'Draw one' : `${game.deck.length} cards`;
-        $('deck-caption').textContent = draw ? `${game.players[game.pendingDraw.owner].name}: draw your card.` : 'Win a contest to draw.';
-        $('deck-caption').className = `deck-caption${draw ? ' pending' : ''}`;
-      }
-
-      function renderRoster() {
-        const roster = $('roster');
-        roster.replaceChildren();
-        const title = document.createElement('h2');
-        title.className = 'section-label';
-        title.textContent = 'The families / food at home';
-        roster.append(title);
-        for (const owner of game.players) {
-          const family = game.family(owner.id);
-          const row = document.createElement('div');
-          row.className =
-            `player-row${owner.id===game.active&&!['predators','finished'].includes(game.phase)?' active':''}${family.length?'':' out'}`;
-          row.append(token(family[0] || game.tokens.find(t => t.owner === owner.id)));
-          const detail = document.createElement('div');
-          const name = document.createElement('strong');
-          name.textContent = owner.name;
-          const subtitle = document.createElement('small');
-          subtitle.textContent =
-            `${ANIMALS[owner.animal].name} · ${family.length} pets · ${family.reduce((sum,t)=>sum+t.cargo,0)} fruit`;
-          detail.append(name, subtitle);
-          const cards = document.createElement('button');
-          cards.className = 'card-icon';
-          cards.dataset.owner = owner.id;
-          cards.setAttribute('aria-label', `${owner.name}: view ${owner.hand.length} cards`);
-          cards.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="13" height="17" rx="2" transform="rotate(-12 11 12)"/><rect x="8" y="4" width="13" height="17" rx="2"/><path d="M11 12h7m-3.5-3.5v7"/></svg><span>${owner.hand.length}</span>`;
-          cards.addEventListener('click', () => {
-            viewedHandOwner = owner.id;
-            renderHand();
-            $('hand-dialog').showModal();
-          });
-          const food = document.createElement('div');
-          food.className = 'food';
-          food.textContent = owner.food;
-          const goal = document.createElement('small');
-          goal.textContent = `of ${game.target}`;
-          food.append(goal);
-          row.append(detail, cards, food);
-          roster.append(row);
-        }
-        const log = $('event-log');
-        log.replaceChildren();
-        for (const message of game.log.slice(0, 15)) {
-          const entry = document.createElement('li');
-          entry.textContent = message;
-          log.append(entry);
-        }
-      }
-
-      function render() {
-        buildBoard();
-        renderTurn();
-        renderHand();
-        renderRoster();
-      }
-
-      function act(action) {
-        if (action() === false) return;
-        render();
-        if (game.phase === 'draw') $('draw-card').focus({
-          preventScroll: true
-        });
-        else if (game.phase === 'contest-choice') $('odd').focus({
-          preventScroll: true
-        });
-        else if (['roll', 'traffic', 'predators', 'contest-roll'].includes(game.phase)) $('roll')
-          .focus({
-            preventScroll: true
-          });
-        else if (game.phase === 'finished') $('new-game').focus({
-          preventScroll: true
-        });
-        else $('board').querySelector('.tile.legal')?.focus({
-          preventScroll: true
-        });
-      }
-
-      // Defaults open directly on a playable two-player board. Settings are an overlay.
-      function playerFields(saved) {
-        const previous = saved || [...$('player-fields').children].map(box => ({
-          name: box.querySelector('input').value,
-          animal: Number(box.querySelector('select').value)
-        }));
-        const used = new Set();
-        $('player-fields').replaceChildren();
-        for (let i = 0; i < Number($('player-count').value); i++) {
-          const box = document.createElement('div');
-          box.className = 'player-field';
-          const nameLabel = document.createElement('label');
-          nameLabel.textContent = `Player ${i+1}`;
-          const name = document.createElement('input');
-          name.id = `name-${i}`;
-          name.maxLength = 24;
-          name.required = true;
-          name.value = previous[i]?.name || `Player ${i+1}`;
-          nameLabel.append(name);
-          const animalLabel = document.createElement('label');
-          animalLabel.textContent = 'Animal';
-          const animal = document.createElement('select');
-          animal.id = `animal-${i}`;
-          ANIMALS.forEach((species, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = species.name;
-            animal.append(option);
-          });
-          const choice = previous[i]?.animal ?? ANIMALS.findIndex((_, index) => !used.has(index));
-          used.add(choice);
-          animal.value = choice;
-          animalLabel.append(animal);
-          box.append(nameLabel, animalLabel);
-          $('player-fields').append(box);
-        }
-      }
-
-      function reset(next = config) {
-        config = structuredClone(next);
-        game = new Game(config);
-        render();
-        $('roll').focus({
-          preventScroll: true
-        });
-      }
-      $('settings-button').addEventListener('click', () => {
-        $('player-count').value = config.players.length;
-        $('target').value = config.target;
-        $('setup-error').textContent = '';
-        playerFields(config.players);
-        $('settings-dialog').showModal();
-      });
-      $('player-count').addEventListener('change', () => playerFields());
-      $('cancel-settings').addEventListener('click', () => $('settings-dialog').close());
-      $('setup-form').addEventListener('submit', event => {
-        event.preventDefault();
-        const players = [...$('player-fields').children].map((box, index) => ({
-          name: box.querySelector('input').value.trim() || `Player ${index+1}`,
-          animal: Number(box.querySelector('select').value)
-        }));
-        if (new Set(players.map(p => p.animal)).size !== players.length) {
-          $('setup-error').textContent = 'Choose a different animal for each player.';
-          return;
-        }
-        $('settings-dialog').close();
-        reset({
-          players,
-          target: Number($('target').value)
-        });
-      });
-      $('new-game').addEventListener('click', () => $('restart-dialog').showModal());
-      $('cancel-restart').addEventListener('click', () => $('restart-dialog').close());
-      $('confirm-restart').addEventListener('click', () => {
-        $('restart-dialog').close();
-        reset();
-      });
-      for (const [id, method] of [
-          ['roll', 'roll'],
-          ['stop', 'stop'],
-          ['undo', 'undo'],
-          ['spawn', 'spawn'],
-          ['cancel-card', 'cancelCard'],
-          ['draw-card', 'drawCard']
-        ]) {
-        $(id).addEventListener('click', () => act(() => game[method]()));
-      }
-      $('odd').addEventListener('click', () => act(() => game.chooseParity('odd')));
-      $('even').addEventListener('click', () => act(() => game.chooseParity('even')));
-      $('open-help').addEventListener('click', () => $('help-dialog').showModal());
-      $('close-help').addEventListener('click', () => $('help-dialog').close());
-      $('close-hand').addEventListener('click', () => $('hand-dialog').close());
-      $('hand-dialog').addEventListener('close', () => {
-        viewedHandOwner = null;
-      });
-      $('rotate-left').addEventListener('click', () => setRotation(viewAngle - 15));
-      $('rotate-right').addEventListener('click', () => setRotation(viewAngle + 15));
-      $('zoom-out').addEventListener('click', () => setZoom(viewZoom / 1.15));
-      $('zoom-in').addEventListener('click', () => setZoom(viewZoom * 1.15));
-      $('reset-view').addEventListener('click', () => {
-        viewZoom = 1;
-        viewPanX = viewPanY = 0;
-        moveMode = false;
-        updateMoveMode();
-        $('zoom-label').textContent = '100%';
-        setRotation(0);
-      });
-      // A fixed elevation keeps the island rigid. Orbit changes yaw only; pan
-      // changes its screen position, and zoom applies the same scale to all axes.
-      const rotationSurface = $('board');
-      const moveHandle = $('move-board');
-
-      function updateMoveMode() {
-        moveHandle.setAttribute('aria-pressed', String(moveMode));
-        rotationSurface.classList.toggle('panning', moveMode);
-        $('camera-help').textContent = moveMode ? 'Drag the board to move it. Click Move board again to rotate.' : 'Drag to rotate · Pinch to zoom · Gold squares to move';
-      }
-      const pointerDistance = () => {
-        const [a, b] = [...pointers.values()];
-        return Math.hypot(a.x - b.x, a.y - b.y);
-      };
-
-      function boardUnits(dx, dy) {
-        const rect = rotationSurface.getBoundingClientRect();
-        const scale = Math.min(rect.width / 1140, rect.height / 780);
-        return {
-          x: dx / scale,
-          y: dy / scale
-        };
-      }
-
-      function beginDrag(event, handle = false) {
-        if (event.button !== 0) return;
-        pointers.set(event.pointerId, {
-          x: event.clientX,
-          y: event.clientY
-        });
-        if (pointers.size === 2) {
-          if (rotationFrame !== null) cancelAnimationFrame(rotationFrame);
-          rotationFrame = null;
-          drag = null;
-          rotationSurface.classList.remove('dragging');
-          pinch = {
-            distance: Math.max(1, pointerDistance()),
-            zoom: viewZoom
+        function project(p, h = 0) {
+          const yaw = (angle * Math.PI) / 180,
+            pitch = (70 * Math.PI) / 180;
+          const x = p.x * Math.cos(yaw) - p.z * Math.sin(yaw),
+            z = p.x * Math.sin(yaw) + p.z * Math.cos(yaw);
+          return {
+            x: 550 + panX + x * 64 * zoom,
+            y:
+              415 +
+              panY +
+              (z * Math.sin(pitch) - h * Math.cos(pitch)) * 64 * zoom,
+            depth: z * Math.cos(pitch) + h * Math.sin(pitch),
           };
-          for (const id of pointers.keys()) rotationSurface.setPointerCapture(id);
-          return;
         }
-        if (drag || pointers.size > 1) return;
-        drag = {
-          id: event.pointerId,
-          startX: event.clientX,
-          startY: event.clientY,
-          startAngle: viewAngle,
-          startPanX: viewPanX,
-          startPanY: viewPanY,
-          pan: handle || moveMode,
-          handle,
-          moved: false,
-          surface: handle ? moveHandle : rotationSurface
-        };
-      }
-
-      function moveDrag(event) {
-        if (!pointers.has(event.pointerId)) return;
-        pointers.set(event.pointerId, {
-          x: event.clientX,
-          y: event.clientY
-        });
-        if (pinch && pointers.size === 2) {
-          event.preventDefault();
-          setZoom(pinch.zoom * pointerDistance() / pinch.distance);
-          return;
+        function polygon(points, h = 0) {
+          return points
+            .map((p) => {
+              const q = project(p, h);
+              return `${q.x.toFixed(2)},${q.y.toFixed(2)}`;
+            })
+            .join(" ");
         }
-        if (!drag || event.pointerId !== drag.id) return;
-        const dx = event.clientX - drag.startX,
-          dy = event.clientY - drag.startY;
-        if (!drag.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
-        if (!drag.moved) {
-          drag.moved = true;
-          drag.surface.setPointerCapture(event.pointerId);
-          rotationSurface.classList.add('dragging');
+        function cell(r, s) {
+          if (!r)
+            return Array.from({ length: 8 }, (_, i) =>
+              xy(radii[0], 22.5 + i * 45),
+            );
+          const start = (s - 0.5) * 15,
+            end = (s + 0.5) * 15,
+            angles = [
+              start,
+              ...Array.from(
+                { length: 16 },
+                (_, i) => 22.5 + (i - 8) * 45,
+              ).filter((a) => a > start && a < end),
+              end,
+            ];
+          return [
+            ...angles.map((a) => xy(radii[r], a)),
+            ...angles.reverse().map((a) => xy(radii[r - 1] + 0.035, a)),
+          ];
         }
-        event.preventDefault();
-        if (rotationFrame !== null) cancelAnimationFrame(rotationFrame);
-        rotationFrame = requestAnimationFrame(() => {
-          rotationFrame = null;
-          applyDrag(dx, dy);
-        });
-      }
-
-      function applyDrag(dx, dy) {
-        if (!drag) return;
-        if (drag.pan) {
-          const delta = boardUnits(dx, dy);
-          viewPanX = drag.startPanX + delta.x;
-          viewPanY = drag.startPanY + delta.y;
-          buildBoard();
-        } else setRotation(drag.startAngle - dx * .4);
-      }
-
-      function endRotation(event) {
-        pointers.delete(event.pointerId);
-        if (pinch) {
-          pinch = null;
-          drag = null;
-          suppressClickUntil = performance.now() + 300;
+        function centre(r, s) {
+          return r ? xy((radii[r] + radii[r - 1]) / 2, s * 15) : { x: 0, z: 0 };
         }
-        if (drag && event.pointerId === drag.id) {
-          if (rotationFrame !== null) cancelAnimationFrame(rotationFrame);
-          rotationFrame = null;
-          if (drag.moved) {
-            if (event.type === 'pointerup') applyDrag(event.clientX - drag.startX, event.clientY - drag.startY);
-            suppressClickUntil = performance.now() + 300;
+        function shape(r, s) {
+          if (!r)
+            return {
+              fill: "#28674d",
+              side: "#163f2d",
+              name: "Central habitat",
+            };
+          if (r === ISLAND)
+            return {
+              fill: "#3a5860",
+              side: "#263f46",
+              name: "Safe island · clockwise",
+            };
+          if (ROAD.has(r))
+            return {
+              fill: r % 2 ? "#9daeb8" : "#8599a6",
+              side: "#526774",
+              name: `Road lane ${[4, 5, 7, 8].indexOf(r) + 1} · sun/moon check`,
+            };
+          if (r === RESOURCE)
+            return CORNUCOPIA.has(s)
+              ? {
+                  fill: "#459fb6",
+                  side: "#235e77",
+                  name: "Cornucopia · 3 fruit + hunter roll",
+                }
+              : {
+                  fill: "#377e57",
+                  side: "#18452e",
+                  name: "Resource patch · 2 fruit",
+                };
+          return {
+            fill:
+              r < 4
+                ? ["", "#94bd77", "#a3ca86", "#8fb66e"][r]
+                : ["#a6c98c", "#90b873", "#a0c580"][r - 9],
+            side: "#557b4c",
+            name: `${r < 4 ? "Inner" : "Outer"} predator lane ${r < 4 ? r : r - 8}`,
+          };
+        }
+        function sprite(group, kind, p, size) {
+          const q = project(p, 0.12),
+            u = size * zoom,
+            cx = q.x,
+            cy = q.y - u * 0.48;
+          const medal = svg("g", { class: "sprite", "pointer-events": "none" });
+          medal.append(
+            svg("ellipse", {
+              cx,
+              cy: q.y + u * 0.05,
+              rx: u * 0.49,
+              ry: u * 0.16,
+              fill: "#071b29",
+              opacity: ".42",
+            }),
+          );
+          medal.append(svg("circle", { cx, cy, r: u * 0.47, fill: "#475d65" }));
+          medal.append(
+            svg("circle", {
+              cx,
+              cy: cy - u * 0.035,
+              r: u * 0.45,
+              fill: `url(#gloss-${kind})`,
+              stroke: "#f1e7c1",
+              "stroke-width": Math.max(0.6, zoom * 0.8),
+            }),
+          );
+          medal.append(
+            svg("use", {
+              href: "#pixel-" + kind,
+              x: cx - u * 0.42,
+              y: cy - u * 0.43,
+              width: u * 0.84,
+              height: u * 0.84,
+            }),
+          );
+          medal.append(
+            svg("path", {
+              d: `M${cx - u * 0.34},${cy - u * 0.23} Q${cx - u * 0.2},${cy - u * 0.46} ${cx + u * 0.1},${cy - u * 0.33}`,
+              fill: "none",
+              stroke: "white",
+              "stroke-width": u * 0.055,
+              "stroke-linecap": "round",
+              opacity: ".64",
+            }),
+          );
+          group.append(medal);
+        }
+        function fruit(g, p, large = false) {
+          const q = project(p, 0.12),
+            u = zoom * (large ? 1.2 : 1);
+          g.append(
+            svg("path", {
+              d: `M${q.x - 12 * u} ${q.y - 1 * u}l${24 * u} 0l${-4 * u} ${11 * u}l${-16 * u} 0Z`,
+              fill: "#b78444",
+              stroke: "#5c472e",
+              "stroke-width": u,
+            }),
+          );
+          [
+            [-8, -6, "#f1d067"],
+            [0, -9, "#e77351"],
+            [8, -5, "#efb55d"],
+            [2, -1, "#bb82d5"],
+          ].forEach(([x, y, c]) => {
+            g.append(
+              svg("circle", {
+                cx: q.x + x * u,
+                cy: q.y + y * u,
+                r: 4.2 * u,
+                fill: c,
+              }),
+            );
+            g.append(
+              svg("path", {
+                d: `M${q.x + x * u} ${q.y + (y - 4) * u}l${3 * u} ${-3 * u}`,
+                stroke: "#b7dd86",
+                "stroke-width": 2 * u,
+              }),
+            );
+          });
+        }
+        function tree(g, p, size = 1) {
+          const q = project(p, 0.1),
+            u = zoom * size;
+          g.append(
+            svg("rect", {
+              x: q.x - 3 * u,
+              y: q.y - 25 * u,
+              width: 6 * u,
+              height: 28 * u,
+              fill: "#946b48",
+            }),
+          );
+          g.append(
+            svg("path", {
+              d: `M${q.x - 19 * u} ${q.y - 17 * u}v${-18 * u}h${8 * u}v${-13 * u}h${22 * u}v${13 * u}h${8 * u}v${18 * u}Z`,
+              fill: "#56a875",
+              stroke: "#245f49",
+              "stroke-width": 2 * u,
+            }),
+          );
+          g.append(
+            svg("rect", {
+              x: q.x - 8 * u,
+              y: q.y - 41 * u,
+              width: 12 * u,
+              height: 9 * u,
+              fill: "#8acc87",
+            }),
+          );
+        }
+        function board() {
+          const root = $("board");
+          root
+            .querySelectorAll(":scope > :not(defs)")
+            .forEach((n) => n.remove());
+          root.classList.toggle("panning", moveMode);
+          root.append(
+            svg("ellipse", {
+              cx: 550 + panX,
+              cy: 456 + panY,
+              rx: 374 * zoom,
+              ry: 340 * zoom,
+              fill: "#020c1b",
+              opacity: ".5",
+            }),
+          );
+          root.setAttribute(
+            "viewBox",
+            innerWidth <= 800 ? "100 0 900 850" : "0 0 1100 850",
+          );
+          const possible =
+              game.phase === "setup"
+                ? game.setupChoices()
+                : game.phase === "push"
+                  ? game.pushes()
+                  : game.phase === "card-target"
+                    ? game.backwardTargets()
+                    : game.legalMoves(),
+            legal = new Set(
+              possible.filter((p) => p.r <= RESOURCE).map((p) => key(p.r, p.s)),
+            );
+          const entries = [
+            { r: 0, s: 0 },
+            ...Array.from({ length: RESOURCE * SECTORS }, (_, i) => ({
+              r: 1 + Math.floor(i / 24),
+              s: i % 24,
+            })),
+          ].sort(
+            (a, b) =>
+              project(centre(a.r, a.s)).depth - project(centre(b.r, b.s)).depth,
+          );
+          for (const { r, s } of entries) {
+            const points = cell(r, s),
+              style = shape(r, s),
+              p = centre(r, s),
+              g = svg("g", {
+                class:
+                  "tile" +
+                  (legal.has(key(r, s)) ? " legal" : "") +
+                  (game.token &&
+                  !game.token.out &&
+                  key(game.token.r, game.token.s) === key(r, s)
+                    ? " current"
+                    : ""),
+                "data-r": r,
+                "data-s": s,
+                role: "button",
+                tabindex: legal.has(key(r, s)) ? 0 : -1,
+                "aria-label": `${style.name}, sector ${s + 1}${legal.has(key(r, s)) ? ", available" : ""}`,
+              });
+            for (let i = 0; i < points.length; i++) {
+              const a = points[i],
+                b = points[(i + 1) % points.length];
+              g.append(
+                svg("polygon", {
+                  points: [
+                    project(a),
+                    project(b),
+                    project(b, -0.25),
+                    project(a, -0.25),
+                  ]
+                    .map((q) => `${q.x},${q.y}`)
+                    .join(" "),
+                  fill: style.side,
+                }),
+              );
+            }
+            g.append(
+              svg("polygon", {
+                points: polygon(points),
+                fill: style.fill,
+                stroke: "#143c35",
+                "stroke-width": 1.2 * zoom,
+                class: "tile-top",
+              }),
+            );
+            const q = project(p);
+            if (r === 0) {
+              [
+                [-1.08, -0.8, 0.85],
+                [-0.55, -1.12, 1.1],
+                [0.12, -1.16, 0.9],
+                [0.74, -0.96, 1.1],
+                [1.14, -0.42, 0.85],
+                [-1.22, -0.15, 0.75],
+                [0.4, -0.5, 0.85],
+              ]
+                .sort(
+                  (a, b) =>
+                    project({ x: a[0], z: a[1] }).depth -
+                    project({ x: b[0], z: b[1] }).depth,
+                )
+                .forEach(([x, z, size]) => tree(g, { x, z }, size));
+              g.append(
+                svg(
+                  "text",
+                  {
+                    x: q.x,
+                    y: q.y + 61 * zoom,
+                    "text-anchor": "middle",
+                    fill: "#d1f0bd",
+                    "font-size": 12 * zoom,
+                    "font-family": "monospace",
+                    "font-weight": 700,
+                  },
+                  "HABITAT",
+                ),
+              );
+            }
+            if (r === RESOURCE) {
+              fruit(g, p, CORNUCOPIA.has(s));
+              if (CORNUCOPIA.has(s)) {
+                sprite(g, "hunter", xy(6.35, s * 15 + 3), 23);
+                g.append(
+                  svg(
+                    "text",
+                    {
+                      x: q.x,
+                      y: q.y + 27 * zoom,
+                      "text-anchor": "middle",
+                      fill: "#e9fffa",
+                      "font-size": 11 * zoom,
+                    },
+                    "+3 · hunter",
+                  ),
+                );
+              } else if (s % 3 === 0) tree(g, xy(5.86, s * 15 + 4), 0.65);
+            }
+            if (ROAD.has(r) || r === ISLAND) {
+              const clockwise = r <= ISLAND;
+              const radius = (radii[r] + radii[r - 1]) / 2;
+              const a = project(xy(radius, s * 15 + (clockwise ? -4 : 4))),
+                b = project(xy(radius, s * 15 + (clockwise ? 4 : -4)));
+              const dx = b.x - a.x,
+                dy = b.y - a.y,
+                len = Math.hypot(dx, dy),
+                ux = dx / len,
+                uy = dy / len;
+              g.append(
+                svg("path", {
+                  d: `M${a.x},${a.y}L${b.x},${b.y}M${b.x - ux * 4 * zoom - uy * 3 * zoom},${b.y - uy * 4 * zoom + ux * 3 * zoom}L${b.x},${b.y}L${b.x - ux * 4 * zoom + uy * 3 * zoom},${b.y - uy * 4 * zoom - ux * 3 * zoom}`,
+                  fill: "none",
+                  stroke: r === ISLAND ? "#b7e4c8" : "#e2e9eb",
+                  "stroke-width": zoom * 0.9,
+                  opacity: ".7",
+                }),
+              );
+              if (r === ISLAND && s % 6 === 0) tree(g, p, 0.3);
+            }
+            const predatorsHere = game.predators.filter(
+              (pred) =>
+                pred.on &&
+                (pred.placed || game.phase === "setup") &&
+                key(pred.r, pred.s) === key(r, s),
+            );
+            predatorsHere.forEach((pred, i) =>
+              sprite(
+                g,
+                pred.kind,
+                {
+                  x: p.x + (i - (predatorsHere.length - 1) / 2) * 0.28,
+                  z: p.z,
+                },
+                predatorsHere.length > 1 ? 15 : 18,
+              ),
+            );
+            const tokens = game.tokens.filter(
+              (t) => !t.out && key(t.r, t.s) === key(r, s),
+            );
+            const visibleTokens = r
+              ? tokens
+              : tokens.filter(
+                  (t, i) => tokens.findIndex((x) => x.owner === t.owner) === i,
+                );
+            visibleTokens.forEach((t, i) => {
+              const off = r
+                ? { x: p.x, z: p.z }
+                : {
+                    x: -0.85 + (i % 4) * 0.55,
+                    z: 0.2 + Math.floor(i / 4) * 0.55,
+                  };
+              sprite(
+                g,
+                game.players[t.owner].animal.toLowerCase(),
+                off,
+                r ? 20 : 25,
+              );
+              const pos = project(off, 0.32);
+              g.append(
+                svg("circle", {
+                  cx: pos.x + 11 * zoom,
+                  cy: pos.y - 3 * zoom,
+                  r: 6 * zoom,
+                  fill: COLORS[t.owner],
+                }),
+              );
+              g.append(
+                svg(
+                  "text",
+                  {
+                    x: pos.x + 11 * zoom,
+                    y: pos.y,
+                    "text-anchor": "middle",
+                    fill: "#102637",
+                    "font-size": 8 * zoom,
+                  },
+                  r
+                    ? `${t.number}`
+                    : `${tokens.filter((x) => x.owner === t.owner).length}`,
+                ),
+              );
+            });
+            const choose = () => {
+              if (suppressClick || moveMode) return;
+              if (game.phase === "setup") {
+                act(() => game.placePredator(r, s));
+              } else if (game.phase === "card-target") {
+                const t = tokens.find((t) =>
+                  game.backwardTargets().some((x) => x.id === t.id),
+                );
+                if (t) act(() => game.targetEnemy(t.id));
+              } else if (game.phase === "push") act(() => game.push(r, s));
+              else act(() => game.move(r, s));
+            };
+            g.addEventListener("click", choose);
+            g.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                choose();
+              }
+            });
+            root.append(g);
           }
-          if (drag.surface.hasPointerCapture(event.pointerId)) drag.surface.releasePointerCapture(event.pointerId);
-          drag = null;
+          // A friendly scavenger mascot watches from outside the landscape.
+          const scavenger = svg("g", {
+            "aria-label": "Vulture · scavenger mascot",
+          });
+          sprite(scavenger, "vulture", xy(6.65, 270), 32);
+          const vp = project(xy(6.65, 270));
+          scavenger.append(
+            svg(
+              "text",
+              {
+                x: vp.x,
+                y: vp.y + 15 * zoom,
+                "text-anchor": "middle",
+                fill: "#a8bdc6",
+                "font-size": 10 * zoom,
+              },
+              "scavenger",
+            ),
+          );
+          root.append(scavenger);
+          if (game.phase === "push" && game.contest.r === RESOURCE) {
+            const p = project(xy(6.8, game.contest.s * 15));
+            const g = svg("g", {
+              role: "button",
+              tabindex: 0,
+              class: "out-button",
+              "aria-label": "Push off the board",
+            });
+            g.append(
+              svg("rect", {
+                x: p.x - 28,
+                y: p.y - 13,
+                width: 56,
+                height: 26,
+                rx: 6,
+                fill: "#a14850",
+              }),
+            );
+            g.append(
+              svg(
+                "text",
+                {
+                  x: p.x,
+                  y: p.y + 4,
+                  "text-anchor": "middle",
+                  fill: "white",
+                  "font-size": 12,
+                },
+                "OUT",
+              ),
+            );
+            const out = () =>
+              act(() => game.push(RESOURCE + 1, game.contest.s));
+            g.addEventListener("click", out);
+            g.addEventListener("keydown", (e) => {
+              if (e.key === "Enter") out();
+            });
+            root.append(g);
+          }
+          $("zoom").textContent = `${Math.round(zoom * 100)}%`;
         }
-        if (rotationSurface.hasPointerCapture(event.pointerId)) rotationSurface.releasePointerCapture(event.pointerId);
-        rotationSurface.classList.remove('dragging');
-      }
-      rotationSurface.addEventListener('pointerdown', event => beginDrag(event));
-      moveHandle.addEventListener('pointerdown', event => beginDrag(event, true));
-      for (const surface of [rotationSurface, moveHandle]) {
-        surface.addEventListener('pointermove', moveDrag);
-        surface.addEventListener('pointerup', endRotation);
-        surface.addEventListener('pointercancel', endRotation);
-      }
-      moveHandle.addEventListener('click', () => {
-        if (performance.now() < suppressClickUntil) return;
-        moveMode = !moveMode;
-        updateMoveMode();
-      });
-      rotationSurface.addEventListener('pointerleave', event => {
-        if (drag && !drag.moved && event.pointerId === drag.id) {
-          drag = null;
-          pointers.delete(event.pointerId);
+        function setButton(id, label, action, show = true, enabled = true) {
+          const b = $(id);
+          b.hidden = !show;
+          b.textContent = label;
+          b.disabled = !enabled;
+          b.onclick = () => act(action);
         }
-      });
-      document.querySelector('.stage').addEventListener('wheel', event => {
-        const pinchWheel = event.ctrlKey || event.metaKey;
-        if (!pinchWheel && !event.target.closest('#board')) return;
-        event.preventDefault();
-        const units = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 780 : 1;
-        if (!pinchWheel && Math.abs(event.deltaX) > Math.abs(event.deltaY)) setRotation(viewAngle - event.deltaX * .2);
-        else setZoom(viewZoom * Math.exp(-event.deltaY * units * (pinchWheel ? .01 : .002)));
-      }, {
-        passive: false
-      });
-      render();
-    })();
-  </script>
-</body>
+        function render() {
+          board();
+          const p = game.player;
+          const response =
+            game.pending && ["traffic", "hunter", "rescue"].includes(game.phase)
+              ? game.players[game.cardOwner()]
+              : p;
+          $("round").textContent =
+            game.phase === "setup"
+              ? `SETUP: PLAYER ${game.setupPlayer + 1}`
+              : `ROUND ${game.round}: PLAYER ${p.id + 1} — ${p.animal.toUpperCase()}`;
+          $("dice").textContent = game.lastRoll
+            ? ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][game.lastRoll - 1]
+            : "⚄";
+          $("goal").textContent =
+            `First family to bank ${game.target} food wins · Start: 5 each`;
+          const descriptions = {
+            setup: `Player ${game.setupPlayer + 1}: place ${game.predators[game.setupIndex]?.kind} ${game.setupIndex + 1} / 18 in the glowing lane.`,
+            roll: "Choose an animal, then roll.",
+            move: `${game.remaining} ${game.remaining === 1 ? "step" : "steps"} left · tap a glowing space`,
+            traffic: `${response.animal}: MOON / night = safe · SUN / day = car hit`,
+            hunter: `${response.animal}: cornucopia hunter roll · odd = keep fruit`,
+            predators: `Lane ${game.predIndex + 1} of 6 · three predators share one roll`,
+            "contest-choice": "Attacker: choose odd or even.",
+            "contest-roll": "Roll to decide who owns this space.",
+            push: "Winner: choose where to push the loser.",
+            draw: `Player ${game.pendingDraw?.owner + 1}: click the deck to draw your card.`,
+            rescue: `${response.animal}: use a rescue card or accept the hit.`,
+            "card-target": "Tap an enemy to move it one space toward home.",
+            finished:
+              game.winner === null
+                ? "No animals remain."
+                : `PLAYER ${game.winner + 1} — ${game.players[game.winner]?.animal} WINS!`,
+          };
+          $("turn-help").textContent = descriptions[game.phase];
+          $("status").textContent = game.log.at(-1);
+          $("traffic-dice").textContent =
+            game.lastTraffic === "sun"
+              ? "☀"
+              : game.lastTraffic === "moon"
+                ? "☾"
+                : "☀☾";
+          $("traffic-dice").classList.toggle(
+            "night",
+            game.lastTraffic === "moon",
+          );
+          $("traffic-dice").setAttribute(
+            "aria-label",
+            game.lastTraffic
+              ? `Traffic result: ${game.lastTraffic}`
+              : "Traffic die: three suns and three moons",
+          );
+          setButton(
+            "finish-setup",
+            "Keep choices + fill the rest",
+            () => game.finishSetup(),
+            game.phase === "setup",
+          );
+          setButton(
+            "roll",
+            game.phase === "predators"
+              ? "Roll lane dice"
+              : game.phase === "traffic"
+                ? "Roll sun / moon die"
+                : game.phase === "hunter"
+                  ? "Roll hunter check"
+                  : game.phase === "contest-roll"
+                    ? "Roll contest dice"
+                    : "Roll movement dice",
+            () =>
+              game.phase === "predators"
+                ? game.rollPredator()
+                : ["traffic", "hunter"].includes(game.phase)
+                  ? game.check()
+                  : game.phase === "contest-roll"
+                    ? game.rollContest()
+                    : game.roll(),
+            ["roll", "traffic", "hunter", "predators", "contest-roll"].includes(
+              game.phase,
+            ),
+          );
+          setButton(
+            "spawn",
+            game.family().length >= 3
+              ? "Maximum 3 animals"
+              : game.player.food < 2
+                ? "Add animal · need 2 food"
+                : `Add ${p.animal} · 2 food`,
+            () => game.spawn(),
+            game.phase === "roll",
+            game.canSpawn(),
+          );
+          setButton(
+            "stop",
+            "Stop here",
+            () => game.stop(),
+            game.phase === "move",
+            game.steps > 0,
+          );
+          setButton(
+            "pass",
+            "Pass / no available moves",
+            () => game.pass(),
+            game.phase === "move" && game.legalMoves().length === 0,
+          );
+          setButton(
+            "accept",
+            "Accept hit",
+            () => game.acceptHit(),
+            game.phase === "rescue",
+          );
+          setButton(
+            "rescue",
+            "View rescue cards",
+            () => {
+              openHand(game.cardOwner());
+              return false;
+            },
+            ["rescue", "traffic"].includes(game.phase),
+          );
+          $("parity").hidden = game.phase !== "contest-choice";
+          $("odd").onclick = () => act(() => game.chooseParity("odd"));
+          $("even").onclick = () => act(() => game.chooseParity("even"));
+          $("family").replaceChildren();
+          game.family().forEach((t) => {
+            const b = document.createElement("button");
+            b.className = "btn animal-pick";
+            b.textContent = `${p.animal} ${t.number} · ${t.r === 0 ? "home" : t.cargo ? `${t.cargo} fruit` : "away"}`;
+            b.setAttribute("aria-pressed", t.id === game.selected);
+            b.disabled =
+              !["roll", "move"].includes(game.phase) || game.steps > 0;
+            b.onclick = () => act(() => game.select(t.id));
+            $("family").append(b);
+          });
+          $("roster").replaceChildren();
+          game.players.forEach((p) => {
+            const row = document.createElement("div");
+            row.className =
+              "player-row" +
+              (p.id ===
+              (game.phase === "setup" ? game.setupPlayer : game.active)
+                ? " active"
+                : "") +
+              (!game.family(p.id).length ? " out" : "");
+            row.append(face(p.animal.toLowerCase()));
+            const name = document.createElement("div");
+            const bold = document.createElement("strong");
+            bold.textContent = `Player ${p.id + 1} · ${p.animal}`;
+            const small = document.createElement("small");
+            small.textContent = `${game.family(p.id).length} animals · ${game.family(p.id).reduce((n, t) => n + t.cargo, 0)} carrying`;
+            name.append(bold, small);
+            row.append(name);
+            const card = document.createElement("button");
+            card.className = "card-icon";
+            card.textContent = `▣ ${p.hand.length}`;
+            card.title = `View ${p.animal}'s cards`;
+            card.setAttribute(
+              "aria-label",
+              `Player ${p.id + 1} cards, ${p.hand.length} held`,
+            );
+            card.onclick = () => openHand(p.id);
+            row.append(card);
+            const food = document.createElement("div");
+            food.className = "food";
+            food.textContent = p.food;
+            food.title = "Banked family food";
+            row.append(food);
+            $("roster").append(row);
+          });
+          $("deck").disabled = game.phase !== "draw";
+          $("deck-caption").textContent =
+            game.phase === "draw"
+              ? `Player ${game.pendingDraw.owner + 1}: DRAW ONE`
+              : `${game.deck.length} in deck · ${game.discard.length} discarded`;
+          $("deck-caption").classList.toggle("pending", game.phase === "draw");
+          $("event-log").textContent = game.log.slice(-8).join("\n");
+          if ($("hand-dialog").open) renderHand();
+          globalThis.qaGame = game;
+        }
+        function act(action) {
+          const result = action();
+          if (result !== false) render();
+          return result;
+        }
+        function renderHand() {
+          const p = game.players[handOwner];
+          $("hand-title").textContent =
+            `Player ${p.id + 1} · ${p.animal}'s cards`;
+          $("hand-list").replaceChildren();
+          if (!p.hand.length) {
+            const empty = document.createElement("p");
+            empty.textContent =
+              "No cards yet. Win a contest, push the loser, then click the floating deck.";
+            $("hand-list").append(empty);
+          }
+          p.hand.forEach((c, i) => {
+            const item = document.createElement("article");
+            item.className = "held-card";
+            const h = document.createElement("h3");
+            h.textContent = `${CARDS[c.type].icon} ${CARDS[c.type].name}`;
+            const text = document.createElement("p");
+            text.textContent = CARDS[c.type].text;
+            const ready = document.createElement("small");
+            ready.textContent =
+              c.availableRound > game.round
+                ? `Ready in round ${c.availableRound}`
+                : "Ready · use when the timing fits";
+            const button = document.createElement("button");
+            button.className = "btn primary";
+            button.textContent = "Use card";
+            button.disabled = !game.canCard(handOwner, i);
+            button.onclick = () => {
+              $("hand-dialog").close();
+              act(() => game.useCard(handOwner, i));
+            };
+            item.append(h, text, ready, button);
+            $("hand-list").append(item);
+          });
+        }
+        function openHand(owner) {
+          handOwner = owner;
+          renderHand();
+          if (!$("hand-dialog").open) $("hand-dialog").showModal();
+        }
+        $("deck").onclick = () => act(() => game.drawCard());
+        $("help").onclick = () => $("help-dialog").showModal();
+        $("settings").onclick = () => $("settings-dialog").showModal();
+        $("history").onclick = () => $("history-dialog").showModal();
+        $("token-designs").onclick = () => {
+          $("token-gallery").replaceChildren();
+          const savedZoom = zoom;
+          zoom = 1;
+          for (const kind of [
+            ...ANIMALS.map((a) => a.toLowerCase()),
+            "snake",
+            "fox",
+            "coyote",
+            "cat",
+            "vulture",
+          ]) {
+            const fig = document.createElement("figure"),
+              art = svg("svg", { viewBox: "0 0 72 72" });
+            const g = svg("g");
+            sprite(g, kind, { x: 0, z: 0 }, 60);
+            const q = project({ x: 0, z: 0 }, 0.12);
+            g.setAttribute("transform", `translate(${36 - q.x},${62 - q.y})`);
+            art.append(g);
+            fig.append(art);
+            const caption = document.createElement("figcaption");
+            caption.textContent = kind[0].toUpperCase() + kind.slice(1);
+            fig.append(caption);
+            $("token-gallery").append(fig);
+          }
+          zoom = savedZoom;
+          $("design-dialog").showModal();
+        };
+        document
+          .querySelectorAll("[data-close]")
+          .forEach((b) => (b.onclick = () => $(b.dataset.close).close()));
+        $("apply-settings").onclick = () => {
+          game = new Game({
+            players: Number($("player-count").value),
+            target: Number($("target").value),
+          });
+          $("settings-dialog").close();
+          render();
+        };
+        $("reset").onclick = () => $("reset-dialog").showModal();
+        $("confirm-reset").onclick = () => {
+          game = new Game({
+            players: game.players.length,
+            target: game.target,
+          });
+          $("reset-dialog").close();
+          render();
+        };
+        $("rotate-left").onclick = () => {
+          angle -= 15;
+          board();
+        };
+        $("rotate-right").onclick = () => {
+          angle += 15;
+          board();
+        };
+        $("zoom-in").onclick = () => {
+          zoom = Math.min(1.6, zoom + 0.1);
+          board();
+        };
+        $("zoom-out").onclick = () => {
+          zoom = Math.max(0.55, zoom - 0.1);
+          board();
+        };
+        $("view-reset").onclick = () => {
+          angle = panX = panY = 0;
+          zoom = 1;
+          board();
+        };
+        const pointers = new Map();
+        let suppressClick = false,
+          dragDistance = 0,
+          previousPinch = null;
+        function scale() {
+          const b = $("board").getBoundingClientRect();
+          return Math.min(
+            b.width / (innerWidth <= 800 ? 900 : 1100),
+            b.height / 850,
+          );
+        }
+        $("move-board").onclick = () => {
+          if (suppressClick) return;
+          moveMode = !moveMode;
+          $("move-board").setAttribute("aria-pressed", moveMode);
+          $("rotation-help").textContent = moveMode
+            ? "Move mode: drag the board. Click again to rotate."
+            : "Drag to rotate · pinch or wheel to zoom";
+          board();
+        };
+        function down(e) {
+          if (e.button !== 0 && e.pointerType === "mouse") return;
+          if (e.currentTarget.id === "move-board")
+            e.currentTarget.setPointerCapture(e.pointerId);
+          pointers.set(e.pointerId, {
+            x: e.clientX,
+            y: e.clientY,
+            handle: e.currentTarget.id === "move-board",
+          });
+          dragDistance = 0;
+          previousPinch = null;
+        }
+        function move(e) {
+          const last = pointers.get(e.pointerId);
+          if (!last) return;
+          const dx = e.clientX - last.x,
+            dy = e.clientY - last.y;
+          last.x = e.clientX;
+          last.y = e.clientY;
+          dragDistance += Math.abs(dx) + Math.abs(dy);
+          if (dragDistance < 4) return;
+          if (!e.currentTarget.hasPointerCapture(e.pointerId))
+            e.currentTarget.setPointerCapture(e.pointerId);
+          suppressClick = true;
+          if (pointers.size === 2) {
+            const [a, b] = [...pointers.values()],
+              dist = Math.hypot(a.x - b.x, a.y - b.y);
+            if (previousPinch)
+              zoom = Math.max(
+                0.55,
+                Math.min(1.6, (zoom * dist) / previousPinch),
+              );
+            previousPinch = dist;
+          } else if (moveMode || last.handle) {
+            panX += dx / scale();
+            panY += dy / scale();
+          } else angle += dx * 0.35;
+          board();
+        }
+        function up(e) {
+          if (e.currentTarget.hasPointerCapture(e.pointerId))
+            e.currentTarget.releasePointerCapture(e.pointerId);
+          pointers.delete(e.pointerId);
+          previousPinch = null;
+          if (suppressClick)
+            setTimeout(() => {
+              suppressClick = false;
+            }, 100);
+        }
+        for (const id of ["board", "move-board"]) {
+          const n = $(id);
+          n.addEventListener("pointerdown", down);
+          n.addEventListener("pointermove", move);
+          n.addEventListener("pointerup", up);
+          n.addEventListener("pointercancel", up);
+        }
+        $("board").addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && !e.ctrlKey)
+              angle += e.deltaX * 0.15;
+            else
+              zoom = Math.max(
+                0.55,
+                Math.min(1.6, zoom * Math.exp(-e.deltaY * 0.003)),
+              );
+            board();
+          },
+          { passive: false },
+        );
+        document.querySelectorAll("dialog").forEach((d) =>
+          d.addEventListener("click", (e) => {
+            if (e.target === d) {
+              const r = d.getBoundingClientRect();
+              if (
+                e.clientX < r.left ||
+                e.clientX > r.right ||
+                e.clientY < r.top ||
+                e.clientY > r.bottom
+              )
+                d.close();
+            }
+          }),
+        );
+        addEventListener("resize", board);
+        globalThis.qaRender = render;
+        globalThis.qaCamera = () => ({ angle, zoom, panX, panY, pitch: 70 });
+        render();
+      })();
+    </script>
+  </body>
 </html>

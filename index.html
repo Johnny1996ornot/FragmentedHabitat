@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#071527" />
     <meta
       name="description"
-      content="Fragmented Habitat v22: an octagonal animal board game. Start with 5 food, cross circling predators and roads, collect fruit and keep 38 wild cards."
+      content="Fragmented Habitat v23: an animal board game with square, circular and octagonal layouts. Start with 5 food, cross predator patrols and roads, collect fruit and keep 38 wild cards."
     />
     <title>Fragmented Habitat</title>
     <link
@@ -1336,7 +1336,7 @@
         </div>
 
         <footer>
-          VERSION 22 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+          VERSION 23 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
             Recent events
           </button>
         </footer>
@@ -1468,6 +1468,12 @@
         You can have up to three living animals, but move only one per turn.
       </p>
       <h3>Choose your game</h3>
+      <p>
+        The square board uses equal square cells, including the corners. Move
+        between cells that share an edge; diagonal moves are unavailable. Food
+        patches are spaced around the outer edge. The green cells between them
+        contain no food.
+      </p>
       <ul>
         <li>
           <strong>Classic — Habitat Fragmentation:</strong> animals start in the
@@ -1553,7 +1559,8 @@
           keep the fruit; sun/day means a hit. Each patch supplies only the
           first animal that collects from it. It stays empty unless its carried
           fruit is returned after a hit. Each animal collects from one patch per
-          trip. In Colonization, the centre is a settlement habitat rather than a food patch.
+          trip. In Colonization, the centre is a settlement habitat rather than
+          a food patch.
         </p>
       </div>
       <h3>Hits, revival and elimination</h3>
@@ -1795,7 +1802,7 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <script id="game-engine">
-      /* Fragmented Habitat v22 — rules engine, independent of the display. */
+      /* Fragmented Habitat v23 — rules engine, independent of the display. */
       (() => {
         "use strict";
         const SECTORS = 24;
@@ -1855,7 +1862,35 @@
           },
         };
         const wrap = (n) => ((n % SECTORS) + SECTORS) % SECTORS;
-        const key = (r, s) => (r === 0 ? "0:0" : `${r}:${wrap(s)}`);
+        const key = (r, s) => (r === 0 ? "0:0" : `${r}:${s}`);
+        const SQUARE_HOME = 5;
+        const SQUARE_UNIT = 6.55 / Math.SQRT2 / (RESOURCE + SQUARE_HOME + 0.5);
+        // A square ring is the perimeter of an integer grid. Each index advances
+        // one square clockwise, including a separate square at every corner.
+        function squareCoordinate(r, s) {
+          const n = r + SQUARE_HOME;
+          const q = (((s + n) % (8 * n)) + 8 * n) % (8 * n);
+          if (q < 2 * n) return { x: -n + q, z: -n };
+          if (q < 4 * n) return { x: n, z: q - 3 * n };
+          if (q < 6 * n) return { x: 5 * n - q, z: n };
+          return { x: -n, z: 7 * n - q };
+        }
+        function squarePosition(x, z) {
+          const n = Math.max(Math.abs(x), Math.abs(z));
+          if (n <= SQUARE_HOME) return { r: 0, s: 0 };
+          const q =
+            z === -n
+              ? x + n
+              : x === n
+                ? 3 * n + z
+                : z === n
+                  ? 5 * n - x
+                  : 7 * n - z;
+          return {
+            r: n - SQUARE_HOME,
+            s: (((q - n) % (8 * n)) + 8 * n) % (8 * n),
+          };
+        }
         function neighbours(r, s, forced = false) {
           if (r === 0)
             return Array.from({ length: SECTORS }, (_, s) => ({ r: 1, s }));
@@ -1906,6 +1941,15 @@
                 : ["square", "circle", "octagon"].includes(shape)
                   ? shape
                   : "octagon";
+            this.resourceSpaces =
+              this.boardShape === "square"
+                ? RESOURCE_SPACES.map((s) =>
+                    Math.round((s * this.laneSize(RESOURCE)) / SECTORS),
+                  )
+                : RESOURCE_SPACES.slice();
+            this.goldenSpaces = new Set(
+              [...CORNUCOPIA].map((s) => this.resourceSpaces[s]),
+            );
             this.predatorCount = Math.max(
               1,
               Math.min(6, Number(predatorCount) || 4),
@@ -1953,7 +1997,7 @@
             let previous = [];
             this.predators = PREDATOR_LANES.flatMap((r, lane) => {
               if (lane === 3) previous = [];
-              const positions = this.randomLanePositions(previous);
+              const positions = this.randomLanePositions(previous, r);
               previous = positions;
               return positions.map((s, slot) => ({
                 id: lane * this.predatorCount + slot,
@@ -1966,7 +2010,10 @@
                 placed: true,
               }));
             });
-            this.police = { r: ISLAND, s: Math.floor(this.rng() * SECTORS) };
+            this.police = {
+              r: ISLAND,
+              s: Math.floor(this.rng() * this.laneSize(ISLAND)),
+            };
             this.predIndex = 0;
             this.predatorRolls = [];
             this.pending = null;
@@ -1987,7 +2034,31 @@
               [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
             }
           }
-          randomLanePositions(avoid = []) {
+          laneSize(r) {
+            return this.boardShape === "square" && r > 0
+              ? 8 * (r + SQUARE_HOME)
+              : SECTORS;
+          }
+          wrapLane(r, s) {
+            const count = this.laneSize(r);
+            return ((s % count) + count) % count;
+          }
+          randomLanePositions(avoid = [], r = 1) {
+            if (this.boardShape === "square") {
+              // Choose one predator in each evenly spaced band. Random rotation
+              // varies their starts; bounded jitter always leaves empty squares.
+              const count = this.laneSize(r),
+                spacing = Math.floor(count / this.predatorCount);
+              const rotation = Math.floor(this.rng() * count);
+              return Array.from({ length: this.predatorCount }, (_, i) =>
+                this.wrapLane(
+                  r,
+                  rotation +
+                    i * spacing +
+                    Math.floor(this.rng() * Math.max(1, spacing - 3)),
+                ),
+              );
+            }
             const layouts = [];
             const visit = (chosen, start) => {
               if (chosen.length === this.predatorCount) {
@@ -2018,6 +2089,24 @@
             return [wrap(s - 1), s, wrap(s + 1)];
           }
           neighbours(r, s, owner = this.active) {
+            if (this.boardShape === "square") {
+              if (r === 0)
+                return Array.from({ length: this.laneSize(1) }, (_, s) => ({
+                  r: 1,
+                  s,
+                })).filter((p) =>
+                  this.neighbours(p.r, p.s).some((n) => n.r === 0),
+                );
+              const p = squareCoordinate(r, s);
+              return [
+                [1, 0],
+                [0, 1],
+                [-1, 0],
+                [0, -1],
+              ]
+                .map(([dx, dz]) => squarePosition(p.x + dx, p.z + dz))
+                .filter((p) => p.r <= RESOURCE);
+            }
             if (this.mode !== "reverse") return neighbours(r, s);
             if (r === RESOURCE)
               return Array.from({ length: SECTORS }, (_, s) => ({
@@ -2115,7 +2204,7 @@
               !live.length ||
               (this.mode === "reverse"
                 ? this.resourceVisits >= this.resourceCapacity
-                : this.harvested.size === RESOURCE_SPACES.length)
+                : this.harvested.size === this.resourceSpaces.length)
             ) {
               const best = Math.max(
                 ...this.players.map((p) => this.score(p.id)),
@@ -2182,7 +2271,7 @@
           rollPolice() {
             if (this.phase !== "police") return false;
             const n = (this.lastRoll = this.dice());
-            this.police.s = wrap(this.police.s + n);
+            this.police.s = this.wrapLane(ISLAND, this.police.s + n);
             this.record(
               `Police patrol moved ${n} spaces clockwise on the island.`,
             );
@@ -2345,7 +2434,7 @@
             if (this.mode === "reverse" && r === RESOURCE)
               this.token.entrySector = this.token.s;
             this.token.r = r;
-            this.token.s = r ? wrap(s) : 0;
+            this.token.s = r ? this.wrapLane(r, s) : 0;
             this.collect(this.token);
             return true;
           }
@@ -2370,7 +2459,7 @@
             if (this.mode === "reverse") return;
             if (
               t.r === RESOURCE &&
-              RESOURCE_SPACES.includes(t.s) &&
+              this.resourceSpaces.includes(t.s) &&
               !t.loaded &&
               (this.mode === "reverse"
                 ? this.resourceVisits < this.resourceCapacity
@@ -2381,11 +2470,15 @@
               t.loaded = true;
               t.sourcePatch = t.s;
               t.cargo =
-                this.mode === "reverse" ? 1 : CORNUCOPIA.has(t.s) ? 3 : 1;
+                this.mode === "reverse"
+                  ? 1
+                  : this.goldenSpaces.has(t.s)
+                    ? 3
+                    : 1;
               this.record(
                 `${this.name(t)} collected ${t.cargo} fruit. Bring it home.`,
               );
-              if (this.mode !== "reverse" && CORNUCOPIA.has(t.s)) {
+              if (this.mode !== "reverse" && this.goldenSpaces.has(t.s)) {
                 this.phase = "hunter";
                 this.pending = {
                   token: t.id,
@@ -2596,7 +2689,7 @@
                     ? `Predator ${this.predIndex + 1}`
                     : `Lane ${this.predIndex + 1}`,
             });
-            lane.forEach((p) => (p.s = wrap(p.s + n)));
+            lane.forEach((p) => (p.s = this.wrapLane(p.r, p.s + n)));
             this.record(
               `${this.predatorRolls.at(-1).label}: ${n} spaces clockwise.`,
             );
@@ -2642,7 +2735,7 @@
             // Play Dead gives only the attacking predator an extra roll. Other
             // predators stay put; it can pass them but cannot finish on one.
             const original = p.s;
-            p.s = wrap(p.s + n);
+            p.s = this.wrapLane(p.r, p.s + n);
             if (
               this.predators.some(
                 (other) =>
@@ -2727,7 +2820,7 @@
               this.hit(loser, "edge", after);
             } else {
               loser.r = r;
-              loser.s = r ? wrap(s) : 0;
+              loser.s = r ? this.wrapLane(r, s) : 0;
               this.collect(loser);
               if (this.phase === "finished") return;
               if (this.phase === "hunter") {
@@ -2882,7 +2975,7 @@
             const t = this.tokens.find((t) => t.id === this.cardEnemy);
             if (this.mode === "reverse" && r === RESOURCE) t.entrySector = t.s;
             t.r = r;
-            t.s = r ? wrap(s) : 0;
+            t.s = r ? this.wrapLane(r, s) : 0;
             this.cardEnemy = null;
             const done = () => {
               if (this.phase !== "finished") this.phase = "move";
@@ -2915,6 +3008,10 @@
           neighbours,
           key,
           wrap,
+          squareCoordinate,
+          squarePosition,
+          SQUARE_HOME,
+          SQUARE_UNIT,
         };
       })();
     </script>
@@ -3108,6 +3205,23 @@
           "#82d2ac",
         ];
         const ANGLE = 360 / SECTORS;
+        const { squareCoordinate, SQUARE_HOME, SQUARE_UNIT } =
+          FragmentedHabitat;
+        function patrolAngle(r, s) {
+          if (game.boardShape !== "square") return s * ANGLE;
+          const a = centre(r, s),
+            b = centre(r, game.wrapLane(r, s + 1));
+          return (Math.atan2(b.x - a.x, -(b.z - a.z)) * 180) / Math.PI;
+        }
+        function beyondEdge(s, distance = 0.28) {
+          if (game.boardShape !== "square") return xy(6.8, s * ANGLE);
+          const p = centre(RESOURCE, s),
+            n = Math.max(Math.abs(p.x), Math.abs(p.z));
+          return {
+            x: (p.x * (n + distance)) / n,
+            z: (p.z * (n + distance)) / n,
+          };
+        }
         const radii = [
           1.8,
           ...Array.from({ length: 13 }, (_, i) => 2.16 + i * 0.3),
@@ -3339,6 +3453,19 @@
             .join(" ");
         }
         function cell(r, s) {
+          if (game.boardShape === "square") {
+            const p = r ? squareCoordinate(r, s) : { x: 0, z: 0 };
+            const half = r ? 0.5 : SQUARE_HOME + 0.5;
+            return [
+              [-half, -half],
+              [half, -half],
+              [half, half],
+              [-half, half],
+            ].map(([dx, dz]) => ({
+              x: (p.x + dx) * SQUARE_UNIT,
+              z: (p.z + dz) * SQUARE_UNIT,
+            }));
+          }
           if (r === RESOURCE && game.mode === "reverse") return outline(2.15);
           if (!r && game.mode !== "reverse") return outline(radii[0]);
           const half = r === RESOURCE && !Number.isInteger(s) ? 0.25 : 0.5;
@@ -3366,6 +3493,10 @@
           ];
         }
         function centre(r, s) {
+          if (game.boardShape === "square") {
+            const p = r ? squareCoordinate(r, s) : { x: 0, z: 0 };
+            return { x: p.x * SQUARE_UNIT, z: p.z * SQUARE_UNIT };
+          }
           if (r === RESOURCE && game.mode === "reverse") return { x: 0, z: 0 };
           return r || game.mode === "reverse"
             ? xy((bounds(r)[0] + bounds(r)[1]) / 2, s * ANGLE)
@@ -3397,7 +3528,7 @@
               name: `Central habitat · ${game.tokens.filter((t) => t.settled).length}/${game.capacity} settled`,
             };
           if (r === RESOURCE)
-            return CORNUCOPIA.has(s)
+            return game.goldenSpaces.has(s)
               ? {
                   fill: "#4c9aa5",
                   side: "#2c6b72",
@@ -3406,7 +3537,9 @@
               : {
                   fill: "#4e8260",
                   side: "#2c553b",
-                  name: "Resource patch · 1 fruit",
+                  name: game.resourceSpaces.includes(s)
+                    ? "Resource patch · 1 fruit"
+                    : "Outer green space",
                 };
           return {
             fill:
@@ -3418,6 +3551,11 @@
           };
         }
         function sprite(group, kind, p, size, threat = false) {
+          if (
+            game.boardShape === "square" &&
+            (threat || kind === "police" || kind === "hunter")
+          )
+            size *= 0.65;
           const q = project(p, 0.12),
             u = size * zoom,
             cx = q.x,
@@ -3517,7 +3655,15 @@
         }
         function fruit(g, p, large = false) {
           const q = project(p, 0.08),
-            u = zoom * (game.mode === "reverse" ? 0.62 : 1);
+            u =
+              zoom *
+              (game.boardShape === "square"
+                ? large
+                  ? 0.5
+                  : 0.64
+                : game.mode === "reverse"
+                  ? 0.62
+                  : 1);
           const node = svg("g", {
             class: "tile-detail",
             transform: `translate(${q.x},${q.y}) scale(${u})`,
@@ -3796,13 +3942,16 @@
             ...(game.mode === "reverse"
               ? Array.from({ length: SECTORS }, (_, s) => ({ r: 0, s }))
               : [{ r: 0, s: 0 }]),
-            ...Array.from({ length: (RESOURCE - 1) * SECTORS }, (_, i) => ({
-              r: 1 + Math.floor(i / SECTORS),
-              s: i % SECTORS,
-            })),
+            ...Array.from({ length: RESOURCE - 1 }, (_, i) => i + 1).flatMap(
+              (r) =>
+                Array.from({ length: game.laneSize(r) }, (_, s) => ({ r, s })),
+            ),
             ...(game.mode === "reverse"
               ? [{ r: RESOURCE, s: 0 }]
-              : RESOURCE_SPACES.map((s) => ({ r: RESOURCE, s }))),
+              : Array.from({ length: game.laneSize(RESOURCE) }, (_, s) => ({
+                  r: RESOURCE,
+                  s,
+                }))),
           ].sort(
             (a, b) =>
               project(centre(a.r, a.s)).depth - project(centre(b.r, b.s)).depth,
@@ -3871,7 +4020,12 @@
               svg("polygon", {
                 points: polygon(points),
                 fill: style.fill,
-                stroke: ROAD.has(r) || r === ISLAND ? "none" : "#365f3b",
+                stroke:
+                  game.boardShape === "square"
+                    ? "#36524b"
+                    : ROAD.has(r) || r === ISLAND
+                      ? "none"
+                      : "#365f3b",
                 "stroke-opacity": r === RESOURCE ? 0.36 : 0.19,
                 "stroke-width": 0.8 * zoom,
                 class: "tile-top",
@@ -3978,8 +4132,12 @@
                 ),
               );
             }
-            if (r === RESOURCE && game.mode !== "reverse") {
-              if (!game.harvested.has(s)) fruit(g, p, CORNUCOPIA.has(s));
+            if (
+              r === RESOURCE &&
+              game.mode !== "reverse" &&
+              game.resourceSpaces.includes(s)
+            ) {
+              if (!game.harvested.has(s)) fruit(g, p, game.goldenSpaces.has(s));
               else {
                 g.append(
                   svg("ellipse", {
@@ -4005,21 +4163,42 @@
                   ),
                 );
               }
-              if (CORNUCOPIA.has(s)) {
+              if (game.goldenSpaces.has(s)) {
                 sprite(
                   g,
                   "hunter",
-                  xy(game.mode === "reverse" ? 1.4 : 6.78, s * ANGLE + 5),
+                  game.boardShape === "square"
+                    ? beyondEdge(s)
+                    : xy(6.78, s * ANGLE + 5),
                   game.mode === "reverse" ? 18 : 23,
                 );
-              } else if (s % 3 === 0 && game.mode !== "reverse")
+              } else if (
+                s % 3 === 0 &&
+                game.mode !== "reverse" &&
+                game.boardShape !== "square"
+              )
                 tree(g, xy(6.24, s * ANGLE + 6), 0.65);
             }
             if (ROAD.has(r)) {
               if (r === 5 || r === 9) {
                 const rr = (bounds(r)[0] + bounds(r)[1]) / 2;
-                const a = project(xy(rr, (s - 0.28) * ANGLE)),
-                  b = project(xy(rr, (s + 0.28) * ANGLE));
+                const next = centre(r, game.wrapLane(r, s + 1));
+                const a = project(
+                    game.boardShape === "square"
+                      ? {
+                          x: p.x + (next.x - p.x) * 0.1,
+                          z: p.z + (next.z - p.z) * 0.1,
+                        }
+                      : xy(rr, (s - 0.28) * ANGLE),
+                  ),
+                  b = project(
+                    game.boardShape === "square"
+                      ? {
+                          x: p.x + (next.x - p.x) * 0.6,
+                          z: p.z + (next.z - p.z) * 0.6,
+                        }
+                      : xy(rr, (s + 0.28) * ANGLE),
+                  );
                 g.append(
                   svg("path", {
                     class: "road-dash",
@@ -4032,11 +4211,19 @@
                   }),
                 );
               }
-              if (r === 4 && s === 1) car(g, p, s * ANGLE, "#c27e6b");
-              if (r === 10 && s === 9) car(g, p, s * ANGLE, "#6e9aaa");
+              if (r === 4 && s === 1) car(g, p, patrolAngle(r, s), "#c27e6b");
+              if (r === 10 && s === 9) car(g, p, patrolAngle(r, s), "#6e9aaa");
               // Visible, understated lane boundaries; no radial road grid or arrows.
-              const a = project(xy(bounds(r)[1], (s - 0.5) * ANGLE)),
-                b = project(xy(bounds(r)[1], (s + 0.5) * ANGLE));
+              const a = project(
+                  game.boardShape === "square"
+                    ? points[0]
+                    : xy(bounds(r)[1], (s - 0.5) * ANGLE),
+                ),
+                b = project(
+                  game.boardShape === "square"
+                    ? points[1]
+                    : xy(bounds(r)[1], (s + 0.5) * ANGLE),
+                );
               g.append(
                 svg("path", {
                   d: `M${a.x},${a.y}L${b.x},${b.y}`,
@@ -4101,7 +4288,7 @@
                 g,
                 game.players[t.owner].animal.toLowerCase(),
                 off,
-                r ? 25 : 30,
+                r ? (game.boardShape === "square" ? 18 : 25) : 30,
               );
               const anchor = project(off, 0.12);
               const flag = svg("g", {
@@ -4109,6 +4296,11 @@
                 "pointer-events": "none",
                 "aria-label": `Player ${t.owner + 1}`,
               });
+              if (r && game.boardShape === "square")
+                flag.setAttribute(
+                  "transform",
+                  `translate(${anchor.x},${anchor.y}) scale(0.75) translate(${-anchor.x},${-anchor.y})`,
+                );
               flag.append(
                 svg("line", {
                   x1: anchor.x + 10 * zoom,
@@ -4209,7 +4401,7 @@
             game.contest.r === RESOURCE &&
             game.mode !== "reverse"
           ) {
-            const p = project(xy(6.8, game.contest.s * ANGLE));
+            const p = project(beyondEdge(game.contest.s));
             const g = svg("g", {
               role: "button",
               tabindex: 0,
@@ -4277,7 +4469,7 @@
           $("goal").textContent =
             game.mode === "reverse"
               ? `Goal: 6 settlers · Habitat: ${game.tokens.filter((t) => t.settled).length}/${game.capacity} animals`
-              : `Target: ${game.target} food · ${RESOURCE_SPACES.length - game.harvested.size} patches left · Start: 5 each`;
+              : `Target: ${game.target} food · ${game.resourceSpaces.length - game.harvested.size} patches left · Start: 5 each`;
           const descriptions = {
             roll:
               game.mode === "reverse" && !game.animals().length

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#071527" />
     <meta
       name="description"
-      content="Fragmented Habitat v23: an animal board game with square, circular and octagonal layouts. Start with 5 food, cross predator patrols and roads, collect fruit and keep 38 wild cards."
+      content="Fragmented Habitat v25: an animal board game with square, circular and octagonal layouts. Start with 5 food, cross predator patrols and roads, collect fruit and keep 38 wild cards."
     />
     <title>Fragmented Habitat</title>
     <link
@@ -1336,7 +1336,7 @@
         </div>
 
         <footer>
-          VERSION 23 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+          VERSION 25 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
             Recent events
           </button>
         </footer>
@@ -1535,11 +1535,18 @@
         <p>
           <strong>Median strip:</strong> the dark gray island needs no traffic
           check. You can move along it in either direction or cross into a
-          neighbouring lane. A traffic officer patrols this strip clockwise. If
-          you stop on the officer, or it stops on your block, your animal
-          returns to its starting habitat or base without paying food. Any
-          carried fruit returns to its resource patch. After the predators move,
-          roll once to move the officer.
+          neighbouring lane. Four traffic officers patrol this strip clockwise.
+          After the predators move, roll once for all four officers. They skip
+          the two protected refuge blocks; only ordinary median blocks count
+          toward their movement. If you stop on an officer, or one stops on your
+          block, your animal returns to its starting habitat or base without
+          paying food. Any carried fruit returns to its resource patch.
+        </p>
+        <p>
+          <strong>Protected refuges:</strong> the two marked median blocks line
+          up with the sides without a golden harvest. Officers cannot enter
+          them. Animals are safe from the patrol here, but an opponent can still
+          contest the block and push the loser into a neighbouring space.
         </p>
         <p>
           <strong>Predator lanes:</strong> leaving the habitat or base exposes
@@ -1642,8 +1649,9 @@
           banked-food target wins. The default is 10; change it in Settings.
         </li>
         <li>
-          <strong>Only one player remains:</strong> that player wins
-          immediately, regardless of their food total.
+          <strong>Only one player remains:</strong> that player wins regardless
+          of their food total. If this happens during a patrol, finish the
+          patrol before checking for a winner.
         </li>
         <li>
           <strong>No food remains in the patches:</strong> finish any pending
@@ -1657,8 +1665,12 @@
           available again.
         </li>
         <li>
-          <strong>Solo play:</strong> reach the target or the highest available
-          depletion score; you lose only when you have no animals remaining.
+          <strong>Local extinction:</strong> if no animals remain anywhere on
+          the Classic board, no player wins that phase. The board automatically
+          switches to Habitat Colonization. Each player begins a new population
+          with one animal and five food. Previous cards and food totals reset.
+          If animals are lost during Colonization, its normal end rules apply;
+          it does not restart again.
         </li>
       </ul>
       <p>
@@ -1782,6 +1794,22 @@
         ><button class="btn" data-close="reset-dialog">Cancel</button>
       </div>
     </dialog>
+    <dialog id="extinction-dialog">
+      <h2>Local extinction</h2>
+      <p>
+        No animals remain in the original habitat. The board has switched to
+        Habitat Colonization.
+      </p>
+      <p>
+        Each player starts a new population with one animal and five food at an
+        edge habitat. Guide these animals into the central habitat: the first
+        player to establish six settlers wins, or the largest population wins
+        when its carrying capacity is reached.
+      </p>
+      <button class="btn primary" data-close="extinction-dialog">
+        Continue to Colonization
+      </button>
+    </dialog>
     <dialog id="design-dialog">
       <h2>Little wildlife, big journeys</h2>
       <p>
@@ -1802,7 +1830,7 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <script id="game-engine">
-      /* Fragmented Habitat v23 — rules engine, independent of the display. */
+      /* Fragmented Habitat v25 — rules engine, independent of the display. */
       (() => {
         "use strict";
         const SECTORS = 24;
@@ -2010,10 +2038,22 @@
                 placed: true,
               }));
             });
-            this.police = {
+            this.refugeSpaces = new Set(
+              [6, 18].map((s) =>
+                Math.round((s * this.laneSize(ISLAND)) / SECTORS),
+              ),
+            );
+            const patrol = this.officerRoute(),
+              offset = Math.floor(this.rng() * patrol.length);
+            this.officers = Array.from({ length: 4 }, (_, id) => ({
+              id,
               r: ISLAND,
-              s: Math.floor(this.rng() * this.laneSize(ISLAND)),
-            };
+              s: patrol[
+                (offset + Math.floor((id * patrol.length) / 4)) % patrol.length
+              ],
+            }));
+            this.policeRoll = null;
+            this.hazardPatrol = false;
             this.predIndex = 0;
             this.predatorRolls = [];
             this.pending = null;
@@ -2042,6 +2082,47 @@
           wrapLane(r, s) {
             const count = this.laneSize(r);
             return ((s % count) + count) % count;
+          }
+          get police() {
+            return this.officers[0];
+          }
+          isRefuge(r, s) {
+            return r === ISLAND && this.refugeSpaces.has(s);
+          }
+          officerRoute() {
+            return Array.from(
+              { length: this.laneSize(ISLAND) },
+              (_, s) => s,
+            ).filter((s) => !this.refugeSpaces.has(s));
+          }
+          officerDestination(s, steps) {
+            const route = this.officerRoute(),
+              index = route.indexOf(s);
+            if (index < 0)
+              throw new Error("An officer cannot occupy a refuge.");
+            return route[(index + steps) % route.length];
+          }
+          beginColonization() {
+            if (this.phase !== "extinction") return false;
+            const previous = { round: this.round, shape: this.boardShape };
+            const next = new Game(
+              {
+                players: this.players.length,
+                target: this.target,
+                mode: "reverse",
+                predatorCount: this.predatorCount,
+                predatorRollMode: this.predatorRollMode,
+                capacity: this.capacity,
+              },
+              this.rng,
+            );
+            for (const field of Object.keys(this)) delete this[field];
+            Object.assign(this, next);
+            this.previousExtinction = previous;
+            this.record(
+              "Local extinction occurred in the original habitat. A new population starts Habitat Colonization: one animal and 5 food per player.",
+            );
+            return true;
           }
           randomLanePositions(avoid = [], r = 1) {
             if (this.boardShape === "square") {
@@ -2180,18 +2261,26 @@
             );
           }
           checkEnd() {
-            if (this.phase === "finished") return true;
-            if (this.mode === "reverse") return this.colonyEnd();
-            const live = this.players.filter((p) => this.animals(p.id).length);
-            if (this.players.length === 1 && !live.length) {
+            if (["finished", "extinction"].includes(this.phase)) return true;
+            if (this.mode === "classic" && !this.tokens.some((t) => !t.out)) {
+              this.phase = "extinction";
+              this.hazardPatrol = false;
               this.winners = [];
               this.winner = null;
-              this.endReason = "Player eliminated";
-              this.phase = "finished";
+              this.endReason = "Local extinction";
               this.pending = this.pendingDraw = this.contest = null;
-              this.record("No animals remain. Game over.");
+              this.record(
+                "No animals remain in the original habitat. Local extinction triggers Habitat Colonization.",
+              );
               return true;
             }
+            if (this.mode === "reverse" && !this.tokens.some((t) => !t.out))
+              return this.colonyEnd();
+            // Resolve the complete environmental patrol before declaring a last
+            // survivor. Other animals can still be hit in the same round.
+            if (this.hazardPatrol) return false;
+            if (this.mode === "reverse") return this.colonyEnd();
+            const live = this.players.filter((p) => this.animals(p.id).length);
             const target = this.players.find((p) => p.food >= this.target);
             let winners, reason;
             if (target) {
@@ -2256,6 +2345,7 @@
             if (this.phase !== "finished") done();
           }
           finishRound() {
+            this.hazardPatrol = false;
             if (this.checkEnd()) return;
             this.round++;
             this.active = this.players.findIndex((p) => this.alive(p.id));
@@ -2270,14 +2360,25 @@
           }
           rollPolice() {
             if (this.phase !== "police") return false;
-            const n = (this.lastRoll = this.dice());
-            this.police.s = this.wrapLane(ISLAND, this.police.s + n);
-            this.record(
-              `Police patrol moved ${n} spaces clockwise on the island.`,
+            const n = (this.lastRoll = this.policeRoll = this.dice());
+            this.officers.forEach(
+              (p) => (p.s = this.officerDestination(p.s, n)),
             );
-            const t = this.occupied(ISLAND, this.police.s);
-            if (t) this.escortHome(t, () => this.finishRound());
-            else this.finishRound();
+            this.record(
+              `All four officers moved ${n} patrol spaces clockwise, skipping the two protected refuges.`,
+            );
+            const resolve = (i) => {
+              if (i === this.officers.length) {
+                this.finishRound();
+                return;
+              }
+              const p = this.officers[i],
+                t = this.occupied(ISLAND, p.s);
+              if (t && !this.isRefuge(t.r, t.s))
+                this.escortHome(t, () => resolve(i + 1));
+              else resolve(i + 1);
+            };
+            resolve(0);
             return true;
           }
           get player() {
@@ -2518,7 +2619,11 @@
           }
           resolveLanding(t, done) {
             if (this.phase === "finished") return;
-            if (t.r === ISLAND && t.s === this.police.s) {
+            if (this.isRefuge(t.r, t.s)) {
+              done();
+              return;
+            }
+            if (t.r === ISLAND && this.officers.some((p) => p.s === t.s)) {
               this.escortHome(t, done);
               return;
             }
@@ -2670,6 +2775,7 @@
           }
           rollPredator() {
             if (this.phase !== "predators") return false;
+            this.hazardPatrol = true;
             const n = (this.lastRoll = this.dice());
             const lane =
               this.predatorRollMode === "shared"
@@ -3207,12 +3313,6 @@
         const ANGLE = 360 / SECTORS;
         const { squareCoordinate, SQUARE_HOME, SQUARE_UNIT } =
           FragmentedHabitat;
-        function patrolAngle(r, s) {
-          if (game.boardShape !== "square") return s * ANGLE;
-          const a = centre(r, s),
-            b = centre(r, game.wrapLane(r, s + 1));
-          return (Math.atan2(b.x - a.x, -(b.z - a.z)) * 180) / Math.PI;
-        }
         function beyondEdge(s, distance = 0.28) {
           if (game.boardShape !== "square") return xy(6.8, s * ANGLE);
           const p = centre(RESOURCE, s),
@@ -3511,9 +3611,11 @@
             };
           if (r === ISLAND)
             return {
-              fill: "#354d50",
+              fill: game.isRefuge(r, s) ? "#8cc5b0" : "#354d50",
               side: "#293e40",
-              name: "Safe island · police patrol",
+              name: game.isRefuge(r, s)
+                ? "Protected refuge · officers skip this block · contests allowed"
+                : "Median strip · four traffic officers",
             };
           if (ROAD.has(r))
             return {
@@ -3808,62 +3910,6 @@
             }),
           );
           g.append(n);
-        }
-        function car(g, p, a, color) {
-          const theta = (a * Math.PI) / 180,
-            radial = { x: Math.sin(theta), z: -Math.cos(theta) },
-            tangent = { x: Math.cos(theta), z: Math.sin(theta) };
-          const point = (side, along) => ({
-            x: p.x + radial.x * side + tangent.x * along,
-            z: p.z + radial.z * side + tangent.z * along,
-          });
-          const footprint = [
-            point(-0.11, -0.29),
-            point(0.11, -0.29),
-            point(0.11, 0.29),
-            point(-0.11, 0.29),
-          ];
-          g.append(
-            svg("polygon", {
-              points: polygon(footprint, -0.015),
-              fill: "#263a41",
-              opacity: ".5",
-            }),
-          );
-          g.append(
-            svg("polygon", {
-              points: polygon(footprint, 0.11),
-              fill: color,
-              stroke: "#405c65",
-              "stroke-width": 0.6 * zoom,
-            }),
-          );
-          const roof = [
-            point(-0.075, -0.1),
-            point(0.075, -0.1),
-            point(0.075, 0.17),
-            point(-0.075, 0.17),
-          ];
-          g.append(
-            svg("polygon", {
-              points: polygon(roof, 0.18),
-              fill: "#e3ece3",
-              stroke: color,
-              "stroke-width": 1.5 * zoom,
-            }),
-          );
-          const windshield = [
-            point(-0.075, -0.15),
-            point(0.075, -0.15),
-            point(0.075, -0.08),
-            point(-0.075, -0.08),
-          ];
-          g.append(
-            svg("polygon", {
-              points: polygon(windshield, 0.16),
-              fill: "#41667b",
-            }),
-          );
         }
         function boardBase(root) {
           const vertices = outline(6.62);
@@ -4211,8 +4257,6 @@
                   }),
                 );
               }
-              if (r === 4 && s === 1) car(g, p, patrolAngle(r, s), "#c27e6b");
-              if (r === 10 && s === 9) car(g, p, patrolAngle(r, s), "#6e9aaa");
               // Visible, understated lane boundaries; no radial road grid or arrows.
               const a = project(
                   game.boardShape === "square"
@@ -4235,9 +4279,50 @@
               );
             }
             if (r === ISLAND) {
-              if (s % 4 === 0) tree(g, p, 0.32);
+              if (game.isRefuge(r, s)) {
+                g.classList.add("refuge");
+                const inset = points.map((a) => ({
+                  x: p.x + (a.x - p.x) * 0.82,
+                  z: p.z + (a.z - p.z) * 0.82,
+                }));
+                g.append(
+                  svg("polygon", {
+                    points: polygon(inset, 0.035),
+                    fill: "#b7e3c7",
+                    stroke: "#ecedbd",
+                    "stroke-width": 1.2 * zoom,
+                    "pointer-events": "none",
+                  }),
+                );
+                const mark = project(p, 0.04),
+                  size = (game.boardShape === "square" ? 7 : 11) * zoom;
+                g.append(
+                  svg("path", {
+                    d: `M${mark.x - size},${mark.y - size} L${mark.x + size},${mark.y - size} L${mark.x + size * 0.8},${mark.y + size * 0.25} Q${mark.x},${mark.y + size * 1.25} ${mark.x - size * 0.8},${mark.y + size * 0.25}Z`,
+                    fill: "#44765e",
+                    "pointer-events": "none",
+                  }),
+                );
+                g.append(
+                  svg(
+                    "text",
+                    {
+                      x: mark.x,
+                      y: mark.y + size * 0.12,
+                      "text-anchor": "middle",
+                      "font-size": size,
+                      fill: "#ebf4d4",
+                      "font-weight": 800,
+                      "pointer-events": "none",
+                    },
+                    "✓",
+                  ),
+                );
+              } else if (s % 4 === 0) tree(g, p, 0.32);
               else if (s % 2 === 0) bush(g, p, 0.45);
-              if (s === game.police.s) sprite(g, "police", p, 29);
+              game.officers
+                .filter((officer) => officer.s === s)
+                .forEach(() => sprite(g, "police", p, 29));
             }
             if ((r === 1 || r === 13) && s % 4 === 1) bush(g, p, 0.28);
             const predatorsHere = game.predators.filter(
@@ -4450,6 +4535,12 @@
             id === "roll" ? () => rollAction(action) : () => act(action);
         }
         function render() {
+          if (game.phase === "extinction") {
+            autoPredators = false;
+            document.querySelectorAll("dialog[open]").forEach((d) => d.close());
+            game.beginColonization();
+            $("extinction-dialog").showModal();
+          }
           board();
           const p = game.player;
           const response =
@@ -4480,7 +4571,7 @@
             hunter: `${response.animal}: MOON / night = keep fruit · SUN / day = hunter hit`,
             predators: `${game.predatorRollMode} rolls · ${game.predatorCount} predators per lane`,
             police:
-              "Island police patrol · returns animals to base; carried fruit is lost",
+              "Four officers · one shared roll · protected refuges are skipped",
             "contest-choice": "Attacker: choose odd or even.",
             "contest-roll": "Roll to decide who owns this space.",
             push: "Winner: choose where to push the loser.",
@@ -4493,11 +4584,17 @@
           };
           $("turn-help").textContent = descriptions[game.phase];
           $("status").textContent = game.log.at(-1);
-          $("predator-results").hidden = !game.predatorRolls.length;
+          $("predator-results").hidden =
+            !game.predatorRolls.length && game.policeRoll === null;
           $("predator-results").textContent =
-            "Predator rolls · " +
+            "Patrol rolls · " +
             game.predatorRolls
               .map((p) => `${p.label || `Lane ${p.lane}`}: ${p.roll}`)
+              .concat(
+                game.policeRoll === null
+                  ? []
+                  : [`Four officers: ${game.policeRoll}`],
+              )
               .join(" · ");
           $("traffic-dice").textContent =
             game.lastTraffic === "sun"
@@ -4518,7 +4615,7 @@
           setButton(
             "roll",
             game.phase === "police"
-              ? "Roll police patrol"
+              ? "Move all 4 officers"
               : game.phase === "predators"
                 ? "Move all predators"
                 : game.phase === "traffic"

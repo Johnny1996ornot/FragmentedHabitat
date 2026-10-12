@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#071527" />
     <meta
       name="description"
-      content="Fragmented Habitat v25: an animal board game with square, circular and octagonal layouts. Start with 5 food, cross predator patrols and roads, collect fruit and keep 38 wild cards."
+      content="Fragmented Habitat v27: an animal board game with square, circular and octagonal layouts. Start with 5 food, cross predator patrols and roads, collect fruit and keep 38 wild cards."
     />
     <title>Fragmented Habitat</title>
     <link
@@ -1336,7 +1336,7 @@
         </div>
 
         <footer>
-          VERSION 25 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+          VERSION 27 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
             Recent events
           </button>
         </footer>
@@ -1428,6 +1428,8 @@
             ><button id="pass" class="btn"></button
             ><button id="rescue" class="btn"></button
             ><button id="accept" class="btn"></button>
+            <button id="steal-food" class="btn primary" hidden></button>
+            <button id="leave-food" class="btn" hidden></button>
             <div id="parity" hidden>
               <button id="odd" class="btn">Odd</button
               ><button id="even" class="btn">Even</button>
@@ -1455,12 +1457,13 @@
         habitat. In both, survival depends on luck and strategy.
       </p>
       <p>
-        <strong>Start:</strong> each player has one animal and 5 food. Choose an
-        animal, roll the movement die, then click neighbouring spaces. Move
-        inward, outward or sideways. You may stop after one step; you do not
-        have to use the whole roll. You may retrace your own steps, including
-        returning to the square you just left. Each return step uses one
-        movement point.
+        <strong>Start:</strong> each player has one animal, 5 food and two
+        random cards. Starting cards can be used from Round 1 whenever their
+        conditions apply. Choose an animal, roll the movement die, then click
+        neighbouring spaces. Move inward, outward or sideways. You may stop
+        after one step; you do not have to use the whole roll. You may retrace
+        your own steps, including returning to the square you just left. Each
+        return step uses one movement point.
       </p>
       <p>
         <strong>Classic — Add an animal (optional):</strong> before rolling,
@@ -1481,7 +1484,11 @@
           roads, collect fruit at the edge, then bring it back alive. The first
           player to bank the food target wins; if the patches empty, compare
           banked food plus carried fruit. You can choose a square, circular or
-          octagonal board in Settings before starting.
+          octagonal board in Settings before starting. If every animal is
+          eliminated, local extinction occurs and the board automatically
+          switches to Habitat Colonization. All players begin a new population
+          with one animal, five food and two new starting cards; previous food
+          totals and cards reset.
         </li>
         <li>
           <strong>Habitat Colonization:</strong> animals start at separate edge
@@ -1532,22 +1539,41 @@
           animal was safe last time. Passing through without stopping needs no
           roll.
         </p>
-        <p>
-          <strong>Median strip:</strong> the dark gray island needs no traffic
-          check. You can move along it in either direction or cross into a
-          neighbouring lane. Four traffic officers patrol this strip clockwise.
-          After the predators move, roll once for all four officers. They skip
-          the two protected refuge blocks; only ordinary median blocks count
-          toward their movement. If you stop on an officer, or one stops on your
-          block, your animal returns to its starting habitat or base without
-          paying food. Any carried fruit returns to its resource patch.
-        </p>
-        <p>
-          <strong>Protected refuges:</strong> the two marked median blocks line
-          up with the sides without a golden harvest. Officers cannot enter
-          them. Animals are safe from the patrol here, but an opponent can still
-          contest the block and push the loser into a neighbouring space.
-        </p>
+        <section id="median-description">
+          <p>
+            <strong>Median strip:</strong> the dark gray strip lies between the
+            two road sections. Animals can stop here without a traffic check and
+            move along it in either direction, or cross into a neighbouring
+            lane. Four traffic officers patrol the strip, so most blocks are
+            still exposed to their patrol.
+          </p>
+          <ul>
+            <li>
+              <strong>Protected refuges:</strong> the two blocks marked with
+              shields line up with the sides without a golden harvest. Officers
+              cannot enter these blocks, so animals resting here are safe from
+              the patrol.
+            </li>
+            <li>
+              <strong>Competition:</strong> animals cannot share a refuge. An
+              opponent can contest it using the usual odd/even roll. The winner
+              keeps the block and pushes the loser one adjacent block away. A
+              push onto the road requires a traffic check.
+            </li>
+            <li>
+              <strong>Officer movement:</strong> after the predators move, roll
+              once for all four officers. They move clockwise and skip refuges.
+              Only ordinary median blocks count toward the roll.
+            </li>
+            <li>
+              <strong>If an officer catches an animal:</strong> stopping on an
+              officer, or having one stop on your block, sends the animal back
+              to its starting habitat. Carried fruit returns to its original
+              resource patch. Banked food is unchanged, and there is no revival
+              cost.
+            </li>
+          </ul>
+        </section>
         <p>
           <strong>Predator lanes:</strong> leaving the habitat or base exposes
           animals to predators. Players have numbered flags; predators do not.
@@ -1607,6 +1633,27 @@
         Other landing effects also apply. You cannot share a square outside the
         habitat or contest your own animals.
       </p>
+      <ul id="competition-food-rules">
+        <li>
+          <strong>Steal carried food:</strong> in Classic mode, a winner
+          carrying no fruit may take the loser’s entire load before pushing it.
+          Choose Take fruit or Leave the fruit. An animal already carrying a
+          load cannot take another. Banked food cannot be stolen.
+        </li>
+        <li>
+          <strong>Bring it home:</strong> stolen fruit counts toward victory
+          only after its new carrier reaches the habitat. If that carrier is
+          hit, the fruit returns to its original resource patch. Losing a load
+          does not allow another harvest on the same trip; the animal can still
+          win its food back in another contest.
+        </li>
+        <li>
+          <strong>The chase:</strong> after the push, all landing checks and
+          card rewards are resolved, the challenger’s turn ends—even if movement
+          points remain. On their next turns, the loser can pursue the winner
+          and the winner can try to escape using normal movement.
+        </li>
+      </ul>
       <p>
         <strong>Risk rewards:</strong> winning a contest, surviving a car roll
         or surviving a hunter roll earns one card. Click the floating deck when
@@ -1616,7 +1663,8 @@
       <p>
         <strong>Held cards:</strong> click the card icon beside a player’s name
         to view their cards, use an eligible card, or close the window. Cards
-        drawn this round unlock next round.
+        dealt at the start are ready in Round 1. Cards earned during play unlock
+        next round.
       </p>
       <ul>
         <li>
@@ -1668,9 +1716,9 @@
           <strong>Local extinction:</strong> if no animals remain anywhere on
           the Classic board, no player wins that phase. The board automatically
           switches to Habitat Colonization. Each player begins a new population
-          with one animal and five food. Previous cards and food totals reset.
-          If animals are lost during Colonization, its normal end rules apply;
-          it does not restart again.
+          with one animal, five food and two new starting cards. Previous cards
+          and food totals reset. If animals are lost during Colonization, its
+          normal end rules apply; it does not restart again.
         </li>
       </ul>
       <p>
@@ -1801,10 +1849,10 @@
         Habitat Colonization.
       </p>
       <p>
-        Each player starts a new population with one animal and five food at an
-        edge habitat. Guide these animals into the central habitat: the first
-        player to establish six settlers wins, or the largest population wins
-        when its carrying capacity is reached.
+        Each player starts a new population with one animal, five food and two
+        starting cards at an edge habitat. Guide these animals into the central
+        habitat: the first player to establish six settlers wins, or the largest
+        population wins when its carrying capacity is reached.
       </p>
       <button class="btn primary" data-close="extinction-dialog">
         Continue to Colonization
@@ -1830,7 +1878,7 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <script id="game-engine">
-      /* Fragmented Habitat v25 — rules engine, independent of the display. */
+      /* Fragmented Habitat v27 — rules engine, independent of the display. */
       (() => {
         "use strict";
         const SECTORS = 24;
@@ -2073,6 +2121,13 @@
               const j = Math.floor(rng() * (i + 1));
               [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
             }
+            for (let deal = 0; deal < 2; deal++)
+              this.players.forEach((p) =>
+                p.hand.push({ type: this.deck.pop(), availableRound: 1 }),
+              );
+            this.record(
+              "Each player has two starting cards, ready from Round 1. Click the card icon beside your name to view them.",
+            );
           }
           laneSize(r) {
             return this.boardShape === "square" && r > 0
@@ -2120,7 +2175,7 @@
             Object.assign(this, next);
             this.previousExtinction = previous;
             this.record(
-              "Local extinction occurred in the original habitat. A new population starts Habitat Colonization: one animal and 5 food per player.",
+              "Local extinction occurred in the original habitat. A new population starts Habitat Colonization: one animal, 5 food and two starting cards per player.",
             );
             return true;
           }
@@ -2554,7 +2609,8 @@
               this.record(
                 `${this.name(t)} reached the central habitat and stays. Player ${t.owner + 1}: ${this.settlers(t.owner).length}/${this.colonyTarget} settlers.`,
               );
-              if (!this.checkEnd() && t.id === this.selected) this.endTurn();
+              if (!this.checkEnd() && t.id === this.selected && !this.contest)
+                this.endTurn();
               return;
             }
             if (this.mode === "reverse") return;
@@ -2879,10 +2935,50 @@
             const attackerWins = (n % 2 ? "odd" : "even") === c.parity;
             c.winner = attackerWins ? c.attacker : c.defender;
             c.loser = attackerWins ? c.defender : c.attacker;
-            this.phase = "push";
+            this.phase = this.canStealContest() ? "contest-food" : "push";
             this.record(
-              `${this.name(this.tokens.find((t) => t.id === c.winner))} won (${n}). Choose a glowing space to push the loser, then draw a card.`,
+              `${this.name(this.tokens.find((t) => t.id === c.winner))} won (${n}). ${this.phase === "contest-food" ? "Choose whether to take the loser's fruit, then " : ""}choose a space to push the loser. The challenger’s turn ends after landing checks and card rewards.`,
             );
+            return true;
+          }
+          canStealContest() {
+            if (!this.contest || this.mode !== "classic") return false;
+            const winner = this.tokens.find(
+              (t) => t.id === this.contest.winner,
+            );
+            const loser = this.tokens.find((t) => t.id === this.contest.loser);
+            return (
+              !!winner &&
+              !!loser &&
+              !winner.out &&
+              !loser.out &&
+              winner.cargo === 0 &&
+              loser.cargo > 0
+            );
+          }
+          chooseContestFood(take) {
+            if (this.phase !== "contest-food") return false;
+            const winner = this.tokens.find(
+              (t) => t.id === this.contest.winner,
+            );
+            const loser = this.tokens.find((t) => t.id === this.contest.loser);
+            if (take) {
+              if (!this.canStealContest()) return false;
+              winner.cargo = loser.cargo;
+              winner.sourcePatch = loser.sourcePatch;
+              winner.loaded = true;
+              loser.cargo = 0;
+              loser.sourcePatch = null;
+              // The loser has already harvested on this trip. It can recover a
+              // stolen load in another contest, but cannot harvest again until home.
+              this.record(
+                `${this.name(winner)} took ${winner.cargo} fruit from ${this.name(loser)}. Bring it home to bank it. Choose where to push the loser.`,
+              );
+            } else
+              this.record(
+                `${this.name(winner)} left the fruit with ${this.name(loser)}. Choose where to push the loser.`,
+              );
+            this.phase = "push";
             return true;
           }
           pushes() {
@@ -2912,15 +3008,21 @@
             winner.r = c.r;
             winner.s = c.s;
             const after = () => {
+              const resolveWinner = () => {
+                if (this.checkEnd()) return;
+                this.resolveLanding(winner, () => {
+                  if (!this.checkEnd()) this.awardCard(winner.owner);
+                });
+              };
               this.collect(winner);
-              if (this.phase === "finished") return;
+              if (["finished", "extinction"].includes(this.phase)) return;
               if (this.phase === "hunter") {
                 const done = this.pending.done;
                 this.pending.done = () => {
                   done();
-                  this.awardCard(winner.owner);
+                  resolveWinner();
                 };
-              } else this.awardCard(winner.owner);
+              } else resolveWinner();
             };
             if (r === RESOURCE + 1) {
               this.hit(loser, "edge", after);
@@ -2941,11 +3043,8 @@
           }
           awardCard(owner) {
             this.contest = null;
-            const resume = () => {
-              if (!this.token || this.token.out || this.token.r === 0)
-                this.endTurn();
-              else this.phase = "move";
-            };
+            this.remaining = 0;
+            const resume = () => this.endTurn();
             this.rewardCard(owner, "won the contest", resume);
           }
 
@@ -4443,6 +4542,52 @@
                     : `${tokens.filter((x) => x.owner === t.owner).length}`,
                 ),
               );
+              if (t.cargo > 0) {
+                const badge = svg("g", {
+                  class: "carried-fruit",
+                  "pointer-events": "none",
+                  "aria-label": `${game.name(t)} carries ${t.cargo} fruit`,
+                  transform: `translate(${pos.x - 25 * zoom},${pos.y + 4 * zoom}) scale(${zoom})`,
+                });
+                badge.append(
+                  svg("rect", {
+                    x: 0,
+                    y: 0,
+                    width: 25,
+                    height: 13,
+                    rx: 6,
+                    fill: "#f0d493",
+                    stroke: "#294a3e",
+                    "stroke-width": 0.8,
+                  }),
+                );
+                badge.append(
+                  svg("circle", { cx: 7, cy: 7, r: 3.5, fill: "#cf765f" }),
+                );
+                badge.append(
+                  svg("path", {
+                    d: "M7,4 Q8,0 11,2",
+                    fill: "none",
+                    stroke: "#547a45",
+                    "stroke-width": 1.5,
+                  }),
+                );
+                badge.append(
+                  svg(
+                    "text",
+                    {
+                      x: 17,
+                      y: 10,
+                      "text-anchor": "middle",
+                      "font-size": 10,
+                      "font-weight": 800,
+                      fill: "#233c32",
+                    },
+                    String(t.cargo),
+                  ),
+                );
+                g.append(badge);
+              }
             });
             const choose = () => {
               if (suppressClick || moveMode) return;
@@ -4543,6 +4688,12 @@
           }
           board();
           const p = game.player;
+          const contestWinner = game.tokens.find(
+            (t) => t.id === game.contest?.winner,
+          );
+          const contestLoser = game.tokens.find(
+            (t) => t.id === game.contest?.loser,
+          );
           const response =
             game.pending && ["traffic", "hunter", "rescue"].includes(game.phase)
               ? game.players[game.cardOwner()]
@@ -4574,6 +4725,7 @@
               "Four officers · one shared roll · protected refuges are skipped",
             "contest-choice": "Attacker: choose odd or even.",
             "contest-roll": "Roll to decide who owns this space.",
+            "contest-food": `Player ${(contestWinner?.owner ?? 0) + 1}: take ${contestLoser?.cargo ?? 0} carried fruit, or leave it with the loser.`,
             push: "Winner: choose where to push the loser.",
             draw: `Player ${game.pendingDraw?.owner + 1}: click the deck to draw your card.`,
             rescue: `${response.animal}: use a rescue card or accept the hit.`,
@@ -4677,6 +4829,18 @@
             "Accept hit",
             () => game.acceptHit(),
             game.phase === "rescue",
+          );
+          setButton(
+            "steal-food",
+            `Take ${contestLoser?.cargo ?? 0} fruit`,
+            () => game.chooseContestFood(true),
+            game.phase === "contest-food",
+          );
+          setButton(
+            "leave-food",
+            "Leave the fruit",
+            () => game.chooseContestFood(false),
+            game.phase === "contest-food",
           );
           setButton(
             "rescue",
@@ -4817,7 +4981,7 @@
           if (!p.hand.length) {
             const empty = document.createElement("p");
             empty.textContent =
-              "No cards yet. Win a contest, push the loser, then click the floating deck.";
+              "No cards held. Win a contest or survive a traffic or hunter check to draw one.";
             $("hand-list").append(empty);
           }
           p.hand.forEach((c, i) => {

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#071527" />
     <meta
       name="description"
-      content="Fragmented Habitat v28: an animal board game with square, circular and octagonal layouts. Start with 5 food, cross predator patrols and roads, collect fruit and keep 38 wild cards."
+      content="Fragmented Habitat v29: an animal board game with square, circular and octagonal layouts. Start with 5 food, cross predator patrols and roads, collect fruit and keep 38 wild cards."
     />
     <title>Fragmented Habitat</title>
     <link
@@ -1313,6 +1313,389 @@
           gap: 8px;
         }
       }
+
+      #help-dialog {
+        box-sizing: border-box;
+        width: 100vw;
+        max-width: 100vw;
+        height: 100dvh;
+        max-height: 100dvh;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: #091c2b;
+        color: #e5eff1;
+        overflow: auto;
+        font-size: 17px;
+        line-height: 1.65;
+      }
+      #help-dialog .book-header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #0b2133;
+        border-bottom: 1px solid #325366;
+        padding: 20px clamp(20px, 4vw, 72px);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      #help-dialog h2 {
+        margin: 0;
+        font-size: 36px;
+        color: #f3f1dc;
+      }
+      #help-dialog h3 {
+        font-size: 27px;
+        margin: 0 0 18px;
+        color: #c4e8cd;
+      }
+      #help-dialog h4 {
+        font-size: 19px;
+        margin: 22px 0 10px;
+        color: #f0dcad;
+      }
+      #help-dialog p,
+      #help-dialog li {
+        font-size: 17px;
+        line-height: 1.7;
+        color: #dfe9eb;
+      }
+      #help-dialog p {
+        margin: 10px 0 16px;
+      }
+      #help-dialog ul {
+        padding-left: 24px;
+      }
+      #help-dialog li + li {
+        margin-top: 10px;
+      }
+      .book-content {
+        max-width: 1600px;
+        margin: auto;
+        padding: 28px clamp(20px, 4vw, 72px) 48px;
+      }
+      .book-eyebrow {
+        font-size: 11px;
+        letter-spacing: 2px;
+        color: #96c8c2;
+      }
+      .book-actions {
+        display: flex;
+        gap: 10px;
+      }
+      .book-intro {
+        max-width: 980px;
+      }
+      .book-nav {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 20px 0;
+      }
+      .book-nav a {
+        background: #17394b;
+        color: #d3e9db;
+        text-decoration: none;
+        padding: 8px 14px;
+        border-radius: 7px;
+        font-size: 14px;
+      }
+      .book-setup {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 18px 22px;
+        background: #123649;
+        border-radius: 12px;
+        margin: 24px 0;
+      }
+      .book-setup span {
+        background: #244954;
+        padding: 5px 12px;
+        border-radius: 8px;
+      }
+      .book-modes {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 26px;
+        margin: 26px 0 48px;
+      }
+      .mode-sheet {
+        background: #102b3b;
+        padding: 28px;
+        border-radius: 16px;
+        border-top: 4px solid #8ec9a4;
+        scroll-margin-top: 120px;
+      }
+      #book-colonization {
+        border-color: #d6bd8d;
+      }
+      .journey {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 18px 0 22px;
+      }
+      .journey span {
+        font-size: 13px;
+        padding: 8px 12px;
+        background: #204539;
+        border-radius: 8px;
+      }
+      .journey b {
+        color: #ddc293;
+      }
+      .opener-note {
+        background: #254150;
+        border-left: 3px solid #d6bd8d;
+        padding: 5px 18px;
+        margin: 24px 0;
+      }
+      #book-turns,
+      #book-landscape,
+      #book-competition,
+      #book-cards {
+        scroll-margin-top: 120px;
+        margin: 44px 0;
+      }
+      .turn-steps {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 14px;
+        padding: 0;
+        list-style: none;
+        counter-reset: steps;
+      }
+      .turn-steps li {
+        counter-increment: steps;
+        background: #123142;
+        border-radius: 12px;
+        padding: 18px;
+        margin: 0 !important;
+      }
+      .turn-steps b {
+        display: block;
+        color: #efdba3;
+        margin-bottom: 12px;
+      }
+      .turn-steps b:before {
+        content: counter(steps);
+        display: inline-grid;
+        place-items: center;
+        width: 27px;
+        height: 27px;
+        border-radius: 50%;
+        background: #9acaad;
+        color: #17352f;
+        margin-right: 8px;
+      }
+      .turn-steps span {
+        display: block;
+        font-size: 15px;
+      }
+      .rule-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
+      .rule-card {
+        background: #102b3b;
+        border-radius: 12px;
+        padding: 20px;
+      }
+      .rule-card h4 {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 14px !important;
+      }
+      .book-mark {
+        display: inline-grid;
+        place-items: center;
+        flex: 0 0 38px;
+        width: 38px;
+        height: 38px;
+        background: #254453;
+        border-radius: 10px;
+      }
+      .book-mark svg {
+        width: 29px;
+        height: 29px;
+      }
+      .day-night {
+        display: flex;
+        gap: 12px;
+        margin: 16px 0;
+      }
+      .day-night span {
+        flex: 1;
+        background: #254553;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 14px;
+      }
+      .day-night b {
+        display: block;
+        color: #f0d9a8;
+        margin-bottom: 5px;
+      }
+      .competition-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
+      .book-example {
+        background: #213e45;
+        border-left: 4px solid #9fcdb3;
+        padding: 20px 24px;
+        margin: 20px 0;
+        border-radius: 8px;
+      }
+      .book-example p {
+        margin-bottom: 0 !important;
+      }
+      .card-list {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+      .card-list small {
+        margin-left: auto;
+        white-space: nowrap;
+        background: #345064;
+        padding: 3px 8px;
+        border-radius: 6px;
+      }
+      .book-controls {
+        border-top: 1px solid #355061;
+        padding-top: 30px;
+      }
+      .book-footer {
+        margin-top: 35px;
+        color: #9fbbc1;
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: center;
+        font-size: 13px;
+      }
+      @media (max-width: 1000px) {
+        .rule-grid,
+        .competition-grid,
+        .card-list {
+          grid-template-columns: 1fr 1fr;
+        }
+        .turn-steps {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      @media (max-width: 700px) {
+        #help-dialog .book-header {
+          padding: 14px 16px;
+        }
+        #help-dialog h2 {
+          font-size: 27px;
+        }
+        .book-eyebrow {
+          font-size: 9px;
+          letter-spacing: 1px;
+        }
+        .book-actions .btn:first-child {
+          display: none;
+        }
+        .book-content {
+          padding: 20px 16px;
+        }
+        .book-modes,
+        .rule-grid,
+        .competition-grid,
+        .card-list,
+        .turn-steps {
+          grid-template-columns: 1fr;
+        }
+        .mode-sheet {
+          padding: 22px;
+        }
+        .book-footer {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+      @media print {
+        body > *:not(#help-dialog) {
+          display: none !important;
+        }
+        #help-dialog {
+          display: block !important;
+          position: static !important;
+          width: 100% !important;
+          height: auto !important;
+          max-height: none !important;
+          overflow: visible !important;
+          background: white !important;
+          color: #172c34 !important;
+        }
+        #help-dialog * {
+          color: #172c34 !important;
+          box-shadow: none !important;
+        }
+        #help-dialog .book-header {
+          position: static;
+          background: white;
+        }
+        .book-actions,
+        .book-nav,
+        .book-footer button {
+          display: none !important;
+        }
+        .book-content {
+          padding: 0;
+          max-width: none;
+        }
+        .book-modes,
+        .rule-grid,
+        .competition-grid,
+        .card-list,
+        .turn-steps {
+          display: block;
+        }
+        .mode-sheet,
+        .rule-card,
+        .opener-note,
+        .book-example,
+        .book-setup,
+        .turn-steps li {
+          background: #f3f6f4 !important;
+          border: 1px solid #d4dfd8;
+          padding: 14px;
+          margin: 12px 0;
+          break-inside: avoid;
+        }
+        #help-dialog p,
+        #help-dialog li {
+          font-size: 11pt !important;
+        }
+        #help-dialog h3 {
+          font-size: 18pt;
+        }
+        .book-header h2 {
+          font-size: 26pt;
+        }
+        #help-dialog .mode-sheet {
+          break-inside: auto;
+        }
+      }
+
+      .mode-sheet h4 {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
     </style>
   </head>
   <body>
@@ -1336,7 +1719,7 @@
         </div>
 
         <footer>
-          VERSION 28 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+          VERSION 29 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
             Recent events
           </button>
         </footer>
@@ -1451,284 +1834,673 @@
       <button class="btn" data-close="hand-dialog">Close</button>
     </dialog>
     <dialog id="help-dialog">
-      <h2>How to play</h2>
-      <p>
-        Choose between a food-gathering journey and a race to colonize a new
-        habitat. In both, survival depends on luck and strategy.
-      </p>
-      <p>
-        <strong>Start:</strong> each player has one animal, 5 food and two
-        random cards. Starting cards can be used from Round 1 whenever their
-        conditions apply. Choose an animal, roll the movement die, then click
-        neighbouring spaces. Move inward, outward or sideways. You may stop
-        after one step; you do not have to use the whole roll. You may retrace
-        your own steps, including returning to the square you just left. Each
-        return step uses one movement point.
-      </p>
-      <p>
-        <strong>Classic — Add an animal (optional):</strong> before rolling,
-        spend 2 food to add another animal at home. Its parent can be anywhere.
-        You can have up to three living animals, but move only one per turn.
-      </p>
-      <h3>Choose your game</h3>
-      <p>
-        The square board uses equal square cells, including the corners. Move
-        between cells that share an edge; diagonal moves are unavailable. Food
-        patches are spaced around the outer edge. The green cells between them
-        contain no food.
-      </p>
-      <ul>
-        <li>
-          <strong>Classic — Habitat Fragmentation:</strong> animals start in the
-          central habitat with 5 food per player. Cross the predator lanes and
-          roads, collect fruit at the edge, then bring it back alive. The first
-          player to bank the food target wins; if the patches empty, compare
-          banked food plus carried fruit. You can choose a square, circular or
-          octagonal board in Settings before starting. If every animal is
-          eliminated, local extinction occurs and the board automatically
-          switches to Habitat Colonization. All players begin a new population
-          with one animal, five food and two new starting cards; previous food
-          totals and cards reset.
-        </li>
-        <li>
-          <strong>Habitat Colonization:</strong> animals start at separate edge
-          bases and make a one-way journey to the central habitat. Once an
-          animal reaches it, it stays there and counts as a settler. It does not
-          need to return. The first player to settle
-          <strong>6 animals</strong> wins. If the habitat fills first, the
-          player with the most settlers wins; ties share the win. Its carrying
-          capacity is <strong>12 animals</strong> by default and can be changed
-          in Settings. Settlers share the habitat safely and cannot be pushed or
-          targeted. There are no food patches, hunters or golden harvests in
-          this mode.
-        </li>
-      </ul>
-      <p>
-        <strong>Colonization recruitment:</strong> add a new animal at your edge
-        base for free before rolling. You can have up to three animals
-        travelling at a time; settled animals do not count toward that limit.
-        Your starting 5 food is used for revival. If you have no travelling
-        animal, recruit one to take your turn.
-      </p>
-      <p>
-        <strong>Why carrying capacity matters:</strong> separate bases spread
-        animals out at the start, but everyone is trying to reach the same
-        habitat. That habitat can support only a limited number of settlers, so
-        space becomes valuable. Arriving safely matters as much as choosing your
-        route.
-      </p>
-      <div class="landscape-rules">
-        <h3>The landscape</h3>
-        <p>
-          <strong>Road:</strong> every time an animal stops on a light gray road
-          space, it has to roll the day/night die.
+      <header class="book-header">
+        <div>
+          <span class="book-eyebrow">FRAGMENTED HABITAT · RULEBOOK · V29</span>
+          <h2>How to play</h2>
+        </div>
+        <div class="book-actions">
+          <button class="btn" onclick="window.print()">Print rules</button
+          ><button class="btn primary" data-close="help-dialog">
+            Back to game ×
+          </button>
+        </div>
+      </header>
+      <div class="book-content">
+        <p class="book-intro">
+          Guide your animals through a landscape divided by roads. Choose
+          routes, manage food and cards, and compete for space while avoiding
+          predators and traffic.
         </p>
-        <ul>
-          <li>
-            <strong>Moon (night or odd):</strong> the animal is safe and stays
-            where it is. In the game, night represents lighter traffic.
-          </li>
-          <li>
-            <strong>Sun (day or even):</strong> the animal gets hit by a car.
-            Pay the revival cost to bring it back to its starting habitat or
-            base.
-          </li>
-        </ul>
-        <p>
-          Stopping on another road space later requires a new roll, even if the
-          animal was safe last time. Passing through without stopping needs no
-          roll.
-        </p>
-        <section id="median-description">
-          <p>
-            <strong>Median strip:</strong> the dark gray strip lies between the
-            two road sections. Animals can stop here without a traffic check and
-            move along it in either direction, or cross into a neighbouring
-            lane. Four traffic officers patrol the strip, so most blocks are
-            still exposed to their patrol.
-          </p>
-          <ul>
+        <nav class="book-nav" aria-label="Rulebook sections">
+          <a href="#book-classic">Classic</a
+          ><a href="#book-colonization">Colonization</a
+          ><a href="#book-turns">Taking a turn</a
+          ><a href="#book-landscape">Landscape</a
+          ><a href="#book-competition">Competition</a
+          ><a href="#book-cards">Cards</a>
+        </nav>
+        <div class="book-setup">
+          <strong>Every player starts with</strong><span>1 animal</span
+          ><span>5 banked food</span
+          ><span>2 random cards · ready in Round 1</span>
+        </div>
+        <div class="book-modes">
+          <section class="mode-sheet" id="book-classic">
+            <span class="book-eyebrow">01 · THE MAIN GAME</span>
+            <h3>Habitat Fragmentation</h3>
+            <div class="journey">
+              <span>Central habitat</span><b>→</b><span>Edge food</span><b>→</b
+              ><span>Home</span>
+            </div>
+            <p>
+              Your animals leave the central habitat to collect food from
+              resource patches at the edge. Collected fruit must return to the
+              habitat before it is banked.
+            </p>
+            <h4>
+              <span class="book-mark food" aria-hidden="true"
+                ><svg viewBox="0 0 32 32">
+                  <circle cx="10" cy="14" r="6" fill="#dd8765" />
+                  <circle cx="19" cy="16" r="5" fill="#eed07b" />
+                  <path
+                    d="M10 8Q11 2 17 5M19 11l3-4"
+                    stroke="#8cba79"
+                    stroke-width="3"
+                    fill="none"
+                  /></svg></span
+              >Gathering food
+            </h4>
+            <p>
+              An ordinary patch provides <strong>1 fruit</strong>. A golden horn
+              patch provides <strong>3 fruit</strong>, but requires a hunter
+              check: moon means keep the load; sun means a hit. Each animal can
+              harvest once per trip and carry one load. Patches stay empty after
+              collection unless their fruit is returned following a hit.
+            </p>
+            <h4>
+              <span class="book-mark home" aria-hidden="true"
+                ><svg viewBox="0 0 32 32">
+                  <path d="m3 16 13-12 13 12H25v13H7V16z" fill="#8fbc91" />
+                  <path d="M13 29V18h6v11" fill="#315d4b" /></svg></span
+              >Adding an animal · optional
+            </h4>
+            <p>
+              Before rolling, spend <strong>2 banked food</strong> to place
+              another animal at home. Your existing animals can be anywhere.
+              Keep at most three living animals; move only one each turn.
+            </p>
+            <h4>
+              <span class="book-mark" aria-hidden="true"
+                ><svg viewBox="0 0 32 32">
+                  <path
+                    d="M9 4h14v10q0 9-7 9t-7-9zM9 7H3q0 12 8 12M23 7h6q0 12-8 12M16 23v5M10 29h12"
+                    fill="#e8ca83"
+                    stroke="#e8ca83"
+                    stroke-width="2"
+                  /></svg></span
+              >Winning Classic
+            </h4>
+            <ul>
+              <li>
+                Reach the banked-food target first: <strong>10</strong> by
+                default, adjustable in Settings.
+              </li>
+              <li>
+                Be the only player with animals remaining. If this happens
+                during a patrol, finish the patrol before declaring the winner.
+              </li>
+              <li>
+                If every resource patch is empty, compare banked food plus fruit
+                carried by surviving animals after pending checks and rewards.
+                Tied totals share the win.
+              </li>
+            </ul>
+            <h4>
+              <span class="book-mark hit" aria-hidden="true"
+                ><svg viewBox="0 0 32 32">
+                  <path d="m16 3 13 25H3z" fill="#e9b68c" />
+                  <path
+                    d="M16 11v8m0 3v2"
+                    stroke="#213d49"
+                    stroke-width="3"
+                  /></svg></span
+              >Local extinction
+            </h4>
+            <p>
+              If <strong>every animal is eliminated</strong>, nobody wins
+              Classic. The board switches to full Habitat Colonization. Everyone
+              receives one new animal, five food and two new cards; old scores
+              and cards reset.
+            </p>
+            <h4>
+              <span class="book-mark" aria-hidden="true"
+                ><svg viewBox="0 0 32 32">
+                  <rect x="3" y="3" width="15" height="15" fill="#8bc2a5" />
+                  <circle cx="23" cy="22" r="8" fill="#d7bd8e" /></svg></span
+              >Board shapes
+            </h4>
+            <p>
+              Choose Octagon, Circle or Square before starting. Square cells
+              connect along shared edges; diagonal moves are unavailable. Its 24
+              food patches are spaced around the edge, with empty green cells
+              between them. Outer square lanes contain more cells, so their
+              patrol routes are longer.
+            </p>
+          </section>
+          <section class="mode-sheet" id="book-colonization">
+            <span class="book-eyebrow"
+              >02 · SETTLEMENT &amp; THE OPTIONAL OPENER</span
+            >
+            <h3>Habitat Colonization</h3>
+            <div class="journey">
+              <span>Edge habitats</span><b>→</b
+              ><span>Shared central habitat</span>
+            </div>
+            <p>
+              Animals travel from separate edge habitats into the central
+              habitat. Each arrival remains as a settler. There is
+              <strong>no return journey</strong> and no food collection, hunters
+              or golden harvests.
+            </p>
+            <h4>
+              <span class="book-mark home" aria-hidden="true"
+                ><svg viewBox="0 0 32 32">
+                  <path d="m3 16 13-12 13 12H25v13H7V16z" fill="#8fbc91" />
+                  <path d="M13 29V18h6v11" fill="#315d4b" /></svg></span
+              >Full Colonization
+            </h4>
+            <p>
+              The first player to establish <strong>6 settlers</strong> wins. If
+              the central habitat fills first, the player with the most settlers
+              wins; ties share the victory. Its carrying capacity is
+              <strong>12 animals</strong> by default and can be changed in
+              Settings.
+            </p>
+            <p>
+              Settlers can share the central habitat. They cannot be pushed or
+              targeted by cards, and count as surviving animals. If only one
+              player remains, that player wins; if none remain, Colonization
+              ends without a winner.
+            </p>
+            <h4>
+              <span class="book-mark home" aria-hidden="true"
+                ><svg viewBox="0 0 32 32">
+                  <path d="m3 16 13-12 13 12H25v13H7V16z" fill="#8fbc91" />
+                  <path d="M13 29V18h6v11" fill="#315d4b" /></svg></span
+              >Recruitment · optional
+            </h4>
+            <p>
+              Before rolling, recruit another animal at your edge habitat
+              <strong>for free</strong>. Keep at most three travelling animals
+              at once; settlers do not count toward this limit. Starting food
+              pays revival costs. If no travelling animal remains, recruit one
+              to take your turn.
+            </p>
+            <div class="opener-note">
+              <h4>
+                <span class="book-mark move" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path
+                      d="M3 16h26m-8-7 8 7-8 7M11 9l-8 7 8 7"
+                      fill="none"
+                      stroke="#a3d8cc"
+                      stroke-width="3"
+                    /></svg></span
+                >Mini-game: choose the first Classic player
+              </h4>
+              <p>
+                In Settings, choose Classic and enable
+                <strong>Colonization opener</strong>. The first animal to reach
+                the central habitat earns its player the first turn in Classic.
+                If only one player survives before an arrival, that player
+                starts; if nobody survives, Player 1 starts.
+              </p>
+              <p>
+                The board then begins a fresh Classic game with the selected
+                shape. Each player gets one animal, five food and two new cards.
+                The chosen player acts first each round, followed by the other
+                players in order. Nothing collected or spent during the opener
+                carries over.
+              </p>
+            </div>
+            <h4>
+              <span class="book-mark home" aria-hidden="true"
+                ><svg viewBox="0 0 32 32">
+                  <path d="m3 16 13-12 13 12H25v13H7V16z" fill="#8fbc91" />
+                  <path d="M13 29V18h6v11" fill="#315d4b" /></svg></span
+              >What carrying capacity represents
+            </h4>
+            <p>
+              The destination has limited space for settlement. Separate
+              starting habitats spread animals out initially, but all
+              populations seek the same finite habitat. This is a simplified
+              illustration of dispersal, survival and competition.
+            </p>
+          </section>
+        </div>
+        <section id="book-turns">
+          <h3>Shared rules · taking a turn</h3>
+          <ol class="turn-steps">
             <li>
-              <strong>Protected refuges:</strong> the two blocks marked with
-              shields line up with the sides without a golden harvest. Officers
-              cannot enter these blocks, so animals resting here are safe from
-              the patrol.
+              <b>Choose</b
+              ><span
+                >Select one of your travelling animals. Recruit first if you
+                want another animal.</span
+              >
             </li>
             <li>
-              <strong>Competition:</strong> animals cannot share a refuge. An
-              opponent can contest it using the usual odd/even roll. The winner
-              keeps the block and pushes the loser one adjacent block away. A
-              push onto the road requires a traffic check.
+              <b>Roll</b
+              ><span
+                >Roll one movement die, from 1 to 6. You can switch animals
+                before the first step; afterward the selection is locked.</span
+              >
             </li>
             <li>
-              <strong>Officer movement:</strong> after the predators move, roll
-              once for all four officers. They move clockwise and skip refuges.
-              Only ordinary median blocks count toward the roll.
+              <b>Move</b
+              ><span
+                >Each neighbouring block costs one step. Move inward, outward or
+                sideways, and retrace your path if you want. Returning over a
+                block costs another step.</span
+              >
             </li>
             <li>
-              <strong>If an officer catches an animal:</strong> stopping on an
-              officer, or having one stop on your block, sends the animal back
-              to its starting habitat. Carried fruit returns to its original
-              resource patch. Banked food is unchanged, and there is no revival
-              cost.
+              <b>Stop</b
+              ><span
+                >You may stop after one step without using the entire roll.
+                Resolve any landing check. If no legal move is available, use
+                Pass.</span
+              >
             </li>
-          </ul>
+            <li>
+              <b>Patrol</b
+              ><span
+                >After all players have acted, move the predators, then roll
+                once for all four officers. The next round begins after these
+                effects are resolved.</span
+              >
+            </li>
+          </ol>
         </section>
-        <p>
-          <strong>Predator lanes:</strong> leaving the habitat or base exposes
-          animals to predators. Players have numbered flags; predators do not.
-          After everyone has taken a turn, click Move All Predators to run their
-          turn. In Settings, choose one roll for all predators, one per lane, or
-          one for each predator. You can also change the number per lane from 1
-          to 6; the default is 4. Predators always move clockwise. If one stops
-          on your animal’s square, that animal is hit. You cannot voluntarily
-          step onto a predator, but a rival can push you there. With individual
-          rolls, predators may gather on the same space.
-        </p>
-        <p>
-          <strong>Resource patches (Classic):</strong> patches hold food at the
-          edges. An ordinary patch gives 1 fruit to carry home. A golden horn
-          patch gives 3 fruit, but you must face the hunter: moon/night means
-          keep the fruit; sun/day means a hit. Each patch supplies only the
-          first animal that collects from it. It stays empty unless its carried
-          fruit is returned after a hit. Each animal collects from one patch per
-          trip. In Colonization, the centre is a settlement habitat rather than
-          a food patch.
-        </p>
-      </div>
-      <h3>Hits, revival and elimination</h3>
-      <ul>
-        <li>
-          A predator, car, hunter or off-board hit sends the affected animal
-          back to the habitat if you can revive it.
-        </li>
-        <li>
-          Any fruit it carries returns to the resource patch it came from. That
-          patch can be collected again.
-        </li>
-        <li>
-          Pay <strong>2 banked food</strong> to revive the animal at home.
-        </li>
-        <li>
-          If you cannot pay 2 food, only the hit animal leaves the board. Its
-          carried fruit returns to the supply. You keep playing with your other
-          surviving animals and keep your cards.
-          <strong
-            >You are eliminated only when you have no animals remaining.</strong
+        <section id="book-landscape">
+          <h3>Read the landscape</h3>
+          <div class="rule-grid">
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark road" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <rect
+                      x="3"
+                      y="2"
+                      width="26"
+                      height="28"
+                      rx="3"
+                      fill="#879899"
+                    />
+                    <path
+                      d="M16 3v6m0 4v6m0 4v6"
+                      stroke="#f6e7af"
+                      stroke-width="2"
+                    /></svg></span
+                >Light gray roads
+              </h4>
+              <p>
+                Every time an animal stops on a road block, roll the day/night
+                die.
+              </p>
+              <div class="day-night">
+                <span><b>☾ Moon / odd</b>Safe; stay on the block.</span
+                ><span><b>☀ Sun / even</b>Car hit; follow revival rules.</span>
+              </div>
+              <p>
+                Passing through without stopping needs no check. Stopping on a
+                road again later requires a new roll, even after an earlier safe
+                result.
+              </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark refuge" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path d="M5 5h22l-2 15-9 9-9-9z" fill="#a7d8b2" />
+                    <path
+                      d="m10 16 4 4 8-9"
+                      fill="none"
+                      stroke="#315b4b"
+                      stroke-width="3"
+                    /></svg></span
+                >Median & protected refuges
+              </h4>
+              <p>
+                The dark gray median needs no traffic check. Move along it
+                either way or cross into a neighbouring lane.
+              </p>
+              <p>
+                Two shield-marked refuge blocks align with the sides without
+                golden harvests. Officers cannot enter them, but opponents can
+                still contest them. Animals cannot share a refuge.
+              </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark officer" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path d="m4 10 12-7 12 7-2 6H6z" fill="#92bedb" />
+                    <path d="M9 16v9l7 5 7-5v-9" fill="#c1d4d6" />
+                    <circle cx="16" cy="11" r="3" fill="#f5dca0" /></svg></span
+                >Four traffic officers
+              </h4>
+              <p>
+                After the predators move, one shared die roll moves all four
+                officers clockwise. They skip refuges; only ordinary median
+                blocks count as steps.
+              </p>
+              <p>
+                If you stop on an officer, or one stops on your block, your
+                animal returns home. Carried fruit returns to its original
+                patch. Banked food is unchanged; no revival cost is paid.
+              </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark predator" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <ellipse cx="16" cy="22" rx="8" ry="6" fill="#e6b87c" />
+                    <g fill="#e6b87c">
+                      <circle cx="5" cy="14" r="3" />
+                      <circle cx="11" cy="8" r="3" />
+                      <circle cx="21" cy="8" r="3" />
+                      <circle cx="27" cy="14" r="3" />
+                    </g></svg></span
+                >Predator lanes
+              </h4>
+              <p>
+                Three inner and three outer green lanes are patrolled by
+                predators. Player animals have numbered flags; predators do not.
+              </p>
+              <p>
+                Predators move clockwise after everyone’s turn and hit animals
+                only on their final blocks. You cannot voluntarily enter a
+                predator’s block, but a push can place you there.
+              </p>
+              <p>
+                Settings allows 1–6 predators per lane, four by default, with a
+                shared roll, one roll per lane, or individual rolls. Click Move
+                all predators once; the sequence pauses for rescue decisions.
+                Individual rolls can bring predators onto the same block.
+              </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark hit" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path d="m16 3 13 25H3z" fill="#e9b68c" />
+                    <path
+                      d="M16 11v8m0 3v2"
+                      stroke="#213d49"
+                      stroke-width="3"
+                    /></svg></span
+                >Hits, revival & elimination
+              </h4>
+              <p>
+                A predator, car, hunter or off-board hit returns carried fruit
+                to its original patch. Pay <strong>2 banked food</strong> to
+                revive at home.
+              </p>
+              <p>
+                If you cannot pay, only that animal is removed. You keep playing
+                and keep your cards while another animal survives, including a
+                settler. When none remain, you are eliminated and your cards
+                return to the deck.
+              </p>
+              <p>
+                A suitable rescue card can be used before paying. A hit or
+                officer escort ends the affected challenger’s movement; a normal
+                contest push into the habitat does not.
+              </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark home" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path d="m3 16 13-12 13 12H25v13H7V16z" fill="#8fbc91" />
+                    <path d="M13 29V18h6v11" fill="#315d4b" /></svg></span
+                >Habitat & food totals
+              </h4>
+              <p>
+                Animals can share their home habitat. Safe home animals cannot
+                be contested or targeted with Move Enemy. Settlers share the
+                Colonization destination safely.
+              </p>
+              <p>
+                <strong>Banked food</strong> belongs to the player.
+                <strong>Carried fruit</strong> belongs to the animal’s current
+                load and is vulnerable during the journey. Carried fruit cannot
+                pay a revival cost.
+              </p>
+            </section>
+          </div>
+        </section>
+        <section id="book-competition">
+          <h3>Competition, theft & the chase</h3>
+          <div class="competition-grid">
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark contest" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path
+                      d="M3 8h16l-5-5m5 5-5 5M29 24H13l5 5m-5-5 5-5"
+                      fill="none"
+                      stroke="#dcc498"
+                      stroke-width="3"
+                    /></svg></span
+                >1 · Contest a block
+              </h4>
+              <p>
+                Move onto an opponent’s animal. The challenger chooses odd or
+                even; the defender receives the opposite. Roll once. The winner
+                keeps the block and chooses an adjacent block for the loser. You
+                cannot contest your own animals.
+              </p>
+              <p>
+                Pushes trigger the destination’s effects immediately: a road
+                check, predator hit, officer escort or other landing
+                consequence. At a Classic outer-edge contest, the winner can
+                also push the loser off the board.
+              </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark food" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <circle cx="10" cy="14" r="6" fill="#dd8765" />
+                    <circle cx="19" cy="16" r="5" fill="#eed07b" />
+                    <path
+                      d="M10 8Q11 2 17 5M19 11l3-4"
+                      stroke="#8cba79"
+                      stroke-width="3"
+                      fill="none"
+                    /></svg></span
+                >2 · Choose whether to steal
+              </h4>
+              <p>
+                In Classic, an empty-handed winner may choose
+                <strong>Take fruit</strong> to take the loser’s entire load
+                before pushing it, or <strong>Leave the fruit</strong>. An
+                animal carrying a load cannot take another. Banked food cannot
+                be stolen.
+              </p>
+              <p>
+                Stolen fruit must reach home to score. If its new carrier is
+                hit, it returns to its original patch. An animal that loses a
+                load cannot harvest again on that trip, but can win food back in
+                another contest.
+              </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark move" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path
+                      d="M3 16h26m-8-7 8 7-8 7M11 9l-8 7 8 7"
+                      fill="none"
+                      stroke="#a3d8cc"
+                      stroke-width="3"
+                    /></svg></span
+                >3 · Keep moving
+              </h4>
+              <p>
+                After the push, forced landing checks and card rewards, the
+                challenger keeps
+                <strong>unused movement whether it won or lost</strong>. The
+                winner can escape with food; the pushed loser can move around.
+              </p>
+              <p>
+                The same two animals cannot contest again until
+                <strong>the next round</strong>, even if the defender initiates
+                the rematch. A winner continuing across a road checks traffic
+                only when it stops; a pushed animal checks immediately upon
+                landing there.
+              </p>
+            </section>
+          </div>
+          <div class="book-example">
+            <b>Example</b>
+            <p>
+              Rat rolls 5 and uses one step to challenge Squirrel, which carries
+              3 fruit. Rat wins, takes the load and pushes Squirrel aside. After
+              the reward draw, Rat still has 4 steps to escape. If Rat loses
+              instead, it still has 4 steps to move from its pushed position.
+              Neither animal can challenge the other again until the next round.
+            </p>
+          </div>
+        </section>
+        <section id="book-cards">
+          <h3>Cards · 38 in the deck</h3>
+          <p>
+            Your two starting cards are ready in Round 1 when their conditions
+            apply. Winning a contest or surviving a traffic or hunter roll earns
+            one card: click the floating deck when prompted. Cards earned during
+            play unlock <strong>next round</strong>. Using Safe Streets or a
+            rescue card does not earn a survival reward.
+          </p>
+          <p>
+            Click the card icon beside a player’s name to view their hand. Use
+            an eligible card or close the panel.
+          </p>
+          <div class="card-list">
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark card" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <rect
+                      x="6"
+                      y="3"
+                      width="20"
+                      height="26"
+                      rx="4"
+                      fill="#9bb8d6"
+                    />
+                    <path
+                      d="m16 9 3 5 5 2-5 2-3 5-3-5-5-2 5-2z"
+                      fill="#16384a"
+                    /></svg></span
+                >Reroll <small>× 14</small>
+              </h4>
+              <p>Replace your movement roll before taking your first step.</p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark move" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path
+                      d="M3 16h26m-8-7 8 7-8 7M11 9l-8 7 8 7"
+                      fill="none"
+                      stroke="#a3d8cc"
+                      stroke-width="3"
+                    /></svg></span
+                >Extra Block <small>× 10</small>
+              </h4>
+              <p>Add one step to your current movement.</p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark contest" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path
+                      d="M3 8h16l-5-5m5 5-5 5M29 24H13l5 5m-5-5 5-5"
+                      fill="none"
+                      stroke="#dcc498"
+                      stroke-width="3"
+                    /></svg></span
+                >Move Enemy <small>× 6</small>
+              </h4>
+              <p>
+                Choose an enemy, then move it one adjacent empty block in any
+                direction. Landing effects apply. Home animals and settlers
+                cannot be targeted.
+              </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark road" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <rect
+                      x="3"
+                      y="2"
+                      width="26"
+                      height="28"
+                      rx="3"
+                      fill="#879899"
+                    />
+                    <path
+                      d="M16 3v6m0 4v6m0 4v6"
+                      stroke="#f6e7af"
+                      stroke-width="2"
+                    /></svg></span
+                >Safe Streets <small>× 4</small>
+              </h4>
+              <p>
+                Skip one traffic check and stay safely on that road block. Later
+                stops still require checks.
+              </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark predator" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <ellipse cx="16" cy="22" rx="8" ry="6" fill="#e6b87c" />
+                    <g fill="#e6b87c">
+                      <circle cx="5" cy="14" r="3" />
+                      <circle cx="11" cy="8" r="3" />
+                      <circle cx="21" cy="8" r="3" />
+                      <circle cx="27" cy="14" r="3" />
+                    </g></svg></span
+                >Play Dead <small>× 2</small>
+              </h4>
+              <p>
+                Survive a predator in place, keeping your fruit. Only the
+                attacking predator rolls and moves again.
+              </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark home" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path d="m3 16 13-12 13 12H25v13H7V16z" fill="#8fbc91" />
+                    <path d="M13 29V18h6v11" fill="#315d4b" /></svg></span
+                >Angel Conservationists <small>× 2</small>
+              </h4>
+              <p>
+                After a car or hunter hit, revive at home for free. Carried
+                fruit still returns to its original patch.
+              </p>
+            </section>
+          </div>
+        </section>
+        <section class="book-controls">
+          <h3>Board controls</h3>
+          <p>
+            Drag sideways to turn and vertically to tilt. Pinch or wheel to zoom
+            the board. 3D View adjusts turn, tilt and Z rotation separately.
+            Move Board lets you reposition the board; Reset view restores the
+            camera.
+          </p>
+          <p>
+            Settings starts a fresh game with your selected options. Reset
+            restarts the chosen game; an enabled Colonization opener runs again.
+          </p>
+        </section>
+        <footer class="book-footer">
+          Fragmented Habitat · v29 · An ecology game about movement, survival
+          and limited resources.<button
+            class="btn primary"
+            data-close="help-dialog"
           >
-          Then your cards return to the deck.
-        </li>
-        <li>
-          An eligible rescue card may be used before you pay. Play Dead keeps
-          the animal and its fruit in place. Angel Conservationists revives it
-          for free, but its fruit still returns to the patch.
-        </li>
-      </ul>
-      <p>
-        <strong>Interspecific competition:</strong> land on another player’s
-        animal to contest its space. The challenger chooses odd or even, and the
-        other player gets the opposite. Roll once. The winner keeps the square
-        and chooses an adjacent square to push the loser into. A push onto a
-        road triggers a day/night check; a push onto a predator causes a hit.
-        Other landing effects also apply. You cannot share a square outside the
-        habitat or contest your own animals.
-      </p>
-      <ul id="competition-food-rules">
-        <li>
-          <strong>Steal carried food:</strong> in Classic mode, a winner
-          carrying no fruit may take the loser’s entire load before pushing it.
-          Choose Take fruit or Leave the fruit. An animal already carrying a
-          load cannot take another. Banked food cannot be stolen.
-        </li>
-        <li>
-          <strong>Bring it home:</strong> stolen fruit counts toward victory
-          only after its new carrier reaches the habitat. If that carrier is
-          hit, the fruit returns to its original resource patch. Losing a load
-          does not allow another harvest on the same trip; the animal can still
-          win its food back in another contest.
-        </li>
-        <li>
-          <strong>The chase:</strong> after the push, forced landing checks and card rewards,
-          the challenger keeps any unused movement, whether it won or lost.
-          A winner can move away with stolen fruit; a pushed loser can move around.
-          The same two animals cannot contest each other again until the next
-          round. Continuing from a road space requires no traffic check unless
-          the animal stops there; a forced push onto a road still requires a check.
-        </li>
-      </ul>
-      <p>
-        <strong>Risk rewards:</strong> winning a contest, surviving a car roll
-        or surviving a hunter roll earns one card. Click the floating deck when
-        prompted. Using Safe Streets or a revival card does not earn a survival
-        reward.
-      </p>
-      <p>
-        <strong>Held cards:</strong> click the card icon beside a player’s name
-        to view their cards, use an eligible card, or close the window. Cards
-        dealt at the start are ready in Round 1. Cards earned during play unlock
-        next round.
-      </p>
-      <ul>
-        <li>
-          <strong>14 Reroll:</strong> replace your movement roll before taking a
-          step.
-        </li>
-        <li><strong>10 Extra Block:</strong> add one movement step.</li>
-        <li>
-          <strong>6 Move Enemy:</strong> choose an enemy, then move it one
-          adjacent square in any direction. Occupied squares are unavailable.
-          Landing consequences apply.
-        </li>
-        <li>
-          <strong>4 Safe Streets:</strong> skip one traffic check. Future stops
-          still need a check.
-        </li>
-        <li>
-          <strong>2 Play Dead:</strong> survive a predator on the same square
-          and keep your fruit. Only that predator rolls again.
-        </li>
-        <li>
-          <strong>2 Angel Conservationists:</strong> revive at home free after a
-          car or hunter hit; carried fruit returns to its original patch.
-        </li>
-      </ul>
-      <h3>How Classic ends</h3>
-      <ul>
-        <li>
-          <strong>Food target:</strong> the first player to reach the chosen
-          banked-food target wins. The default is 10; change it in Settings.
-        </li>
-        <li>
-          <strong>Only one player remains:</strong> that player wins regardless
-          of their food total. If this happens during a patrol, finish the
-          patrol before checking for a winner.
-        </li>
-        <li>
-          <strong>No food remains in the patches:</strong> finish any pending
-          hunter check and reward draw. If all patches are still empty, the
-          player with the most banked food plus fruit carried by surviving
-          animals wins. Equal totals share the win.
-        </li>
-        <li>
-          <strong>Returned fruit:</strong> food lost after a hit goes back to
-          its original patch, so the board is not depleted while that food is
-          available again.
-        </li>
-        <li>
-          <strong>Local extinction:</strong> if no animals remain anywhere on
-          the Classic board, no player wins that phase. The board automatically
-          switches to Habitat Colonization. Each player begins a new population
-          with one animal, five food and two new starting cards. Previous cards
-          and food totals reset. If animals are lost during Colonization, its
-          normal end rules apply; it does not restart again.
-        </li>
-      </ul>
-      <p>
-        <strong>Board controls:</strong> drag sideways to turn, vertically to
-        tilt, and pinch or wheel to zoom. 3D View gives separate tilt, turn and
-        Z rotation controls. Move Board lets you drag the whole board.
-      </p>
-      <button class="btn" data-close="help-dialog">Let’s play</button>
+            Let’s play
+          </button>
+        </footer>
+      </div>
     </dialog>
     <dialog id="view-dialog">
       <h2>Move around the landscape</h2>
@@ -1827,6 +2599,10 @@
           <option>20</option>
         </select></label
       >
+      <label
+        ><input type="checkbox" id="colonization-opener" /> Colonization opener
+        · choose who starts Classic</label
+      >
       <div class="toolbar">
         <button id="apply-settings" class="btn primary">Start fresh game</button
         ><button class="btn" data-close="settings-dialog">Cancel</button>
@@ -1843,6 +2619,13 @@
         <button id="confirm-reset" class="btn primary">Reset game</button
         ><button class="btn" data-close="reset-dialog">Cancel</button>
       </div>
+    </dialog>
+    <dialog id="opener-dialog">
+      <h2>Classic begins</h2>
+      <p id="opener-result"></p>
+      <button class="btn primary" data-close="opener-dialog">
+        Start Classic
+      </button>
     </dialog>
     <dialog id="extinction-dialog">
       <h2>Local extinction</h2>
@@ -1880,7 +2663,7 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <script id="game-engine">
-      /* Fragmented Habitat v28 — rules engine, independent of the display. */
+      /* Fragmented Habitat v29 — rules engine, independent of the display. */
       (() => {
         "use strict";
         const SECTORS = 24;
@@ -2009,10 +2792,15 @@
               predatorCount = 4,
               predatorRollMode = "lane",
               capacity = 12,
+              opener = false,
             } = {},
             rng = Math.random,
           ) {
-            this.mode = mode === "reverse" ? "reverse" : "classic";
+            this.openerEnabled = !!opener && mode !== "reverse";
+            this.isOpening = this.openerEnabled;
+            this.classicShape = shape;
+            this.mode =
+              this.isOpening || mode === "reverse" ? "reverse" : "classic";
             this.boardShape =
               this.mode === "reverse"
                 ? "octagon"
@@ -2038,7 +2826,7 @@
               ? predatorRollMode
               : "lane";
             this.capacity = Math.max(6, Math.min(42, Number(capacity) || 12));
-            this.colonyTarget = 6;
+            this.colonyTarget = this.isOpening ? 1 : 6;
             this.rng = rng;
             this.target = target;
             this.round = 1;
@@ -2056,6 +2844,7 @@
                 eliminated: false,
               }),
             );
+            this.turnOrder = this.players.map((p) => p.id);
             this.tokens = this.players.map((p) => ({
               id: p.id + 1,
               owner: p.id,
@@ -2182,6 +2971,37 @@
             );
             return true;
           }
+          beginClassicFromOpener() {
+            if (this.phase !== "opener-complete") return false;
+            const first = this.starterWinner,
+              reason = this.log.at(-1);
+            const next = new Game(
+              {
+                players: this.players.length,
+                target: this.target,
+                mode: "classic",
+                shape: this.classicShape,
+                predatorCount: this.predatorCount,
+                predatorRollMode: this.predatorRollMode,
+                capacity: this.capacity,
+              },
+              this.rng,
+            );
+            for (const field of Object.keys(this)) delete this[field];
+            Object.assign(this, next);
+            this.openerEnabled = true;
+            this.turnOrder = this.players.map(
+              (_, i) => (first + i) % this.players.length,
+            );
+            this.active = first;
+            this.selected = this.animals(first)[0].id;
+            this.openerResult = reason;
+            this.record(
+              reason +
+                " Classic starts fresh: one animal, five food and two cards each.",
+            );
+            return true;
+          }
           randomLanePositions(avoid = [], r = 1) {
             if (this.boardShape === "square") {
               // Choose one predator in each evenly spaced band. Random rotation
@@ -2276,6 +3096,22 @@
             );
             const total = this.tokens.filter((t) => t.settled && !t.out).length;
             const live = this.players.filter((p) => this.alive(p.id));
+            if (this.isOpening) {
+              if (!target && live.length > 1) return false;
+              if (!target && live.length === 1 && this.players.length === 1)
+                return false;
+              this.starterWinner = target?.id ?? live[0]?.id ?? 0;
+              this.phase = "opener-complete";
+              this.pending = this.pendingDraw = this.contest = null;
+              this.record(
+                target
+                  ? `Player ${this.starterWinner + 1} settled first and starts Classic.`
+                  : live.length
+                    ? `Player ${this.starterWinner + 1} is the last survivor and starts Classic.`
+                    : "No animals survived the opener. Player 1 starts Classic.",
+              );
+              return true;
+            }
             let ids, reason;
             if (target) {
               ids = [target.id];
@@ -2319,7 +3155,10 @@
             );
           }
           checkEnd() {
-            if (["finished", "extinction"].includes(this.phase)) return true;
+            if (
+              ["finished", "extinction", "opener-complete"].includes(this.phase)
+            )
+              return true;
             if (this.mode === "classic" && !this.tokens.some((t) => !t.out)) {
               this.phase = "extinction";
               this.hazardPatrol = false;
@@ -2407,7 +3246,7 @@
             this.hazardPatrol = false;
             if (this.checkEnd()) return;
             this.round++;
-            this.active = this.players.findIndex((p) => this.alive(p.id));
+            this.active = this.turnOrder.find((id) => this.alive(id)) ?? -1;
             if (this.active < 0) {
               this.phase = "finished";
               this.winner = null;
@@ -2540,9 +3379,14 @@
             );
             return true;
           }
-          contestPair(a, b) { return `${this.round}:${Math.min(a,b)}:${Math.max(a,b)}`; }
+          contestPair(a, b) {
+            return `${this.round}:${Math.min(a, b)}:${Math.max(a, b)}`;
+          }
           canContest(enemy) {
-            if (this.contestedPairs.has(this.contestPair(this.selected, enemy.id))) return false;
+            if (
+              this.contestedPairs.has(this.contestPair(this.selected, enemy.id))
+            )
+              return false;
             return (
               (enemy.r === RESOURCE && this.mode !== "reverse") ||
               this.neighbours(enemy.r, enemy.s, enemy.owner).some(
@@ -2816,9 +3660,10 @@
             this.contest = null;
             this.steps = 0;
             this.remaining = 0;
-            let next = this.active + 1;
-            while (next < this.players.length && !this.alive(next)) next++;
-            if (next < this.players.length) {
+            const next = this.turnOrder
+              .slice(this.turnOrder.indexOf(this.active) + 1)
+              .find((id) => this.alive(id));
+            if (next !== undefined) {
               this.active = next;
               this.selected = this.animals()[0]?.id ?? null;
               this.phase = "roll";
@@ -3050,7 +3895,13 @@
           awardCard(owner) {
             this.contest = null;
             const resume = () => {
-              if (!this.token || this.token.out || this.token.settled || (this.token.r === 0 && this.remaining === 0)) this.endTurn();
+              if (
+                !this.token ||
+                this.token.out ||
+                this.token.settled ||
+                (this.token.r === 0 && this.remaining === 0)
+              )
+                this.endTurn();
               else this.phase = "move";
             };
             this.rewardCard(owner, "won the contest", resume);
@@ -4688,6 +5539,15 @@
             id === "roll" ? () => rollAction(action) : () => act(action);
         }
         function render() {
+          if (game.phase === "opener-complete") {
+            autoPredators = false;
+            document.querySelectorAll("dialog[open]").forEach((d) => d.close());
+            game.beginClassicFromOpener();
+            $("opener-result").textContent =
+              game.openerResult +
+              " Everyone starts Classic with one animal, five food and two new cards. Turn order follows the first player clockwise through the player list.";
+            $("opener-dialog").showModal();
+          }
           if (game.phase === "extinction") {
             autoPredators = false;
             document.querySelectorAll("dialog[open]").forEach((d) => d.close());
@@ -4716,8 +5576,9 @@
           $("dice").textContent = game.lastRoll
             ? ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][game.lastRoll - 1]
             : "⚄";
-          $("goal").textContent =
-            game.mode === "reverse"
+          $("goal").textContent = game.isOpening
+            ? "Colonization opener · first arrival chooses the first Classic player"
+            : game.mode === "reverse"
               ? `Goal: 6 settlers · Habitat: ${game.tokens.filter((t) => t.settled).length}/${game.capacity} animals`
               : `Target: ${game.target} food · ${game.resourceSpaces.length - game.harvested.size} patches left · Start: 5 each`;
           const descriptions = {
@@ -5038,10 +5899,13 @@
           $("reset-dialog").showModal();
         };
         $("settings").onclick = () => {
-          $("mode-select").value = game.mode;
+          $("mode-select").value = game.isOpening ? "classic" : game.mode;
+          $("colonization-opener").checked = game.openerEnabled;
           $("player-count").value = String(game.players.length);
           $("target").value = String(game.target);
-          $("shape-select").value = game.boardShape;
+          $("shape-select").value = game.isOpening
+            ? game.classicShape
+            : game.boardShape;
           $("predator-count").value = String(game.predatorCount);
           $("predator-roll-mode").value = game.predatorRollMode;
           $("capacity").value = String(game.capacity);
@@ -5089,6 +5953,7 @@
             predatorCount: Number($("predator-count").value),
             predatorRollMode: $("predator-roll-mode").value,
             capacity: Number($("capacity").value),
+            opener: $("colonization-opener").checked,
           });
           $("settings-dialog").close();
           render();
@@ -5104,8 +5969,9 @@
           game = new Game({
             players: game.players.length,
             target: game.target,
-            mode: requestedMode || game.mode,
-            shape: game.boardShape,
+            mode: requestedMode || (game.isOpening ? "classic" : game.mode),
+            shape: game.isOpening ? game.classicShape : game.boardShape,
+            opener: !requestedMode && game.openerEnabled,
             predatorCount: game.predatorCount,
             predatorRollMode: game.predatorRollMode,
             capacity: game.capacity,

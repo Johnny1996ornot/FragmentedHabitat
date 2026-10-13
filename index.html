@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#071527" />
     <meta
       name="description"
-      content="Fragmented Habitat v27: an animal board game with square, circular and octagonal layouts. Start with 5 food, cross predator patrols and roads, collect fruit and keep 38 wild cards."
+      content="Fragmented Habitat v28: an animal board game with square, circular and octagonal layouts. Start with 5 food, cross predator patrols and roads, collect fruit and keep 38 wild cards."
     />
     <title>Fragmented Habitat</title>
     <link
@@ -1336,7 +1336,7 @@
         </div>
 
         <footer>
-          VERSION 27 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+          VERSION 28 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
             Recent events
           </button>
         </footer>
@@ -1648,10 +1648,12 @@
           win its food back in another contest.
         </li>
         <li>
-          <strong>The chase:</strong> after the push, all landing checks and
-          card rewards are resolved, the challenger’s turn ends—even if movement
-          points remain. On their next turns, the loser can pursue the winner
-          and the winner can try to escape using normal movement.
+          <strong>The chase:</strong> after the push, forced landing checks and card rewards,
+          the challenger keeps any unused movement, whether it won or lost.
+          A winner can move away with stolen fruit; a pushed loser can move around.
+          The same two animals cannot contest each other again until the next
+          round. Continuing from a road space requires no traffic check unless
+          the animal stops there; a forced push onto a road still requires a check.
         </li>
       </ul>
       <p>
@@ -1878,7 +1880,7 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <script id="game-engine">
-      /* Fragmented Habitat v27 — rules engine, independent of the display. */
+      /* Fragmented Habitat v28 — rules engine, independent of the display. */
       (() => {
         "use strict";
         const SECTORS = 24;
@@ -2100,6 +2102,7 @@
                 (offset + Math.floor((id * patrol.length) / 4)) % patrol.length
               ],
             }));
+            this.contestedPairs = new Set();
             this.policeRoll = null;
             this.hazardPatrol = false;
             this.predIndex = 0;
@@ -2389,6 +2392,7 @@
             );
           }
           escortHome(t, done) {
+            if (t.id === this.selected) this.remaining = 0;
             const cargo = t.cargo;
             this.returnFruit(t);
             t.r = 0;
@@ -2536,7 +2540,9 @@
             );
             return true;
           }
+          contestPair(a, b) { return `${this.round}:${Math.min(a,b)}:${Math.max(a,b)}`; }
           canContest(enemy) {
+            if (this.contestedPairs.has(this.contestPair(this.selected, enemy.id))) return false;
             return (
               (enemy.r === RESOURCE && this.mode !== "reverse") ||
               this.neighbours(enemy.r, enemy.s, enemy.owner).some(
@@ -2775,6 +2781,7 @@
             t.loaded = false;
           }
           applyHit(t, free = false) {
+            if (t.id === this.selected) this.remaining = 0;
             const owner = this.players[t.owner];
             this.returnFruit(t);
             if (free || owner.food >= 2) {
@@ -2935,9 +2942,10 @@
             const attackerWins = (n % 2 ? "odd" : "even") === c.parity;
             c.winner = attackerWins ? c.attacker : c.defender;
             c.loser = attackerWins ? c.defender : c.attacker;
+            this.contestedPairs.add(this.contestPair(c.attacker, c.defender));
             this.phase = this.canStealContest() ? "contest-food" : "push";
             this.record(
-              `${this.name(this.tokens.find((t) => t.id === c.winner))} won (${n}). ${this.phase === "contest-food" ? "Choose whether to take the loser's fruit, then " : ""}choose a space to push the loser. The challenger’s turn ends after landing checks and card rewards.`,
+              `${this.name(this.tokens.find((t) => t.id === c.winner))} won (${n}). ${this.phase === "contest-food" ? "Choose whether to take the loser's fruit, then " : ""}choose a space to push the loser. The challenger can continue with unused movement after the push and rewards. This pair cannot contest again until next round.`,
             );
             return true;
           }
@@ -3010,9 +3018,7 @@
             const after = () => {
               const resolveWinner = () => {
                 if (this.checkEnd()) return;
-                this.resolveLanding(winner, () => {
-                  if (!this.checkEnd()) this.awardCard(winner.owner);
-                });
+                this.awardCard(winner.owner);
               };
               this.collect(winner);
               if (["finished", "extinction"].includes(this.phase)) return;
@@ -3043,8 +3049,10 @@
           }
           awardCard(owner) {
             this.contest = null;
-            this.remaining = 0;
-            const resume = () => this.endTurn();
+            const resume = () => {
+              if (!this.token || this.token.out || this.token.settled || (this.token.r === 0 && this.remaining === 0)) this.endTurn();
+              else this.phase = "move";
+            };
             this.rewardCard(owner, "won the contest", resume);
           }
 

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#071527" />
     <meta
       name="description"
-      content="Fragmented Habitat v30: an animal board game with square, circular and octagonal layouts. Start with 5 food, cross predator patrols and roads, collect fruit and keep 38 wild cards."
+      content="Fragmented Habitat v32: an animal board game with square, circular and octagonal layouts. Start with 5 food, cross stealth lanes and roads, collect fruit and manage a 60-card deck."
     />
     <title>Fragmented Habitat</title>
     <link
@@ -1696,9 +1696,286 @@
         gap: 12px;
         align-items: center;
       }
-    
-.board-guide{margin:24px 0;padding:24px;border-radius:20px;background:#102a3d}.board-guide-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}.board-guide svg{width:100%;max-height:420px;display:block}.board-guide figcaption{font-size:16px;line-height:1.6}.board-guide ol{font-size:17px;line-height:1.8}.board-guide figure{margin:0}@media(max-width:700px){.board-guide-grid{grid-template-columns:1fr}}
-</style>
+
+      .board-guide {
+        margin: 24px 0;
+        padding: 24px;
+        border-radius: 20px;
+        background: #102a3d;
+      }
+      .board-guide-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+      .board-guide svg {
+        width: 100%;
+        max-height: 420px;
+        display: block;
+      }
+      .board-guide figcaption {
+        font-size: 16px;
+        line-height: 1.6;
+      }
+      .board-guide ol {
+        font-size: 17px;
+        line-height: 1.8;
+      }
+      .board-guide figure {
+        margin: 0;
+      }
+      @media (max-width: 700px) {
+        .board-guide-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .dice-pair {
+        gap: 8px;
+      }
+      .die-item #stealth-dice {
+        background: #c2dca3;
+        color: #213d35;
+      }
+      .player-row {
+        min-height: 42px;
+      }
+      .held-card h3 {
+        overflow-wrap: anywhere;
+      }
+      @media (max-height: 850px) {
+        .player-row {
+          padding-top: 4px;
+          padding-bottom: 4px;
+        }
+      }
+      .game-hud {
+        min-height: 0;
+        max-height: 100%;
+        overflow: hidden;
+      }
+      .game-hud > .panel:last-child {
+        min-height: 0;
+        overflow: auto;
+      }
+      .player-row {
+        min-height: 38px;
+        padding: 5px;
+      }
+      .player-row small {
+        font-size: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      @media (max-width: 800px) {
+        .app {
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: 64px minmax(190px, 1fr) auto;
+          gap: 6px;
+          padding: 8px;
+        }
+        .sidebar {
+          grid-column: 1;
+          grid-row: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          justify-content: center;
+          gap: 2px;
+        }
+        .intro-block h1 {
+          font-size: 22px;
+          line-height: 1.1;
+        }
+        .intro-block .help-button {
+          width: 28px;
+          height: 28px;
+          font-size: 17px;
+          margin: 0 0 0 5px;
+        }
+        .sidebar .toolbar {
+          margin: 0;
+          gap: 4px;
+        }
+        .sidebar .toolbar .btn {
+          padding: 4px 7px;
+          font-size: 9px;
+        }
+        .stage {
+          grid-column: 1;
+          grid-row: 2;
+          min-height: 0;
+        }
+        .camera-controls {
+          bottom: 0;
+          padding: 0;
+        }
+        .view-controls {
+          gap: 3px;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+        .view-controls .btn {
+          font-size: 8px;
+          padding: 4px;
+        }
+        .rotation-help {
+          display: none;
+        }
+        .game-hud {
+          grid-column: 1;
+          grid-row: 3;
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 5px;
+          max-height: 370px;
+          overflow: auto;
+        }
+        .game-hud > .panel {
+          padding: 8px;
+        }
+        .game-hud > .panel:first-child {
+          display: block;
+        }
+        .game-hud > .panel:last-child {
+          overflow: visible;
+          padding: 5px;
+        }
+        .round-tag {
+          font-size: 14px !important;
+          line-height: 1.2;
+        }
+        .turn-heading {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .turn-heading h2 {
+          flex: 1;
+          min-width: 0;
+        }
+        .turn-tools {
+          gap: 6px;
+          flex-shrink: 0;
+        }
+        .dice-pair {
+          gap: 5px;
+        }
+        .dice {
+          width: 30px !important;
+          height: 30px !important;
+          font-size: 26px !important;
+        }
+        .die-item small {
+          font-size: 5px;
+        }
+        .deck-wrap {
+          width: 36px;
+        }
+        .deck-stack {
+          height: 38px;
+          width: 26px;
+          margin: 0 auto;
+        }
+        .deck-caption {
+          display: none;
+        }
+        .deck-star {
+          font-size: 17px;
+        }
+        .deck-label {
+          font-size: 4px;
+        }
+        .goal {
+          font-size: 9px;
+          margin: 3px 0;
+        }
+        .turn-help {
+          font-size: 10px;
+          line-height: 1.25;
+          margin: 3px 0;
+        }
+        .status {
+          display: none;
+        }
+        .control-actions {
+          margin: 4px 0;
+          gap: 4px;
+        }
+        .control-actions .btn {
+          font-size: 10px;
+          padding: 6px 8px;
+        }
+        #roll {
+          width: auto;
+          flex: 1;
+        }
+        .family-picks {
+          margin: 3px 0;
+        }
+        .animal-pick {
+          font-size: 9px;
+          padding: 3px 6px;
+        }
+        .game-hud > .panel:last-child > .section-label {
+          display: none;
+        }
+        #roster {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 2px;
+        }
+        .player-row {
+          grid-template-columns: 20px minmax(0, 1fr) 25px 18px;
+          gap: 3px;
+          padding: 3px;
+          min-height: 28px;
+        }
+        .player-row strong {
+          font-size: 9px !important;
+        }
+        .player-row small {
+          font-size: 8px !important;
+          line-height: 1.1;
+        }
+        .player-row .pixel-face {
+          width: 19px;
+          height: 19px;
+        }
+        .card-icon {
+          padding: 2px;
+          min-width: 0;
+        }
+        .card-icon svg {
+          width: 11px;
+          height: 11px;
+        }
+        .card-icon span {
+          font-size: 8px;
+        }
+        .food {
+          font-size: 12px !important;
+        }
+      }
+
+      @media (max-width: 800px) {
+        .player-row .card-icon {
+          white-space: nowrap;
+          font-size: 10px;
+          line-height: 1;
+          height: 24px;
+          width: 25px;
+          padding: 2px;
+        }
+        .player-row {
+          height: 30px;
+        }
+        .game-hud {
+          max-height: 370px;
+        }
+      }
+    </style>
   </head>
   <body>
     <main class="app">
@@ -1721,7 +1998,7 @@
         </div>
 
         <footer>
-          VERSION 29 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+          VERSION 32 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
             Recent events
           </button>
         </footer>
@@ -1781,6 +2058,14 @@
               <div class="dice-pair">
                 <div class="die-item">
                   <div
+                    id="stealth-dice"
+                    class="dice"
+                    aria-label="Stealth die"
+                  ></div>
+                  <small>STEALTH</small>
+                </div>
+                <div class="die-item">
+                  <div
                     id="dice"
                     class="dice"
                     aria-label="Last numbered dice roll"
@@ -1807,7 +2092,10 @@
           <p id="goal" class="goal"></p>
           <p id="turn-help" class="turn-help"></p>
           <div class="control-actions">
-            <button id="roll" class="btn primary"></button
+            <button id="phase-action" class="btn primary" hidden></button
+            ><button id="response-cards" class="btn" hidden>
+              View response cards</button
+            ><button id="roll" class="btn primary"></button
             ><button id="spawn" class="btn"></button
             ><button id="stop" class="btn"></button
             ><button id="pass" class="btn"></button
@@ -1838,7 +2126,7 @@
     <dialog id="help-dialog">
       <header class="book-header">
         <div>
-          <span class="book-eyebrow">FRAGMENTED HABITAT · RULEBOOK · V29</span>
+          <span class="book-eyebrow">FRAGMENTED HABITAT · RULEBOOK · V32</span>
           <h2>How to play</h2>
         </div>
         <div class="book-actions">
@@ -1850,655 +2138,1292 @@
       </header>
       <div class="book-content">
         <p class="book-intro">
-          Guide your animals through a landscape divided by roads. Choose
-          routes, manage food and cards, and compete for space while avoiding
-          predators and traffic.
+          Cross the landscape, find food and make it home. Luck shapes each
+          encounter; your routes, cards and rivals shape what happens next.
         </p>
-        <nav class="book-nav" aria-label="Rulebook sections">
+        <nav class="book-nav">
           <a href="#book-classic">Classic</a
           ><a href="#book-colonization">Colonization</a
-          ><a href="#book-turns">Taking a turn</a
-          ><a href="#book-landscape">Landscape</a
+          ><a href="#book-stealth">Stealth</a><a href="#book-landscape">Roads</a
           ><a href="#book-competition">Competition</a
           ><a href="#book-cards">Cards</a>
         </nav>
         <div class="book-setup">
-          <strong>Every player starts with</strong><span>1 animal</span
-          ><span>5 banked food</span
-          ><span>2 random cards · ready in Round 1</span>
+          <strong>1–8 players · each starts with</strong><span>1 animal</span
+          ><span>5 banked food</span><span>4 cards · ready immediately</span>
         </div>
-        <section class="board-guide" id="book-map"><h3>Read the board</h3><p>Follow the numbers from the centre to the edge. These maps identify the landscape; the playable board divides every lane into individual spaces.</p><div class="board-guide-grid"><figure><h4>Classic · Square is the default</h4><svg viewBox="0 0 420 420" role="img" aria-label="Labelled board map, from centre habitat through predator lanes and roads to the edge"><rect x="15" y="15" width="390" height="390" fill="#d3a660" stroke="#183447" stroke-width="1"/><path d="M58.333333333333336 15v12 M58.333333333333336 393v12 M15 58.333333333333336h12 M393 58.333333333333336h12" stroke="#244155" opacity=".45"/><path d="M101.66666666666667 15v12 M101.66666666666667 393v12 M15 101.66666666666667h12 M393 101.66666666666667h12" stroke="#244155" opacity=".45"/><path d="M145.0 15v12 M145.0 393v12 M15 145.0h12 M393 145.0h12" stroke="#244155" opacity=".45"/><path d="M188.33333333333334 15v12 M188.33333333333334 393v12 M15 188.33333333333334h12 M393 188.33333333333334h12" stroke="#244155" opacity=".45"/><path d="M231.66666666666666 15v12 M231.66666666666666 393v12 M15 231.66666666666666h12 M393 231.66666666666666h12" stroke="#244155" opacity=".45"/><path d="M275.0 15v12 M275.0 393v12 M15 275.0h12 M393 275.0h12" stroke="#244155" opacity=".45"/><path d="M318.3333333333333 15v12 M318.3333333333333 393v12 M15 318.3333333333333h12 M393 318.3333333333333h12" stroke="#244155" opacity=".45"/><path d="M361.6666666666667 15v12 M361.6666666666667 393v12 M15 361.6666666666667h12 M393 361.6666666666667h12" stroke="#244155" opacity=".45"/><rect x="27" y="27" width="366" height="366" fill="#92bb79" stroke="#183447" stroke-width="1"/><rect x="39" y="39" width="342" height="342" fill="#92bb79" stroke="#183447" stroke-width="1"/><path d="M77.0 39v12 M77.0 369v12 M39 77.0h12 M369 77.0h12" stroke="#244155" opacity=".45"/><path d="M115.0 39v12 M115.0 369v12 M39 115.0h12 M369 115.0h12" stroke="#244155" opacity=".45"/><path d="M153.0 39v12 M153.0 369v12 M39 153.0h12 M369 153.0h12" stroke="#244155" opacity=".45"/><path d="M191.0 39v12 M191.0 369v12 M39 191.0h12 M369 191.0h12" stroke="#244155" opacity=".45"/><path d="M229.0 39v12 M229.0 369v12 M39 229.0h12 M369 229.0h12" stroke="#244155" opacity=".45"/><path d="M267.0 39v12 M267.0 369v12 M39 267.0h12 M369 267.0h12" stroke="#244155" opacity=".45"/><path d="M305.0 39v12 M305.0 369v12 M39 305.0h12 M369 305.0h12" stroke="#244155" opacity=".45"/><path d="M343.0 39v12 M343.0 369v12 M39 343.0h12 M369 343.0h12" stroke="#244155" opacity=".45"/><rect x="51" y="51" width="318" height="318" fill="#92bb79" stroke="#183447" stroke-width="1"/><rect x="63" y="63" width="294" height="294" fill="#a5aeb9" stroke="#183447" stroke-width="1"/><rect x="75" y="75" width="270" height="270" fill="#a5aeb9" stroke="#183447" stroke-width="1"/><path d="M105.0 75v12 M105.0 333v12 M75 105.0h12 M333 105.0h12" stroke="#244155" opacity=".45"/><path d="M135.0 75v12 M135.0 333v12 M75 135.0h12 M333 135.0h12" stroke="#244155" opacity=".45"/><path d="M165.0 75v12 M165.0 333v12 M75 165.0h12 M333 165.0h12" stroke="#244155" opacity=".45"/><path d="M195.0 75v12 M195.0 333v12 M75 195.0h12 M333 195.0h12" stroke="#244155" opacity=".45"/><path d="M225.0 75v12 M225.0 333v12 M75 225.0h12 M333 225.0h12" stroke="#244155" opacity=".45"/><path d="M255.0 75v12 M255.0 333v12 M75 255.0h12 M333 255.0h12" stroke="#244155" opacity=".45"/><path d="M285.0 75v12 M285.0 333v12 M75 285.0h12 M333 285.0h12" stroke="#244155" opacity=".45"/><path d="M315.0 75v12 M315.0 333v12 M75 315.0h12 M333 315.0h12" stroke="#244155" opacity=".45"/><rect x="87" y="87" width="246" height="246" fill="#a5aeb9" stroke="#183447" stroke-width="1"/><rect x="99" y="99" width="222" height="222" fill="#445365" stroke="#183447" stroke-width="1"/><path d="M123.66666666666667 99v12 M123.66666666666667 309v12 M99 123.66666666666667h12 M309 123.66666666666667h12" stroke="#244155" opacity=".45"/><path d="M148.33333333333334 99v12 M148.33333333333334 309v12 M99 148.33333333333334h12 M309 148.33333333333334h12" stroke="#244155" opacity=".45"/><path d="M173.0 99v12 M173.0 309v12 M99 173.0h12 M309 173.0h12" stroke="#244155" opacity=".45"/><path d="M197.66666666666669 99v12 M197.66666666666669 309v12 M99 197.66666666666669h12 M309 197.66666666666669h12" stroke="#244155" opacity=".45"/><path d="M222.33333333333331 99v12 M222.33333333333331 309v12 M99 222.33333333333331h12 M309 222.33333333333331h12" stroke="#244155" opacity=".45"/><path d="M247.0 99v12 M247.0 309v12 M99 247.0h12 M309 247.0h12" stroke="#244155" opacity=".45"/><path d="M271.66666666666663 99v12 M271.66666666666663 309v12 M99 271.66666666666663h12 M309 271.66666666666663h12" stroke="#244155" opacity=".45"/><path d="M296.33333333333337 99v12 M296.33333333333337 309v12 M99 296.33333333333337h12 M309 296.33333333333337h12" stroke="#244155" opacity=".45"/><rect x="111" y="111" width="198" height="198" fill="#a5aeb9" stroke="#183447" stroke-width="1"/><rect x="123" y="123" width="174" height="174" fill="#a5aeb9" stroke="#183447" stroke-width="1"/><path d="M142.33333333333334 123v12 M142.33333333333334 285v12 M123 142.33333333333334h12 M285 142.33333333333334h12" stroke="#244155" opacity=".45"/><path d="M161.66666666666666 123v12 M161.66666666666666 285v12 M123 161.66666666666666h12 M285 161.66666666666666h12" stroke="#244155" opacity=".45"/><path d="M181.0 123v12 M181.0 285v12 M123 181.0h12 M285 181.0h12" stroke="#244155" opacity=".45"/><path d="M200.33333333333331 123v12 M200.33333333333331 285v12 M123 200.33333333333331h12 M285 200.33333333333331h12" stroke="#244155" opacity=".45"/><path d="M219.66666666666669 123v12 M219.66666666666669 285v12 M123 219.66666666666669h12 M285 219.66666666666669h12" stroke="#244155" opacity=".45"/><path d="M239.0 123v12 M239.0 285v12 M123 239.0h12 M285 239.0h12" stroke="#244155" opacity=".45"/><path d="M258.33333333333337 123v12 M258.33333333333337 285v12 M123 258.33333333333337h12 M285 258.33333333333337h12" stroke="#244155" opacity=".45"/><path d="M277.66666666666663 123v12 M277.66666666666663 285v12 M123 277.66666666666663h12 M285 277.66666666666663h12" stroke="#244155" opacity=".45"/><rect x="135" y="135" width="150" height="150" fill="#a5aeb9" stroke="#183447" stroke-width="1"/><rect x="147" y="147" width="126" height="126" fill="#92bb79" stroke="#183447" stroke-width="1"/><rect x="159" y="159" width="102" height="102" fill="#92bb79" stroke="#183447" stroke-width="1"/><path d="M170.33333333333334 159v12 M170.33333333333334 249v12 M159 170.33333333333334h12 M249 170.33333333333334h12" stroke="#244155" opacity=".45"/><path d="M181.66666666666666 159v12 M181.66666666666666 249v12 M159 181.66666666666666h12 M249 181.66666666666666h12" stroke="#244155" opacity=".45"/><path d="M193.0 159v12 M193.0 249v12 M159 193.0h12 M249 193.0h12" stroke="#244155" opacity=".45"/><path d="M204.33333333333334 159v12 M204.33333333333334 249v12 M159 204.33333333333334h12 M249 204.33333333333334h12" stroke="#244155" opacity=".45"/><path d="M215.66666666666666 159v12 M215.66666666666666 249v12 M159 215.66666666666666h12 M249 215.66666666666666h12" stroke="#244155" opacity=".45"/><path d="M227.0 159v12 M227.0 249v12 M159 227.0h12 M249 227.0h12" stroke="#244155" opacity=".45"/><path d="M238.33333333333331 159v12 M238.33333333333331 249v12 M159 238.33333333333331h12 M249 238.33333333333331h12" stroke="#244155" opacity=".45"/><path d="M249.66666666666669 159v12 M249.66666666666669 249v12 M159 249.66666666666669h12 M249 249.66666666666669h12" stroke="#244155" opacity=".45"/><rect x="171" y="171" width="78" height="78" fill="#92bb79" stroke="#183447" stroke-width="1"/><rect x="183" y="183" width="54" height="54" fill="#396b48" stroke="#183447" stroke-width="1"/><rect x="75" y="75" width="270" height="270" fill="none" stroke="#ffe3a3" stroke-width="2" stroke-dasharray="9 8"/><rect x="123" y="123" width="174" height="174" fill="none" stroke="#ffe3a3" stroke-width="2" stroke-dasharray="9 8"/><circle cx="210" cy="210" r="10" fill="#071527"/><text x="210" y="214" text-anchor="middle" fill="white" font-size="13" font-family="system-ui">1</text><circle cx="210" cy="169" r="10" fill="#071527"/><text x="210" y="173" text-anchor="middle" fill="white" font-size="13" font-family="system-ui">2</text><circle cx="210" cy="132" r="10" fill="#071527"/><text x="210" y="136" text-anchor="middle" fill="white" font-size="13" font-family="system-ui">3</text><circle cx="210" cy="105" r="10" fill="#071527"/><text x="210" y="109" text-anchor="middle" fill="white" font-size="13" font-family="system-ui">4</text><circle cx="210" cy="68" r="10" fill="#071527"/><text x="210" y="72" text-anchor="middle" fill="white" font-size="13" font-family="system-ui">5</text><circle cx="210" cy="21" r="10" fill="#071527"/><text x="210" y="25" text-anchor="middle" fill="white" font-size="13" font-family="system-ui">6</text></svg><figcaption><ol><li>Central habitat · start and bank food</li><li>Inner green lanes · predator patrol</li><li>Inner road · three light gray lanes</li><li>Median strip · officers and protected refuges</li><li>Outer road · three light gray lanes</li><li>Outer green patrol lanes, then resource patches at the edge</li></ol></figcaption></figure><figure><h4>Colonization · Reversed landscape</h4><svg viewBox="0 0 420 420" role="img" aria-label="Labelled board map, from centre habitat through predator lanes and roads to the edge"><polygon points="128.1,15.0 291.9,15.0 405.0,128.1 405.0,291.9 291.9,405.0 128.1,405.0 15.0,291.9 15.0,128.1" fill="#396b48" stroke="#183447" stroke-width="1"/><polygon points="133.14,27.0 286.86,27.0 393.0,133.14 393.0,286.86 286.86,393.0 133.14,393.0 27.0,286.86 27.0,133.14" fill="#92bb79" stroke="#183447" stroke-width="1"/><polygon points="138.18,39.0 281.82,39.0 381.0,138.18 381.0,281.82 281.82,381.0 138.18,381.0 39.0,281.82 39.0,138.18" fill="#92bb79" stroke="#183447" stroke-width="1"/><polygon points="143.22,51.0 276.78,51.0 369.0,143.22 369.0,276.78 276.78,369.0 143.22,369.0 51.0,276.78 51.0,143.22" fill="#92bb79" stroke="#183447" stroke-width="1"/><polygon points="148.26,63.0 271.74,63.0 357.0,148.26 357.0,271.74 271.74,357.0 148.26,357.0 63.0,271.74 63.0,148.26" fill="#a5aeb9" stroke="#183447" stroke-width="1"/><polygon points="153.3,75.0 266.7,75.0 345.0,153.3 345.0,266.7 266.7,345.0 153.3,345.0 75.0,266.7 75.0,153.3" fill="#a5aeb9" stroke="#183447" stroke-width="1"/><polygon points="158.33999999999997,87.0 261.66,87.0 333.0,158.33999999999997 333.0,261.66 261.66,333.0 158.33999999999997,333.0 87.0,261.66 87.0,158.33999999999997" fill="#a5aeb9" stroke="#183447" stroke-width="1"/><polygon points="163.38,99.0 256.62,99.0 321.0,163.38 321.0,256.62 256.62,321.0 163.38,321.0 99.0,256.62 99.0,163.38" fill="#445365" stroke="#183447" stroke-width="1"/><polygon points="168.42,111.0 251.58,111.0 309.0,168.42 309.0,251.58 251.58,309.0 168.42,309.0 111.0,251.58 111.0,168.42" fill="#a5aeb9" stroke="#183447" stroke-width="1"/><polygon points="173.45999999999998,123.0 246.54000000000002,123.0 297.0,173.45999999999998 297.0,246.54000000000002 246.54000000000002,297.0 173.45999999999998,297.0 123.0,246.54000000000002 123.0,173.45999999999998" fill="#a5aeb9" stroke="#183447" stroke-width="1"/><polygon points="178.5,135.0 241.5,135.0 285.0,178.5 285.0,241.5 241.5,285.0 178.5,285.0 135.0,241.5 135.0,178.5" fill="#a5aeb9" stroke="#183447" stroke-width="1"/><polygon points="183.54,147.0 236.46,147.0 273.0,183.54 273.0,236.46 236.46,273.0 183.54,273.0 147.0,236.46 147.0,183.54" fill="#92bb79" stroke="#183447" stroke-width="1"/><polygon points="188.57999999999998,159.0 231.42000000000002,159.0 261.0,188.57999999999998 261.0,231.42000000000002 231.42000000000002,261.0 188.57999999999998,261.0 159.0,231.42000000000002 159.0,188.57999999999998" fill="#92bb79" stroke="#183447" stroke-width="1"/><polygon points="193.62,171.0 226.38,171.0 249.0,193.62 249.0,226.38 226.38,249.0 193.62,249.0 171.0,226.38 171.0,193.62" fill="#92bb79" stroke="#183447" stroke-width="1"/><polygon points="198.66,183.0 221.34,183.0 237.0,198.66 237.0,221.34 221.34,237.0 198.66,237.0 183.0,221.34 183.0,198.66" fill="#396b48" stroke="#183447" stroke-width="1"/><polygon points="153.3,75.0 266.7,75.0 345.0,153.3 345.0,266.7 266.7,345.0 153.3,345.0 75.0,266.7 75.0,153.3" fill="none" stroke="#ffe3a3" stroke-width="2" stroke-dasharray="9 8"/><polygon points="173.45999999999998,123.0 246.54000000000002,123.0 297.0,173.45999999999998 297.0,246.54000000000002 246.54000000000002,297.0 173.45999999999998,297.0 123.0,246.54000000000002 123.0,173.45999999999998" fill="none" stroke="#ffe3a3" stroke-width="2" stroke-dasharray="9 8"/><circle cx="210" cy="210" r="10" fill="#071527"/><text x="210" y="214" text-anchor="middle" fill="white" font-size="13" font-family="system-ui">1</text><circle cx="210" cy="169" r="10" fill="#071527"/><text x="210" y="173" text-anchor="middle" fill="white" font-size="13" font-family="system-ui">2</text><circle cx="210" cy="132" r="10" fill="#071527"/><text x="210" y="136" text-anchor="middle" fill="white" font-size="13" font-family="system-ui">3</text><circle cx="210" cy="105" r="10" fill="#071527"/><text x="210" y="109" text-anchor="middle" fill="white" font-size="13" font-family="system-ui">4</text><circle cx="210" cy="68" r="10" fill="#071527"/><text x="210" y="72" text-anchor="middle" fill="white" font-size="13" font-family="system-ui">5</text><circle cx="210" cy="21" r="10" fill="#071527"/><text x="210" y="25" text-anchor="middle" fill="white" font-size="13" font-family="system-ui">6</text></svg><figcaption><ol><li>Central settlement habitat</li><li>Inner green lanes · predator patrol</li><li>Inner road · three light gray lanes</li><li>Median strip · officers and protected refuges</li><li>Outer road · three light gray lanes</li><li>Edge bases · start here</li></ol></figcaption></figure></div><p>Predators: four per inner green lane and five per outer green lane by default. Green lanes are exposed travel spaces; the central habitat is home. Circular and octagonal Classic boards remain available in Settings.</p></section><div class="book-modes">
+        <section class="board-guide" id="book-map">
+          <h3>Read the board</h3>
+          <p>
+            Follow the numbers from the centre to the edge. These maps identify
+            the landscape; the playable board divides every lane into individual
+            spaces.
+          </p>
+          <div class="board-guide-grid">
+            <figure>
+              <h4>Classic · Square is the default</h4>
+              <svg
+                viewBox="0 0 420 420"
+                role="img"
+                aria-label="Labelled board map, from centre habitat through stealth lanes and roads to the edge"
+              >
+                <rect
+                  x="15"
+                  y="15"
+                  width="390"
+                  height="390"
+                  fill="#d3a660"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <path
+                  d="M58.333333333333336 15v12 M58.333333333333336 393v12 M15 58.333333333333336h12 M393 58.333333333333336h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M101.66666666666667 15v12 M101.66666666666667 393v12 M15 101.66666666666667h12 M393 101.66666666666667h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M145.0 15v12 M145.0 393v12 M15 145.0h12 M393 145.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M188.33333333333334 15v12 M188.33333333333334 393v12 M15 188.33333333333334h12 M393 188.33333333333334h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M231.66666666666666 15v12 M231.66666666666666 393v12 M15 231.66666666666666h12 M393 231.66666666666666h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M275.0 15v12 M275.0 393v12 M15 275.0h12 M393 275.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M318.3333333333333 15v12 M318.3333333333333 393v12 M15 318.3333333333333h12 M393 318.3333333333333h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M361.6666666666667 15v12 M361.6666666666667 393v12 M15 361.6666666666667h12 M393 361.6666666666667h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <rect
+                  x="27"
+                  y="27"
+                  width="366"
+                  height="366"
+                  fill="#92bb79"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <rect
+                  x="39"
+                  y="39"
+                  width="342"
+                  height="342"
+                  fill="#92bb79"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <path
+                  d="M77.0 39v12 M77.0 369v12 M39 77.0h12 M369 77.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M115.0 39v12 M115.0 369v12 M39 115.0h12 M369 115.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M153.0 39v12 M153.0 369v12 M39 153.0h12 M369 153.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M191.0 39v12 M191.0 369v12 M39 191.0h12 M369 191.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M229.0 39v12 M229.0 369v12 M39 229.0h12 M369 229.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M267.0 39v12 M267.0 369v12 M39 267.0h12 M369 267.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M305.0 39v12 M305.0 369v12 M39 305.0h12 M369 305.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M343.0 39v12 M343.0 369v12 M39 343.0h12 M369 343.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <rect
+                  x="51"
+                  y="51"
+                  width="318"
+                  height="318"
+                  fill="#92bb79"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <rect
+                  x="63"
+                  y="63"
+                  width="294"
+                  height="294"
+                  fill="#a5aeb9"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <rect
+                  x="75"
+                  y="75"
+                  width="270"
+                  height="270"
+                  fill="#a5aeb9"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <path
+                  d="M105.0 75v12 M105.0 333v12 M75 105.0h12 M333 105.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M135.0 75v12 M135.0 333v12 M75 135.0h12 M333 135.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M165.0 75v12 M165.0 333v12 M75 165.0h12 M333 165.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M195.0 75v12 M195.0 333v12 M75 195.0h12 M333 195.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M225.0 75v12 M225.0 333v12 M75 225.0h12 M333 225.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M255.0 75v12 M255.0 333v12 M75 255.0h12 M333 255.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M285.0 75v12 M285.0 333v12 M75 285.0h12 M333 285.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M315.0 75v12 M315.0 333v12 M75 315.0h12 M333 315.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <rect
+                  x="87"
+                  y="87"
+                  width="246"
+                  height="246"
+                  fill="#a5aeb9"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <rect
+                  x="99"
+                  y="99"
+                  width="222"
+                  height="222"
+                  fill="#445365"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <path
+                  d="M123.66666666666667 99v12 M123.66666666666667 309v12 M99 123.66666666666667h12 M309 123.66666666666667h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M148.33333333333334 99v12 M148.33333333333334 309v12 M99 148.33333333333334h12 M309 148.33333333333334h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M173.0 99v12 M173.0 309v12 M99 173.0h12 M309 173.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M197.66666666666669 99v12 M197.66666666666669 309v12 M99 197.66666666666669h12 M309 197.66666666666669h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M222.33333333333331 99v12 M222.33333333333331 309v12 M99 222.33333333333331h12 M309 222.33333333333331h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M247.0 99v12 M247.0 309v12 M99 247.0h12 M309 247.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M271.66666666666663 99v12 M271.66666666666663 309v12 M99 271.66666666666663h12 M309 271.66666666666663h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M296.33333333333337 99v12 M296.33333333333337 309v12 M99 296.33333333333337h12 M309 296.33333333333337h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <rect
+                  x="111"
+                  y="111"
+                  width="198"
+                  height="198"
+                  fill="#a5aeb9"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <rect
+                  x="123"
+                  y="123"
+                  width="174"
+                  height="174"
+                  fill="#a5aeb9"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <path
+                  d="M142.33333333333334 123v12 M142.33333333333334 285v12 M123 142.33333333333334h12 M285 142.33333333333334h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M161.66666666666666 123v12 M161.66666666666666 285v12 M123 161.66666666666666h12 M285 161.66666666666666h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M181.0 123v12 M181.0 285v12 M123 181.0h12 M285 181.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M200.33333333333331 123v12 M200.33333333333331 285v12 M123 200.33333333333331h12 M285 200.33333333333331h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M219.66666666666669 123v12 M219.66666666666669 285v12 M123 219.66666666666669h12 M285 219.66666666666669h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M239.0 123v12 M239.0 285v12 M123 239.0h12 M285 239.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M258.33333333333337 123v12 M258.33333333333337 285v12 M123 258.33333333333337h12 M285 258.33333333333337h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M277.66666666666663 123v12 M277.66666666666663 285v12 M123 277.66666666666663h12 M285 277.66666666666663h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <rect
+                  x="135"
+                  y="135"
+                  width="150"
+                  height="150"
+                  fill="#a5aeb9"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <rect
+                  x="147"
+                  y="147"
+                  width="126"
+                  height="126"
+                  fill="#92bb79"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <rect
+                  x="159"
+                  y="159"
+                  width="102"
+                  height="102"
+                  fill="#92bb79"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <path
+                  d="M170.33333333333334 159v12 M170.33333333333334 249v12 M159 170.33333333333334h12 M249 170.33333333333334h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M181.66666666666666 159v12 M181.66666666666666 249v12 M159 181.66666666666666h12 M249 181.66666666666666h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M193.0 159v12 M193.0 249v12 M159 193.0h12 M249 193.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M204.33333333333334 159v12 M204.33333333333334 249v12 M159 204.33333333333334h12 M249 204.33333333333334h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M215.66666666666666 159v12 M215.66666666666666 249v12 M159 215.66666666666666h12 M249 215.66666666666666h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M227.0 159v12 M227.0 249v12 M159 227.0h12 M249 227.0h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M238.33333333333331 159v12 M238.33333333333331 249v12 M159 238.33333333333331h12 M249 238.33333333333331h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <path
+                  d="M249.66666666666669 159v12 M249.66666666666669 249v12 M159 249.66666666666669h12 M249 249.66666666666669h12"
+                  stroke="#244155"
+                  opacity=".45"
+                />
+                <rect
+                  x="171"
+                  y="171"
+                  width="78"
+                  height="78"
+                  fill="#92bb79"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <rect
+                  x="183"
+                  y="183"
+                  width="54"
+                  height="54"
+                  fill="#396b48"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <rect
+                  x="75"
+                  y="75"
+                  width="270"
+                  height="270"
+                  fill="none"
+                  stroke="#ffe3a3"
+                  stroke-width="2"
+                  stroke-dasharray="9 8"
+                />
+                <rect
+                  x="123"
+                  y="123"
+                  width="174"
+                  height="174"
+                  fill="none"
+                  stroke="#ffe3a3"
+                  stroke-width="2"
+                  stroke-dasharray="9 8"
+                />
+                <circle cx="210" cy="210" r="10" fill="#071527" />
+                <text
+                  x="210"
+                  y="214"
+                  text-anchor="middle"
+                  fill="white"
+                  font-size="13"
+                  font-family="system-ui"
+                >
+                  1
+                </text>
+                <circle cx="210" cy="169" r="10" fill="#071527" />
+                <text
+                  x="210"
+                  y="173"
+                  text-anchor="middle"
+                  fill="white"
+                  font-size="13"
+                  font-family="system-ui"
+                >
+                  2
+                </text>
+                <circle cx="210" cy="132" r="10" fill="#071527" />
+                <text
+                  x="210"
+                  y="136"
+                  text-anchor="middle"
+                  fill="white"
+                  font-size="13"
+                  font-family="system-ui"
+                >
+                  3
+                </text>
+                <circle cx="210" cy="105" r="10" fill="#071527" />
+                <text
+                  x="210"
+                  y="109"
+                  text-anchor="middle"
+                  fill="white"
+                  font-size="13"
+                  font-family="system-ui"
+                >
+                  4
+                </text>
+                <circle cx="210" cy="68" r="10" fill="#071527" />
+                <text
+                  x="210"
+                  y="72"
+                  text-anchor="middle"
+                  fill="white"
+                  font-size="13"
+                  font-family="system-ui"
+                >
+                  5
+                </text>
+                <circle cx="210" cy="21" r="10" fill="#071527" />
+                <text
+                  x="210"
+                  y="25"
+                  text-anchor="middle"
+                  fill="white"
+                  font-size="13"
+                  font-family="system-ui"
+                >
+                  6
+                </text>
+              </svg>
+              <figcaption>
+                <ol>
+                  <li>Central habitat · start and bank food</li>
+                  <li>Inner green lanes · Stealth Check</li>
+                  <li>Inner road · three light gray lanes</li>
+                  <li>Median strip · officers and protected refuges</li>
+                  <li>Outer road · three light gray lanes</li>
+                  <li>
+                    Outer green stealth lanes, then resource patches at the edge
+                  </li>
+                </ol>
+              </figcaption>
+            </figure>
+            <figure>
+              <h4>Colonization · Reversed landscape</h4>
+              <svg
+                viewBox="0 0 420 420"
+                role="img"
+                aria-label="Labelled board map, from centre habitat through stealth lanes and roads to the edge"
+              >
+                <polygon
+                  points="128.1,15.0 291.9,15.0 405.0,128.1 405.0,291.9 291.9,405.0 128.1,405.0 15.0,291.9 15.0,128.1"
+                  fill="#396b48"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="133.14,27.0 286.86,27.0 393.0,133.14 393.0,286.86 286.86,393.0 133.14,393.0 27.0,286.86 27.0,133.14"
+                  fill="#92bb79"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="138.18,39.0 281.82,39.0 381.0,138.18 381.0,281.82 281.82,381.0 138.18,381.0 39.0,281.82 39.0,138.18"
+                  fill="#92bb79"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="143.22,51.0 276.78,51.0 369.0,143.22 369.0,276.78 276.78,369.0 143.22,369.0 51.0,276.78 51.0,143.22"
+                  fill="#92bb79"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="148.26,63.0 271.74,63.0 357.0,148.26 357.0,271.74 271.74,357.0 148.26,357.0 63.0,271.74 63.0,148.26"
+                  fill="#a5aeb9"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="153.3,75.0 266.7,75.0 345.0,153.3 345.0,266.7 266.7,345.0 153.3,345.0 75.0,266.7 75.0,153.3"
+                  fill="#a5aeb9"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="158.33999999999997,87.0 261.66,87.0 333.0,158.33999999999997 333.0,261.66 261.66,333.0 158.33999999999997,333.0 87.0,261.66 87.0,158.33999999999997"
+                  fill="#a5aeb9"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="163.38,99.0 256.62,99.0 321.0,163.38 321.0,256.62 256.62,321.0 163.38,321.0 99.0,256.62 99.0,163.38"
+                  fill="#445365"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="168.42,111.0 251.58,111.0 309.0,168.42 309.0,251.58 251.58,309.0 168.42,309.0 111.0,251.58 111.0,168.42"
+                  fill="#a5aeb9"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="173.45999999999998,123.0 246.54000000000002,123.0 297.0,173.45999999999998 297.0,246.54000000000002 246.54000000000002,297.0 173.45999999999998,297.0 123.0,246.54000000000002 123.0,173.45999999999998"
+                  fill="#a5aeb9"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="178.5,135.0 241.5,135.0 285.0,178.5 285.0,241.5 241.5,285.0 178.5,285.0 135.0,241.5 135.0,178.5"
+                  fill="#a5aeb9"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="183.54,147.0 236.46,147.0 273.0,183.54 273.0,236.46 236.46,273.0 183.54,273.0 147.0,236.46 147.0,183.54"
+                  fill="#92bb79"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="188.57999999999998,159.0 231.42000000000002,159.0 261.0,188.57999999999998 261.0,231.42000000000002 231.42000000000002,261.0 188.57999999999998,261.0 159.0,231.42000000000002 159.0,188.57999999999998"
+                  fill="#92bb79"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="193.62,171.0 226.38,171.0 249.0,193.62 249.0,226.38 226.38,249.0 193.62,249.0 171.0,226.38 171.0,193.62"
+                  fill="#92bb79"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="198.66,183.0 221.34,183.0 237.0,198.66 237.0,221.34 221.34,237.0 198.66,237.0 183.0,221.34 183.0,198.66"
+                  fill="#396b48"
+                  stroke="#183447"
+                  stroke-width="1"
+                />
+                <polygon
+                  points="153.3,75.0 266.7,75.0 345.0,153.3 345.0,266.7 266.7,345.0 153.3,345.0 75.0,266.7 75.0,153.3"
+                  fill="none"
+                  stroke="#ffe3a3"
+                  stroke-width="2"
+                  stroke-dasharray="9 8"
+                />
+                <polygon
+                  points="173.45999999999998,123.0 246.54000000000002,123.0 297.0,173.45999999999998 297.0,246.54000000000002 246.54000000000002,297.0 173.45999999999998,297.0 123.0,246.54000000000002 123.0,173.45999999999998"
+                  fill="none"
+                  stroke="#ffe3a3"
+                  stroke-width="2"
+                  stroke-dasharray="9 8"
+                />
+                <circle cx="210" cy="210" r="10" fill="#071527" />
+                <text
+                  x="210"
+                  y="214"
+                  text-anchor="middle"
+                  fill="white"
+                  font-size="13"
+                  font-family="system-ui"
+                >
+                  1
+                </text>
+                <circle cx="210" cy="169" r="10" fill="#071527" />
+                <text
+                  x="210"
+                  y="173"
+                  text-anchor="middle"
+                  fill="white"
+                  font-size="13"
+                  font-family="system-ui"
+                >
+                  2
+                </text>
+                <circle cx="210" cy="132" r="10" fill="#071527" />
+                <text
+                  x="210"
+                  y="136"
+                  text-anchor="middle"
+                  fill="white"
+                  font-size="13"
+                  font-family="system-ui"
+                >
+                  3
+                </text>
+                <circle cx="210" cy="105" r="10" fill="#071527" />
+                <text
+                  x="210"
+                  y="109"
+                  text-anchor="middle"
+                  fill="white"
+                  font-size="13"
+                  font-family="system-ui"
+                >
+                  4
+                </text>
+                <circle cx="210" cy="68" r="10" fill="#071527" />
+                <text
+                  x="210"
+                  y="72"
+                  text-anchor="middle"
+                  fill="white"
+                  font-size="13"
+                  font-family="system-ui"
+                >
+                  5
+                </text>
+                <circle cx="210" cy="21" r="10" fill="#071527" />
+                <text
+                  x="210"
+                  y="25"
+                  text-anchor="middle"
+                  fill="white"
+                  font-size="13"
+                  font-family="system-ui"
+                >
+                  6
+                </text>
+              </svg>
+              <figcaption>
+                <ol>
+                  <li>Central settlement habitat</li>
+                  <li>Inner green lanes · Stealth Check</li>
+                  <li>Inner road · three light gray lanes</li>
+                  <li>Median strip · officers and protected refuges</li>
+                  <li>Outer road · three light gray lanes</li>
+                  <li>Edge bases · start here</li>
+                </ol>
+              </figcaption>
+            </figure>
+          </div>
+          <p>
+            Start with no predators on the board. Light green lanes require a
+            Stealth Check whenever an animal stops. Predators added during play
+            remain stationary and block routes.
+          </p>
+        </section>
+        <div class="book-modes">
           <section class="mode-sheet" id="book-classic">
             <span class="book-eyebrow">01 · THE MAIN GAME</span>
             <h3>Habitat Fragmentation</h3>
-            <div class="journey">
-              <span>Central habitat</span><b>→</b><span>Edge food</span><b>→</b
-              ><span>Home</span>
-            </div>
-            <p>
-              Your animals leave the central habitat to collect food from
-              resource patches at the edge. Collected fruit must return to the
-              habitat before it is banked.
-            </p>
             <h4>
-              <span class="book-mark food" aria-hidden="true"
+              <span class="book-mark" aria-hidden="true"
                 ><svg viewBox="0 0 32 32">
-                  <circle cx="10" cy="14" r="6" fill="#dd8765" />
-                  <circle cx="19" cy="16" r="5" fill="#eed07b" />
                   <path
-                    d="M10 8Q11 2 17 5M19 11l3-4"
-                    stroke="#8cba79"
-                    stroke-width="3"
-                    fill="none"
+                    d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                    fill="#9ddfba"
                   /></svg></span
-              >Gathering food
+              >Gather food and come home
             </h4>
             <p>
-              An ordinary patch provides <strong>1 fruit</strong>. A golden horn
-              patch provides <strong>3 fruit</strong>, but requires a hunter
-              check: moon means keep the load; sun means a hit. Each animal can
-              harvest once per trip and carry one load. Patches stay empty after
-              collection unless their fruit is returned following a hit.
-            </p>
-            <h4>
-              <span class="book-mark home" aria-hidden="true"
-                ><svg viewBox="0 0 32 32">
-                  <path d="m3 16 13-12 13 12H25v13H7V16z" fill="#8fbc91" />
-                  <path d="M13 29V18h6v11" fill="#315d4b" /></svg></span
-              >Adding an animal · optional
-            </h4>
-            <p>
-              Before rolling, spend <strong>2 banked food</strong> to place
-              another animal at home. Your existing animals can be anywhere.
-              Keep at most three living animals; move only one each turn.
+              Start in the central habitat. Cross the green lanes and roads,
+              collect fruit at the edge, then return home to bank it. An
+              ordinary resource patch provides <strong>1 fruit</strong>; a
+              golden horn provides <strong>3 fruit</strong> but requires a
+              hunter check: moon means safe, sun means a hit. Each animal
+              collects one load per trip. A harvested patch stays empty unless
+              its fruit returns after a hit or officer escort.
             </p>
             <h4>
               <span class="book-mark" aria-hidden="true"
                 ><svg viewBox="0 0 32 32">
                   <path
-                    d="M9 4h14v10q0 9-7 9t-7-9zM9 7H3q0 12 8 12M23 7h6q0 12-8 12M16 23v5M10 29h12"
-                    fill="#e8ca83"
-                    stroke="#e8ca83"
-                    stroke-width="2"
+                    d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                    fill="#9ddfba"
                   /></svg></span
-              >Winning Classic
+              >Add an animal · optional
+            </h4>
+            <p>
+              Before rolling, spend <strong>2 banked food</strong> to add an
+              animal at home. Its parent can be anywhere. Keep at most three
+              living animals; move only one per turn.
+            </p>
+            <h4>
+              <span class="book-mark" aria-hidden="true"
+                ><svg viewBox="0 0 32 32">
+                  <path
+                    d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                    fill="#9ddfba"
+                  /></svg></span
+              >Win Classic
             </h4>
             <ul>
               <li>
-                Reach the banked-food target first: <strong>10</strong> by
-                default, adjustable in Settings.
+                Reach the chosen banked-food target first:
+                <strong>10</strong> by default.
               </li>
               <li>
-                Be the only player with animals remaining. If this happens
-                during a patrol, finish the patrol before declaring the winner.
+                Be the only player with animals remaining. Resolve the complete
+                officer patrol before declaring a last-survivor winner.
               </li>
               <li>
-                If every resource patch is empty, compare banked food plus fruit
-                carried by surviving animals after pending checks and rewards.
-                Tied totals share the win.
+                If all resource patches are empty, finish pending checks, then
+                compare banked food plus carried fruit. Ties share the win.
               </li>
             </ul>
             <h4>
-              <span class="book-mark hit" aria-hidden="true"
+              <span class="book-mark" aria-hidden="true"
                 ><svg viewBox="0 0 32 32">
-                  <path d="m16 3 13 25H3z" fill="#e9b68c" />
                   <path
-                    d="M16 11v8m0 3v2"
-                    stroke="#213d49"
-                    stroke-width="3"
+                    d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                    fill="#9ddfba"
                   /></svg></span
               >Local extinction
             </h4>
             <p>
-              If <strong>every animal is eliminated</strong>, nobody wins
-              Classic. The board switches to full Habitat Colonization. Everyone
-              receives one new animal, five food and two new cards; old scores
-              and cards reset.
-            </p>
-            <h4>
-              <span class="book-mark" aria-hidden="true"
-                ><svg viewBox="0 0 32 32">
-                  <rect x="3" y="3" width="15" height="15" fill="#8bc2a5" />
-                  <circle cx="23" cy="22" r="8" fill="#d7bd8e" /></svg></span
-              >Board shapes
-            </h4>
-            <p>
-              Choose Octagon, Circle or Square before starting. Square cells
-              connect along shared edges; diagonal moves are unavailable. Its 24
-              food patches are spaced around the edge, with empty green cells
-              between them. Outer square lanes contain more cells, so their
-              patrol routes are longer.
+              If no animals remain, nobody wins Classic. A fresh full
+              Colonization game begins: one animal, five food and four new cards
+              each. Old totals, predators and cards reset.
             </p>
           </section>
           <section class="mode-sheet" id="book-colonization">
             <span class="book-eyebrow"
-              >02 · SETTLEMENT &amp; THE OPTIONAL OPENER</span
+              >02 · SETTLEMENT AND OPTIONAL OPENER</span
             >
             <h3>Habitat Colonization</h3>
-            <div class="journey">
-              <span>Edge habitats</span><b>→</b
-              ><span>Shared central habitat</span>
-            </div>
             <p>
-              Animals travel from separate edge habitats into the central
-              habitat. Each arrival remains as a settler. There is
-              <strong>no return journey</strong> and no food collection, hunters
-              or golden harvests.
+              Travel from separate edge habitats to the shared central habitat.
+              Arriving animals stay as settlers; there is no return trip, food
+              collection, hunter or golden harvest.
             </p>
             <h4>
-              <span class="book-mark home" aria-hidden="true"
+              <span class="book-mark" aria-hidden="true"
                 ><svg viewBox="0 0 32 32">
-                  <path d="m3 16 13-12 13 12H25v13H7V16z" fill="#8fbc91" />
-                  <path d="M13 29V18h6v11" fill="#315d4b" /></svg></span
-              >Full Colonization
+                  <path
+                    d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                    fill="#9ddfba"
+                  /></svg></span
+              >Settlement and recruitment
             </h4>
             <p>
-              The first player to establish <strong>6 settlers</strong> wins. If
-              the central habitat fills first, the player with the most settlers
-              wins; ties share the victory. Its carrying capacity is
-              <strong>12 animals</strong> by default and can be changed in
-              Settings.
-            </p>
-            <p>
-              Settlers can share the central habitat. They cannot be pushed or
-              targeted by cards, and count as surviving animals. If only one
-              player remains, that player wins; if none remain, Colonization
-              ends without a winner.
+              First to <strong>6 settlers</strong> wins. If the habitat reaches
+              its carrying capacity first (12 by default), most settlers wins;
+              ties share the win. Settlers cannot be targeted or pushed and
+              count as surviving animals. Before rolling, recruit at your edge
+              habitat for free, with at most three travelling animals at once.
+              If none are travelling and you remain in the game, recruit to take
+              your turn. Starting food pays revival costs.
             </p>
             <h4>
-              <span class="book-mark home" aria-hidden="true"
+              <span class="book-mark" aria-hidden="true"
                 ><svg viewBox="0 0 32 32">
-                  <path d="m3 16 13-12 13 12H25v13H7V16z" fill="#8fbc91" />
-                  <path d="M13 29V18h6v11" fill="#315d4b" /></svg></span
-              >Recruitment · optional
+                  <path
+                    d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                    fill="#9ddfba"
+                  /></svg></span
+              >Optional opening mini-game
             </h4>
             <p>
-              Before rolling, recruit another animal at your edge habitat
-              <strong>for free</strong>. Keep at most three travelling animals
-              at once; settlers do not count toward this limit. Starting food
-              pays revival costs. If no travelling animal remains, recruit one
-              to take your turn.
+              Choose Classic and enable Colonization opener in Settings. The
+              first arrival chooses the first Classic player. If only one player
+              survives, that player starts; if none survive, Player 1 starts.
+              Then everyone begins fresh Classic with one animal, five food and
+              four cards. The chosen order repeats each round.
             </p>
-            <div class="opener-note">
-              <h4>
-                <span class="book-mark move" aria-hidden="true"
-                  ><svg viewBox="0 0 32 32">
-                    <path
-                      d="M3 16h26m-8-7 8 7-8 7M11 9l-8 7 8 7"
-                      fill="none"
-                      stroke="#a3d8cc"
-                      stroke-width="3"
-                    /></svg></span
-                >Mini-game: choose the first Classic player
-              </h4>
-              <p>
-                In Settings, choose Classic and enable
-                <strong>Colonization opener</strong>. The first animal to reach
-                the central habitat earns its player the first turn in Classic.
-                If only one player survives before an arrival, that player
-                starts; if nobody survives, Player 1 starts.
-              </p>
-              <p>
-                The board then begins a fresh Classic game with the selected
-                shape. Each player gets one animal, five food and two new cards.
-                The chosen player acts first each round, followed by the other
-                players in order. Nothing collected or spent during the opener
-                carries over.
-              </p>
-            </div>
             <h4>
-              <span class="book-mark home" aria-hidden="true"
+              <span class="book-mark" aria-hidden="true"
                 ><svg viewBox="0 0 32 32">
-                  <path d="m3 16 13-12 13 12H25v13H7V16z" fill="#8fbc91" />
-                  <path d="M13 29V18h6v11" fill="#315d4b" /></svg></span
-              >What carrying capacity represents
+                  <path
+                    d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                    fill="#9ddfba"
+                  /></svg></span
+              >Carrying capacity
             </h4>
             <p>
-              The destination has limited space for settlement. Separate
-              starting habitats spread animals out initially, but all
-              populations seek the same finite habitat. This is a simplified
-              illustration of dispersal, survival and competition.
+              Separate starting habitats spread animals out, but the shared
+              destination supports a limited number of settlers. This
+              illustrates dispersal and competition for finite habitat. If only
+              one player remains, they win; if none remain, full Colonization
+              ends without restarting.
             </p>
           </section>
         </div>
         <section id="book-turns">
-          <h3>Shared rules · taking a turn</h3>
-          <ol class="turn-steps">
+          <h3>Taking a turn</h3>
+          <h4>
+            <span class="book-mark" aria-hidden="true"
+              ><svg viewBox="0 0 32 32">
+                <path
+                  d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                  fill="#9ddfba"
+                /></svg></span
+            >1 · Draw, choose and roll
+          </h4>
+          <p>
+            At the <strong>start of your turn</strong>, draw
+            <strong>one card if you hold fewer than four</strong>. Do not draw
+            if you already have four. Cards are ready as soon as drawn. You may
+            add or recruit an animal before rolling. Choose one animal and roll
+            the movement die (1–6). You may switch animals before the first
+            step; afterward your selection is locked.
+          </p>
+          <h4>
+            <span class="book-mark" aria-hidden="true"
+              ><svg viewBox="0 0 32 32">
+                <path
+                  d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                  fill="#9ddfba"
+                /></svg></span
+            >2 · Move and stop
+          </h4>
+          <p>
+            Move inward, outward or sideways between neighbouring blocks. Every
+            step costs one movement point, including retracing your path. Square
+            cells must share an edge; diagonal moves are unavailable. You may
+            stop after one step without using the full roll. Passing through
+            green or road spaces requires no check; stopping does. If no legal
+            move is available, use Pass.
+          </p>
+          <h4>
+            <span class="book-mark" aria-hidden="true"
+              ><svg viewBox="0 0 32 32">
+                <path
+                  d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                  fill="#9ddfba"
+                /></svg></span
+            >3 · Resolve and end
+          </h4>
+          <p>
+            Resolve the landing check and any forced movement. Before rolling or
+            before ending your turn, you may play Predator Block. After
+            resolving your stop, click <strong>End turn</strong>. After everyone
+            has acted, roll once to move all four officers; predators do not
+            patrol.
+          </p>
+        </section>
+        <section id="book-stealth">
+          <h3>Stealth and stationary predators</h3>
+          <h4>
+            <span class="book-mark" aria-hidden="true"
+              ><svg viewBox="0 0 32 32">
+                <path
+                  d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                  fill="#9ddfba"
+                /></svg></span
+            >The Stealth Die
+          </h4>
+          <p>
+            Every stop on a light green space requires one Stealth Check. Its
+            six faces have these effects:
+          </p>
+          <ul>
             <li>
-              <b>Choose</b
-              ><span
-                >Select one of your travelling animals. Recruit first if you
-                want another animal.</span
-              >
+              <strong>1 predator face (number 1):</strong> place a predator on
+              the animal’s block. The animal is hit unless it uses Play Dead.
+              The predator stays after revival.
             </li>
             <li>
-              <b>Roll</b
-              ><span
-                >Roll one movement die, from 1 to 6. You can switch animals
-                before the first step; afterward the selection is locked.</span
-              >
+              <strong>2 safe faces (numbers 2–3):</strong> remain where you are;
+              nothing happens.
             </li>
             <li>
-              <b>Move</b
-              ><span
-                >Each neighbouring block costs one step. Move inward, outward or
-                sideways, and retrace your path if you want. Returning over a
-                block costs another step.</span
-              >
+              <strong>3 evade faces (numbers 4–6):</strong> choose an adjacent
+              available block. No movement point is spent and no second Stealth
+              Check is made. A road landing still requires the day/night die.
+              Other existing landing effects, such as an officer escort, still
+              apply.
             </li>
-            <li>
-              <b>Stop</b
-              ><span
-                >You may stop after one step without using the entire roll.
-                Resolve any landing check. If no legal move is available, use
-                Pass.</span
-              >
-            </li>
-            <li>
-              <b>Patrol</b
-              ><span
-                >After all players have acted, move the predators, then roll
-                once for all four officers. The next round begins after these
-                effects are resolved.</span
-              >
-            </li>
-          </ol>
+          </ul>
+          <h4>
+            <span class="book-mark" aria-hidden="true"
+              ><svg viewBox="0 0 32 32">
+                <path
+                  d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                  fill="#9ddfba"
+                /></svg></span
+            >Blocked escape
+          </h4>
+          <p>
+            You cannot voluntarily enter a predator’s block. If predators occupy
+            every adjacent escape route when your Stealth Check resolves, the
+            animal is automatically caught. If no empty evade space exists
+            because other animals occupy the remaining routes, stay safely in
+            place instead of starting another contest.
+          </p>
+          <h4>
+            <span class="book-mark" aria-hidden="true"
+              ><svg viewBox="0 0 32 32">
+                <path
+                  d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                  fill="#9ddfba"
+                /></svg></span
+            >Building the predator population
+          </h4>
+          <p>
+            No predators start on the board. A Stealth predator result adds one
+            automatically; Predator Block adds one deliberately on an empty
+            green block adjacent to an opponent. Predators never roam. They
+            block voluntary movement and cause a hit if an animal is pushed onto
+            them.
+          </p>
+          <p>
+            There are <strong>50 predator tokens</strong>. When all are
+            deployed, click an existing predator to relocate it to the new
+            destination. The total never exceeds 50. Deliberate placement and
+            Play Dead relocation cannot place a predator on an animal, road,
+            resource patch, habitat or refuge.
+          </p>
         </section>
         <section id="book-landscape">
-          <h3>Read the landscape</h3>
-          <div class="rule-grid">
-            <section class="rule-card">
-              <h4>
-                <span class="book-mark road" aria-hidden="true"
-                  ><svg viewBox="0 0 32 32">
-                    <rect
-                      x="3"
-                      y="2"
-                      width="26"
-                      height="28"
-                      rx="3"
-                      fill="#879899"
-                    />
-                    <path
-                      d="M16 3v6m0 4v6m0 4v6"
-                      stroke="#f6e7af"
-                      stroke-width="2"
-                    /></svg></span
-                >Light gray roads
-              </h4>
-              <p>
-                Every time an animal stops on a road block, roll the day/night
-                die.
-              </p>
-              <div class="day-night">
-                <span><b>☾ Moon / odd</b>Safe; stay on the block.</span
-                ><span><b>☀ Sun / even</b>Car hit; follow revival rules.</span>
-              </div>
-              <p>
-                Passing through without stopping needs no check. Stopping on a
-                road again later requires a new roll, even after an earlier safe
-                result.
-              </p>
-            </section>
-            <section class="rule-card">
-              <h4>
-                <span class="book-mark refuge" aria-hidden="true"
-                  ><svg viewBox="0 0 32 32">
-                    <path d="M5 5h22l-2 15-9 9-9-9z" fill="#a7d8b2" />
-                    <path
-                      d="m10 16 4 4 8-9"
-                      fill="none"
-                      stroke="#315b4b"
-                      stroke-width="3"
-                    /></svg></span
-                >Median & protected refuges
-              </h4>
-              <p>
-                The dark gray median needs no traffic check. Move along it
-                either way or cross into a neighbouring lane.
-              </p>
-              <p>
-                Two shield-marked refuge blocks align with the sides without
-                golden harvests. Officers cannot enter them, but opponents can
-                still contest them. Animals cannot share a refuge.
-              </p>
-            </section>
-            <section class="rule-card">
-              <h4>
-                <span class="book-mark officer" aria-hidden="true"
-                  ><svg viewBox="0 0 32 32">
-                    <path d="m4 10 12-7 12 7-2 6H6z" fill="#92bedb" />
-                    <path d="M9 16v9l7 5 7-5v-9" fill="#c1d4d6" />
-                    <circle cx="16" cy="11" r="3" fill="#f5dca0" /></svg></span
-                >Four traffic officers
-              </h4>
-              <p>
-                After the predators move, one shared die roll moves all four
-                officers clockwise. They skip refuges; only ordinary median
-                blocks count as steps.
-              </p>
-              <p>
-                If you stop on an officer, or one stops on your block, your
-                animal returns home. Carried fruit returns to its original
-                patch. Banked food is unchanged; no revival cost is paid.
-              </p>
-            </section>
-            <section class="rule-card">
-              <h4>
-                <span class="book-mark predator" aria-hidden="true"
-                  ><svg viewBox="0 0 32 32">
-                    <ellipse cx="16" cy="22" rx="8" ry="6" fill="#e6b87c" />
-                    <g fill="#e6b87c">
-                      <circle cx="5" cy="14" r="3" />
-                      <circle cx="11" cy="8" r="3" />
-                      <circle cx="21" cy="8" r="3" />
-                      <circle cx="27" cy="14" r="3" />
-                    </g></svg></span
-                >Predator lanes
-              </h4>
-              <p>
-                Three inner and three outer green lanes are patrolled by
-                predators. Player animals have numbered flags; predators do not.
-              </p>
-              <p>
-                Predators move clockwise after everyone’s turn and hit animals
-                only on their final blocks. You cannot voluntarily enter a
-                predator’s block, but a push can place you there.
-              </p>
-              <p>
-                Settings sets 1–6 predators per inner lane; each outer lane has one extra. The default is four inner and five outer, with a
-                shared roll, one roll per lane, or individual rolls. Click Move
-                all predators once; the sequence pauses for rescue decisions.
-                Individual rolls can bring predators onto the same block.
-              </p>
-            </section>
-            <section class="rule-card">
-              <h4>
-                <span class="book-mark hit" aria-hidden="true"
-                  ><svg viewBox="0 0 32 32">
-                    <path d="m16 3 13 25H3z" fill="#e9b68c" />
-                    <path
-                      d="M16 11v8m0 3v2"
-                      stroke="#213d49"
-                      stroke-width="3"
-                    /></svg></span
-                >Hits, revival & elimination
-              </h4>
-              <p>
-                A predator, car, hunter or off-board hit returns carried fruit
-                to its original patch. Pay <strong>2 banked food</strong> to
-                revive at home.
-              </p>
-              <p>
-                If you cannot pay, only that animal is removed. You keep playing
-                and keep your cards while another animal survives, including a
-                settler. When none remain, you are eliminated and your cards
-                return to the deck.
-              </p>
-              <p>
-                A suitable rescue card can be used before paying. A hit or
-                officer escort ends the affected challenger’s movement; a normal
-                contest push into the habitat does not.
-              </p>
-            </section>
-            <section class="rule-card">
-              <h4>
-                <span class="book-mark home" aria-hidden="true"
-                  ><svg viewBox="0 0 32 32">
-                    <path d="m3 16 13-12 13 12H25v13H7V16z" fill="#8fbc91" />
-                    <path d="M13 29V18h6v11" fill="#315d4b" /></svg></span
-                >Habitat & food totals
-              </h4>
-              <p>
-                Animals can share their home habitat. Safe home animals cannot
-                be contested or targeted with Move Enemy. Settlers share the
-                Colonization destination safely.
-              </p>
-              <p>
-                <strong>Banked food</strong> belongs to the player.
-                <strong>Carried fruit</strong> belongs to the animal’s current
-                load and is vulnerable during the journey. Carried fruit cannot
-                pay a revival cost.
-              </p>
-            </section>
-          </div>
+          <h3>Roads, refuges and officers</h3>
+          <h4>
+            <span class="book-mark" aria-hidden="true"
+              ><svg viewBox="0 0 32 32">
+                <path
+                  d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                  fill="#9ddfba"
+                /></svg></span
+            >Light gray road
+          </h4>
+          <p>
+            Every time an animal stops on a road block, roll the day/night die:
+            <strong>moon / odd = safe</strong>;
+            <strong>sun / even = hit</strong>. Passing through requires no
+            check. Every later road stop needs a fresh check, even if the
+            previous one was safe. This also applies after a push, Move Enemy or
+            an evade.
+          </p>
+          <h4>
+            <span class="book-mark" aria-hidden="true"
+              ><svg viewBox="0 0 32 32">
+                <path
+                  d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                  fill="#9ddfba"
+                /></svg></span
+            >Median and protected refuges
+          </h4>
+          <p>
+            The dark gray median needs no traffic check. Move along it in either
+            direction or across it into a neighbouring lane. Two shield-marked
+            refuges cannot be entered by officers. Animals cannot share them,
+            and opponents may contest them.
+          </p>
+          <h4>
+            <span class="book-mark" aria-hidden="true"
+              ><svg viewBox="0 0 32 32">
+                <path
+                  d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                  fill="#9ddfba"
+                /></svg></span
+            >Four traffic officers
+          </h4>
+          <p>
+            After all players finish their turns, one shared roll moves all four
+            officers clockwise. They skip refuges; only ordinary median blocks
+            count as steps. Stopping on an officer, or having one stop on your
+            animal, sends it home. Carried fruit returns to its original patch;
+            banked food is unchanged and no revival cost is paid.
+          </p>
+        </section>
+        <section id="book-hits">
+          <h3>Hits, revival and elimination</h3>
+          <h4>
+            <span class="book-mark" aria-hidden="true"
+              ><svg viewBox="0 0 32 32">
+                <path
+                  d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                  fill="#9ddfba"
+                /></svg></span
+            >Pay or rescue
+          </h4>
+          <p>
+            A predator, car, hunter or off-board hit returns carried fruit to
+            its original patch. Pay <strong>2 banked food</strong> to revive at
+            home. Carried fruit cannot pay the cost. An eligible rescue card may
+            be used first. Play Dead keeps the animal and fruit in place while
+            you move the predator to a different adjacent empty green block.
+            Angel Conservationists revives for free after a car or hunter hit;
+            its fruit still returns to the patch.
+          </p>
+          <h4>
+            <span class="book-mark" aria-hidden="true"
+              ><svg viewBox="0 0 32 32">
+                <path
+                  d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                  fill="#9ddfba"
+                /></svg></span
+            >Keep playing while an animal survives
+          </h4>
+          <p>
+            If you cannot pay, remove only the hit animal. You retain your cards
+            and keep playing while another animal survives, including a settler.
+            With none remaining, you are eliminated and your cards return to the
+            deck. A hit or officer escort ends the affected animal’s unused
+            movement. Home means the central habitat in Classic and your edge
+            habitat in Colonization. Animals may share home safely; home animals
+            and settlers cannot be targeted or contested.
+          </p>
         </section>
         <section id="book-competition">
-          <h3>Competition, theft & the chase</h3>
-          <div class="competition-grid">
-            <section class="rule-card">
-              <h4>
-                <span class="book-mark contest" aria-hidden="true"
-                  ><svg viewBox="0 0 32 32">
-                    <path
-                      d="M3 8h16l-5-5m5 5-5 5M29 24H13l5 5m-5-5 5-5"
-                      fill="none"
-                      stroke="#dcc498"
-                      stroke-width="3"
-                    /></svg></span
-                >1 · Contest a block
-              </h4>
-              <p>
-                Move onto an opponent’s animal. The challenger chooses odd or
-                even; the defender receives the opposite. Roll once. The winner
-                keeps the block and chooses an adjacent block for the loser. You
-                cannot contest your own animals.
-              </p>
-              <p>
-                Pushes trigger the destination’s effects immediately: a road
-                check, predator hit, officer escort or other landing
-                consequence. At a Classic outer-edge contest, the winner can
-                also push the loser off the board.
-              </p>
-            </section>
-            <section class="rule-card">
-              <h4>
-                <span class="book-mark food" aria-hidden="true"
-                  ><svg viewBox="0 0 32 32">
-                    <circle cx="10" cy="14" r="6" fill="#dd8765" />
-                    <circle cx="19" cy="16" r="5" fill="#eed07b" />
-                    <path
-                      d="M10 8Q11 2 17 5M19 11l3-4"
-                      stroke="#8cba79"
-                      stroke-width="3"
-                      fill="none"
-                    /></svg></span
-                >2 · Choose whether to steal
-              </h4>
-              <p>
-                In Classic, an empty-handed winner may choose
-                <strong>Take fruit</strong> to take the loser’s entire load
-                before pushing it, or <strong>Leave the fruit</strong>. An
-                animal carrying a load cannot take another. Banked food cannot
-                be stolen.
-              </p>
-              <p>
-                Stolen fruit must reach home to score. If its new carrier is
-                hit, it returns to its original patch. An animal that loses a
-                load cannot harvest again on that trip, but can win food back in
-                another contest.
-              </p>
-            </section>
-            <section class="rule-card">
-              <h4>
-                <span class="book-mark move" aria-hidden="true"
-                  ><svg viewBox="0 0 32 32">
-                    <path
-                      d="M3 16h26m-8-7 8 7-8 7M11 9l-8 7 8 7"
-                      fill="none"
-                      stroke="#a3d8cc"
-                      stroke-width="3"
-                    /></svg></span
-                >3 · Keep moving
-              </h4>
-              <p>
-                After the push, forced landing checks and card rewards, the
-                challenger keeps
-                <strong>unused movement whether it won or lost</strong>. The
-                winner can escape with food; the pushed loser can move around.
-              </p>
-              <p>
-                The same two animals cannot contest again until
-                <strong>the next round</strong>, even if the defender initiates
-                the rematch. A winner continuing across a road checks traffic
-                only when it stops; a pushed animal checks immediately upon
-                landing there.
-              </p>
-            </section>
-          </div>
+          <h3>Competition, theft and pursuit</h3>
+          <h4>
+            <span class="book-mark" aria-hidden="true"
+              ><svg viewBox="0 0 32 32">
+                <path
+                  d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                  fill="#9ddfba"
+                /></svg></span
+            >Contest a block
+          </h4>
+          <p>
+            Move onto an opponent’s animal. The challenger chooses odd or even;
+            the defender receives the opposite. Roll once. Before accepting the
+            result, the losing player may use an eligible competition reroll
+            card, even outside their turn. Accept the final result to continue:
+            the winner keeps the block and chooses an adjacent destination for
+            the loser. Road checks, predator hits and officer escorts apply
+            immediately. An edge contest in Classic may push the loser off the
+            board.
+          </p>
+          <h4>
+            <span class="book-mark" aria-hidden="true"
+              ><svg viewBox="0 0 32 32">
+                <path
+                  d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                  fill="#9ddfba"
+                /></svg></span
+            >Choose whether to steal
+          </h4>
+          <p>
+            In Classic, a winner carrying no fruit may take the loser’s entire
+            load before pushing it, or leave the load. Banked food cannot be
+            stolen. Stolen fruit counts only after reaching home; a hit returns
+            it to its original patch. Losing a load does not allow another
+            harvest on the same trip, but it can be won back in a later contest.
+          </p>
+          <h4>
+            <span class="book-mark" aria-hidden="true"
+              ><svg viewBox="0 0 32 32">
+                <path
+                  d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                  fill="#9ddfba"
+                /></svg></span
+            >Keep unused movement
+          </h4>
+          <p>
+            After the push and landing effects, the challenger keeps unused
+            movement whether it won or lost, unless a hit or officer escort
+            ended it. Only the challenger continues; a defending winner waits
+            for its own turn. The same two animals cannot contest again until
+            next round. A pushed animal checks the road immediately; a moving
+            challenger checks only when it stops.
+          </p>
           <div class="book-example">
             <b>Example</b>
             <p>
-              Rat rolls 5 and uses one step to challenge Squirrel, which carries
-              3 fruit. Rat wins, takes the load and pushes Squirrel aside. After
-              the reward draw, Rat still has 4 steps to escape. If Rat loses
-              instead, it still has 4 steps to move from its pushed position.
-              Neither animal can challenge the other again until the next round.
+              Rat rolls 5 and spends one step challenging Squirrel. After the
+              contest, Rat has 4 steps left whether it wins or loses, provided
+              the push does not cause a hit or officer escort. If Rat wins and
+              steals food, it can use those steps to escape.
             </p>
           </div>
         </section>
         <section id="book-cards">
-          <h3>Cards · 38 in the deck</h3>
+          <h3>Cards · 60 in the deck</h3>
           <p>
-            Your two starting cards are ready in Round 1 when their conditions
-            apply. Winning a contest or surviving a traffic or hunter roll earns
-            one card: click the floating deck when prompted. Cards earned during
-            play unlock <strong>next round</strong>. Using Safe Streets or a
-            rescue card does not earn a survival reward.
+            Start with <strong>four cards</strong>. Draw at most
+            <strong>one replacement at the start of each turn</strong>, only
+            while below four. Never replenish immediately after playing. You may
+            play any number of eligible cards; rescue and competition-response
+            cards can be used outside your turn when their conditions apply.
+            There are no extra card draws for contests, traffic or hunters. When
+            the deck empties, shuffle discarded cards into a new draw pile.
+            Click the card icon beside a player’s name, or the deck, to view
+            cards and use an eligible one.
           </p>
-          <p>
-            Click the card icon beside a player’s name to view their hand. Use
-            an eligible card or close the panel.
-          </p>
-          <div class="card-list">
+          <div class="cards-grid">
             <section class="rule-card">
               <h4>
-                <span class="book-mark card" aria-hidden="true"
+                <span class="book-mark" aria-hidden="true"
                   ><svg viewBox="0 0 32 32">
-                    <rect
-                      x="6"
-                      y="3"
-                      width="20"
-                      height="26"
-                      rx="4"
-                      fill="#9bb8d6"
-                    />
                     <path
-                      d="m16 9 3 5 5 2-5 2-3 5-3-5-5-2 5-2z"
-                      fill="#16384a"
+                      d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                      fill="#9ddfba"
                     /></svg></span
-                >Reroll <small>× 14</small>
+                >Reroll ×14
               </h4>
-              <p>Replace your movement roll before taking your first step.</p>
+              <p>Replace your movement roll before your first step.</p>
             </section>
             <section class="rule-card">
               <h4>
-                <span class="book-mark move" aria-hidden="true"
+                <span class="book-mark" aria-hidden="true"
                   ><svg viewBox="0 0 32 32">
                     <path
-                      d="M3 16h26m-8-7 8 7-8 7M11 9l-8 7 8 7"
-                      fill="none"
-                      stroke="#a3d8cc"
-                      stroke-width="3"
+                      d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                      fill="#9ddfba"
                     /></svg></span
-                >Extra Block <small>× 10</small>
+                >Extra Block ×10
               </h4>
               <p>Add one step to your current movement.</p>
             </section>
             <section class="rule-card">
               <h4>
-                <span class="book-mark contest" aria-hidden="true"
+                <span class="book-mark" aria-hidden="true"
                   ><svg viewBox="0 0 32 32">
                     <path
-                      d="M3 8h16l-5-5m5 5-5 5M29 24H13l5 5m-5-5 5-5"
-                      fill="none"
-                      stroke="#dcc498"
-                      stroke-width="3"
+                      d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                      fill="#9ddfba"
                     /></svg></span
-                >Move Enemy <small>× 6</small>
+                >Move Enemy ×6
               </h4>
               <p>
-                Choose an enemy, then move it one adjacent empty block in any
-                direction. Landing effects apply. Home animals and settlers
-                cannot be targeted.
+                Move an enemy to an adjacent empty block in any direction.
+                Resolve landing effects; home animals and settlers are
+                protected.
               </p>
             </section>
             <section class="rule-card">
               <h4>
-                <span class="book-mark road" aria-hidden="true"
+                <span class="book-mark" aria-hidden="true"
                   ><svg viewBox="0 0 32 32">
-                    <rect
-                      x="3"
-                      y="2"
-                      width="26"
-                      height="28"
-                      rx="3"
-                      fill="#879899"
-                    />
                     <path
-                      d="M16 3v6m0 4v6m0 4v6"
-                      stroke="#f6e7af"
-                      stroke-width="2"
+                      d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                      fill="#9ddfba"
                     /></svg></span
-                >Safe Streets <small>× 4</small>
+                >Safe Streets ×4
               </h4>
               <p>
-                Skip one traffic check and stay safely on that road block. Later
-                stops still require checks.
+                Skip one traffic check. Later road stops still require checks.
               </p>
             </section>
             <section class="rule-card">
               <h4>
-                <span class="book-mark predator" aria-hidden="true"
+                <span class="book-mark" aria-hidden="true"
                   ><svg viewBox="0 0 32 32">
-                    <ellipse cx="16" cy="22" rx="8" ry="6" fill="#e6b87c" />
-                    <g fill="#e6b87c">
-                      <circle cx="5" cy="14" r="3" />
-                      <circle cx="11" cy="8" r="3" />
-                      <circle cx="21" cy="8" r="3" />
-                      <circle cx="27" cy="14" r="3" />
-                    </g></svg></span
-                >Play Dead <small>× 2</small>
+                    <path
+                      d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                      fill="#9ddfba"
+                    /></svg></span
+                >Play Dead ×2
               </h4>
               <p>
-                Survive a predator in place, keeping your fruit. Only the
-                attacking predator rolls and moves again.
+                After a predator hit, stay in place with your fruit. Place that
+                predator on a different adjacent empty green block. Unavailable
+                if none exists.
               </p>
             </section>
             <section class="rule-card">
               <h4>
-                <span class="book-mark home" aria-hidden="true"
+                <span class="book-mark" aria-hidden="true"
                   ><svg viewBox="0 0 32 32">
-                    <path d="m3 16 13-12 13 12H25v13H7V16z" fill="#8fbc91" />
-                    <path d="M13 29V18h6v11" fill="#315d4b" /></svg></span
-                >Angel Conservationists <small>× 2</small>
+                    <path
+                      d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                      fill="#9ddfba"
+                    /></svg></span
+                >Angel Conservationists ×2
               </h4>
               <p>
-                After a car or hunter hit, revive at home for free. Carried
-                fruit still returns to its original patch.
+                After a car or hunter hit, revive at home free. Carried fruit
+                returns to its original patch.
               </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path
+                      d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                      fill="#9ddfba"
+                    /></svg></span
+                >Predator Block ×12
+              </h4>
+              <p>
+                Before rolling or before ending your turn, choose an opponent
+                and place a predator on an adjacent empty green block.
+              </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path
+                      d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                      fill="#9ddfba"
+                    /></svg></span
+                >Interspecific Re-engagement ×6
+              </h4>
+              <p>
+                After losing a competition roll, reroll before the push. Either
+                contestant can respond when they lose.
+              </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path
+                      d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                      fill="#9ddfba"
+                    /></svg></span
+                >Desperate Struggle ×2
+              </h4>
+              <p>
+                After losing a competition roll, spend 1 banked food and reroll
+                before the push. Odd/even contests have no ties.
+              </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path
+                      d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                      fill="#9ddfba"
+                    /></svg></span
+                >Quick Sprint ×2
+              </h4>
+              <p>Add two steps to your current movement.</p>
             </section>
           </div>
         </section>
         <section class="book-controls">
           <h3>Board controls</h3>
           <p>
-            Drag sideways to turn and vertically to tilt. Pinch or wheel to zoom
-            the board. 3D View adjusts turn, tilt and Z rotation separately.
-            Move Board lets you reposition the board; Reset view restores the
-            camera.
-          </p>
-          <p>
-            Settings starts a fresh game with your selected options. Reset
-            restarts the chosen game; an enabled Colonization opener runs again.
+            Drag sideways to turn and vertically to tilt; pinch or wheel to zoom
+            the board. 3D View offers separate turn, tilt and Z rotation. Move
+            Board repositions it. Settings starts a fresh game; Classic defaults
+            to Square, with Circle and Octagon also available.
           </p>
         </section>
         <footer class="book-footer">
-          Fragmented Habitat · v30 · An ecology game about movement, survival
-          and limited resources.<button
-            class="btn primary"
-            data-close="help-dialog"
-          >
+          Fragmented Habitat · v32 · Survival, fragmentation and finite
+          habitat.<button class="btn primary" data-close="help-dialog">
             Let’s play
           </button>
         </footer>
@@ -2552,6 +3477,7 @@
           <option>5</option>
           <option>6</option>
           <option>7</option>
+          <option>8</option>
         </select></label
       ><label
         >Food to win
@@ -2574,8 +3500,8 @@
           <option value="square">Square</option>
         </select></label
       >
-      <label
-        >Inner predators per lane (outer lanes add one)<select id="predator-count">
+      <label hidden
+        >Legacy predator count<select id="predator-count">
           <option>1</option>
           <option>2</option>
           <option>3</option>
@@ -2584,8 +3510,8 @@
           <option>6</option>
         </select></label
       >
-      <label
-        >Predator rolls<select id="predator-roll-mode">
+      <label hidden
+        >Legacy predator rolls<select id="predator-roll-mode">
           <option value="shared">One roll for all predators</option>
           <option value="lane" selected>One roll per lane</option>
           <option value="individual">One roll per predator</option>
@@ -2665,7 +3591,7 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <script id="game-engine">
-      /* Fragmented Habitat v30 — rules engine, independent of the display. */
+      /* Fragmented Habitat v32 — rules engine, independent of the display. */
       (() => {
         "use strict";
         const SECTORS = 24;
@@ -2685,6 +3611,7 @@
           "Capybara",
           "Tarsier",
           "Beetle",
+          "Koala",
         ];
         const CARDS = {
           reroll: {
@@ -2715,13 +3642,37 @@
             name: "Play Dead",
             count: 2,
             icon: "☾",
-            text: "Survive a predator on the same space, keeping your fruit. That predator rolls and moves again.",
+            text: "Survive a predator on the same space, keeping your fruit. Place the predator on an empty adjacent green block instead.",
           },
           angel: {
             name: "Angel Conservationists",
             count: 2,
             icon: "✦",
             text: "After a car or hunter hit, revive at home for free. Carried fruit returns to its original patch.",
+          },
+          block: {
+            name: "Predator Block",
+            count: 12,
+            icon: "⚑",
+            text: "Before rolling or before ending your turn, place a predator on an empty green block adjacent to an opponent.",
+          },
+          reengage: {
+            name: "Interspecific Re-engagement",
+            count: 6,
+            icon: "⇄",
+            text: "After losing a contest roll, reroll it before the push. Either contestant may respond.",
+          },
+          struggle: {
+            name: "Desperate Struggle",
+            count: 2,
+            icon: "✹",
+            text: "After losing a contest roll, spend 1 banked food and reroll before the push.",
+          },
+          sprint: {
+            name: "Quick Sprint",
+            count: 2,
+            icon: "+2",
+            text: "Add two steps to your movement this turn.",
           },
         };
         const wrap = (n) => ((n % SECTORS) + SECTORS) % SECTORS;
@@ -2837,7 +3788,7 @@
 
             this.lastTraffic = null;
             this.players = Array.from(
-              { length: Math.max(1, Math.min(7, players)) },
+              { length: Math.max(1, Math.min(8, players)) },
               (_, id) => ({
                 id,
                 animal: ANIMALS[id],
@@ -2863,22 +3814,12 @@
             this.steps = 0;
             this.remaining = 0;
             this.lastRoll = null;
-            let previous = [];
-            this.predators = PREDATOR_LANES.flatMap((r, lane) => {
-              if (lane === 3) previous = [];
-              const positions = this.randomLanePositions(previous, r, this.predatorCount + (r >= 11 ? 1 : 0));
-              previous = positions;
-              return positions.map((s, slot) => ({
-                id: lane * 7 + slot,
-                r,
-                s,
-                kind: PREDATOR_KINDS[
-                  (lane * this.predatorCount + slot) % PREDATOR_KINDS.length
-                ],
-                on: true,
-                placed: true,
-              }));
-            });
+            this.predators = [];
+            this.predatorLimit = 50;
+            this.nextPredatorId = 0;
+            this.lastStealth = null;
+            this.placement = null;
+            this.drawnTurn = null;
             this.refugeSpaces = new Set(
               [6, 18].map((s) =>
                 Math.round((s * this.laneSize(ISLAND)) / SECTORS),
@@ -2905,7 +3846,7 @@
             this.resourceCapacity = 24;
             this.resourceVisits = 0;
             this.log = [
-              "Predators are randomly spaced. Each player starts with 5 food. Choose an animal and roll.",
+              "No predators start on the board. Stop on green to roll Stealth. Each player starts with 5 food and 4 cards.",
             ];
             this.deck = Object.entries(CARDS).flatMap(([type, c]) =>
               Array(c.count).fill(type),
@@ -2915,12 +3856,12 @@
               const j = Math.floor(rng() * (i + 1));
               [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
             }
-            for (let deal = 0; deal < 2; deal++)
+            for (let deal = 0; deal < 4; deal++)
               this.players.forEach((p) =>
                 p.hand.push({ type: this.deck.pop(), availableRound: 1 }),
               );
             this.record(
-              "Each player has two starting cards, ready from Round 1. Click the card icon beside your name to view them.",
+              "Each player has four starting cards, ready now. Click the card icon beside your name to view them.",
             );
           }
           laneSize(r) {
@@ -2969,7 +3910,7 @@
             Object.assign(this, next);
             this.previousExtinction = previous;
             this.record(
-              "Local extinction occurred in the original habitat. A new population starts Habitat Colonization: one animal, 5 food and two starting cards per player.",
+              "Local extinction occurred in the original habitat. A new population starts Habitat Colonization: one animal, 5 food and four starting cards per player.",
             );
             return true;
           }
@@ -3000,11 +3941,15 @@
             this.openerResult = reason;
             this.record(
               reason +
-                " Classic starts fresh: one animal, five food and two cards each.",
+                " Classic starts fresh: one animal, five food and four cards each.",
             );
             return true;
           }
-          randomLanePositions(avoid = [], r = 1, population = this.predatorCount) {
+          randomLanePositions(
+            avoid = [],
+            r = 1,
+            population = this.predatorCount,
+          ) {
             if (this.boardShape === "square") {
               // Choose one predator in each evenly spaced band. Random rotation
               // varies their starts; bounded jitter always leaves empty squares.
@@ -3217,21 +4162,12 @@
             return true;
           }
           rewardCard(owner, reason, done) {
-            if (this.phase === "finished") return;
-            if (!this.animals(owner).length) {
-              done();
-              return;
-            }
-            this.pendingDraw = {
-              owner,
-              availableRound: this.round + 1,
-              resume: done,
-            };
-            this.phase = "draw";
             this.record(
-              `Player ${owner + 1} ${reason}. Click the floating deck to keep one card. Use it from next round.`,
+              `Player ${owner + 1} ${reason}. Replacement cards are drawn only at the start of a turn.`,
             );
+            if (!this.checkEnd()) done();
           }
+
           escortHome(t, done) {
             if (t.id === this.selected) this.remaining = 0;
             const cargo = t.cargo;
@@ -3256,7 +4192,10 @@
             }
             this.selected = this.animals()[0]?.id ?? null;
             this.phase = "roll";
-            this.record(`Round ${this.round}. New cards are now ready.`);
+            this.record(
+              `Round ${this.round}. Officers have finished their patrol.`,
+            );
+            this.replenish();
           }
           rollPolice() {
             if (this.phase !== "police") return false;
@@ -3435,7 +4374,7 @@
               };
               this.phase = "contest-choice";
               this.record(
-                `Contest for a space! ${this.name(this.token)} chooses odd or even. The winner earns a card.`,
+                `Contest for a space! ${this.name(this.token)} chooses odd or even. The loser may use a competition reroll card.`,
               );
               return true;
             }
@@ -3517,15 +4456,15 @@
           }
           stop() {
             if (this.phase !== "move" || this.steps < 1) return false;
-            this.resolveLanding(this.token, () => this.endTurn());
+            this.resolveLanding(this.token, () => this.readyToEnd());
             return true;
           }
           pass() {
             if (this.phase !== "move" || this.legalMoves().length) return false;
-            this.resolveLanding(this.token, () => this.endTurn());
+            this.resolveLanding(this.token, () => this.readyToEnd());
             return true;
           }
-          resolveLanding(t, done) {
+          resolveLanding(t, done, skipStealth = false) {
             if (this.phase === "finished") return;
             if (this.isRefuge(t.r, t.s)) {
               done();
@@ -3545,6 +4484,14 @@
               this.pending = { token: t.id, done };
               this.record(
                 `${this.name(t)} stopped on the road. Roll the sun/moon die or use Safe Streets.`,
+              );
+              return;
+            }
+            if (PREDATOR_LANES.includes(t.r) && !skipStealth) {
+              this.phase = "stealth";
+              this.pending = { token: t.id, done };
+              this.record(
+                `${this.name(t)} stopped on green. Roll Stealth: 1 predator, 2–3 safe, 4–6 evade.`,
               );
               return;
             }
@@ -3669,12 +4616,14 @@
               this.active = next;
               this.selected = this.animals()[0]?.id ?? null;
               this.phase = "roll";
+              this.replenish();
             } else {
               this.predIndex = 0;
               this.predatorRolls = [];
-              this.phase = "predators";
+              this.phase = "police";
+              this.hazardPatrol = true;
               this.record(
-                "Everyone has moved. Click Move all predators once; the six lane rolls run automatically.",
+                "Everyone has moved. Roll once to move the four traffic officers.",
               );
             }
             if (!this.tokens.some((t) => !t.out)) {
@@ -3684,94 +4633,13 @@
             }
           }
           rollPredator() {
-            if (this.phase !== "predators") return false;
-            this.hazardPatrol = true;
-            const n = (this.lastRoll = this.dice());
-            const lane =
-              this.predatorRollMode === "shared"
-                ? this.predators
-                : this.predatorRollMode === "individual"
-                  ? [this.predators[this.predIndex]]
-                  : this.predators.filter(
-                      (p) => p.r === PREDATOR_LANES[this.predIndex],
-                    );
-            this.predatorRolls.push({
-              lane: this.predIndex + 1,
-              roll: n,
-              label:
-                this.predatorRollMode === "shared"
-                  ? "All predators"
-                  : this.predatorRollMode === "individual"
-                    ? `Predator ${this.predIndex + 1}`
-                    : `Lane ${this.predIndex + 1}`,
-            });
-            lane.forEach((p) => (p.s = this.wrapLane(p.r, p.s + n)));
-            this.record(
-              `${this.predatorRolls.at(-1).label}: ${n} spaces clockwise.`,
-            );
-            const finish = () => {
-              if (this.checkEnd()) return;
-              this.predIndex++;
-              if (!this.tokens.some((t) => !t.out)) {
-                this.phase = "finished";
-                this.winner = null;
-                this.record("No animals remain.");
-                return;
-              }
-              if (
-                this.predIndex ===
-                (this.predatorRollMode === "shared"
-                  ? 1
-                  : this.predatorRollMode === "individual"
-                    ? this.predators.length
-                    : PREDATOR_LANES.length)
-              ) {
-                this.phase = "police";
-                this.record(
-                  "Predator lanes finished. Roll once for the island police patrol.",
-                );
-              } else this.phase = "predators";
-            };
-            const resolve = (i) => {
-              if (this.phase === "finished") return;
-              if (i === lane.length) {
-                finish();
-                return;
-              }
-              const pred = lane[i],
-                victim = this.occupied(pred.r, pred.s);
-              if (victim)
-                this.hit(victim, "predator", () => resolve(i + 1), pred.id);
-              else resolve(i + 1);
-            };
-            resolve(0);
-            return true;
+            return false;
           }
-          movePredator(p, n, done) {
-            // Play Dead gives only the attacking predator an extra roll. Other
-            // predators stay put; it can pass them but cannot finish on one.
-            const original = p.s;
-            p.s = this.wrapLane(p.r, p.s + n);
-            if (
-              this.predators.some(
-                (other) =>
-                  other.id !== p.id && other.r === p.r && other.s === p.s,
-              )
-            ) {
-              p.s = original;
-              this.record(
-                `${p.kind} ${p.id + 1} rolled ${n}, but its destination was occupied. Play Dead kept the animal safe.`,
-              );
-              done();
-              return;
-            }
-            this.record(
-              `${p.kind} ${p.id + 1} rolled ${n}${p.s === original ? " but its destination was occupied" : " and moved clockwise"}.`,
-            );
-            const victim = this.occupied(p.r, p.s);
-            if (victim) this.hit(victim, "predator", done, p.id);
-            else done();
+
+          movePredator() {
+            return false;
           }
+
           chooseParity(parity) {
             if (
               this.phase !== "contest-choice" ||
@@ -3790,9 +4658,9 @@
             c.winner = attackerWins ? c.attacker : c.defender;
             c.loser = attackerWins ? c.defender : c.attacker;
             this.contestedPairs.add(this.contestPair(c.attacker, c.defender));
-            this.phase = this.canStealContest() ? "contest-food" : "push";
+            this.phase = "contest-review";
             this.record(
-              `${this.name(this.tokens.find((t) => t.id === c.winner))} won (${n}). ${this.phase === "contest-food" ? "Choose whether to take the loser's fruit, then " : ""}choose a space to push the loser. The challenger can continue with unused movement after the push and rewards. This pair cannot contest again until next round.`,
+              `${this.name(this.tokens.find((t) => t.id === c.winner))} won (${n}). ${this.phase === "contest-food" ? "Choose whether to take the loser's fruit, then " : ""}choose a space to push the loser. Accept the result or let the losing player use a reroll card before pushing. The challenger keeps unused movement. This pair cannot contest again until next round.`,
             );
             return true;
           }
@@ -3910,8 +4778,13 @@
           }
 
           drawCard() {
-            if (this.phase !== "draw") return false;
-            const p = this.pendingDraw;
+            return false;
+          }
+          replenish() {
+            const stamp = `${this.round}:${this.active}`;
+            if (this.drawnTurn === stamp) return;
+            this.drawnTurn = stamp;
+            if (this.player.hand.length >= 4) return;
             if (!this.deck.length) {
               this.deck = this.discard.splice(0);
               for (let i = this.deck.length - 1; i > 0; i--) {
@@ -3921,21 +4794,13 @@
             }
             if (this.deck.length) {
               const type = this.deck.pop();
-              this.players[p.owner].hand.push({
-                type,
-                availableRound: p.availableRound,
-              });
+              this.player.hand.push({ type, availableRound: this.round });
               this.record(
-                `${this.players[p.owner].animal} kept ${CARDS[type].name}. Ready in round ${p.availableRound}.`,
+                `Player ${this.active + 1} draws ${CARDS[type].name} at turn start (${this.player.hand.length}/4 cards).`,
               );
-            } else
-              this.record(
-                "Every card is currently held. No card is available to draw.",
-              );
-            this.pendingDraw = null;
-            p.resume();
-            return true;
+            }
           }
+
           cardOwner() {
             return this.pendingDraw
               ? this.pendingDraw.owner
@@ -3963,26 +4828,51 @@
             const c = this.players[owner]?.hand[index];
             if (
               !c ||
-              c.availableRound > this.round ||
-              owner !== this.cardOwner()
+              this.players[owner].eliminated ||
+              c.availableRound > this.round
             )
               return false;
-            return c.type === "reroll"
-              ? this.phase === "move" && this.steps === 0
-              : c.type === "step"
-                ? this.phase === "move"
-                : c.type === "back"
-                  ? this.phase === "move" && this.backwardTargets().length > 0
-                  : c.type === "street"
-                    ? this.phase === "traffic"
-                    : c.type === "dead"
-                      ? this.phase === "rescue" &&
-                        this.pending.cause === "predator"
-                      : c.type === "angel"
-                        ? this.phase === "rescue" &&
-                          ["car", "hunter"].includes(this.pending.cause)
-                        : false;
+            const type = c.type;
+            if (["reengage", "struggle"].includes(type)) {
+              const loser = this.tokens.find(
+                (t) => t.id === this.contest?.loser,
+              );
+              return (
+                this.phase === "contest-review" &&
+                loser?.owner === owner &&
+                (type !== "struggle" || this.players[owner].food >= 1)
+              );
+            }
+            if (owner !== this.cardOwner()) return false;
+            if (type === "block")
+              return (
+                owner === this.active &&
+                ["roll", "move", "turn-end"].includes(this.phase) &&
+                this.blockTargets().length > 0
+              );
+            if (type === "sprint")
+              return owner === this.active && this.phase === "move";
+            if (type === "reroll")
+              return this.phase === "move" && this.steps === 0;
+            if (type === "step") return this.phase === "move";
+            if (type === "back")
+              return this.phase === "move" && this.backwardTargets().length > 0;
+            if (type === "street") return this.phase === "traffic";
+            if (type === "dead")
+              return (
+                this.phase === "rescue" &&
+                this.pending.cause === "predator" &&
+                this.greenPlacements(
+                  this.tokens.find((t) => t.id === this.pending.token),
+                ).length > 0
+              );
+            return (
+              type === "angel" &&
+              this.phase === "rescue" &&
+              ["car", "hunter"].includes(this.pending.cause)
+            );
           }
+
           useCard(owner, index) {
             if (!this.canCard(owner, index)) return false;
             const c = this.players[owner].hand.splice(index, 1)[0];
@@ -3990,12 +4880,14 @@
             this.record(
               `${this.players[owner].animal} used ${CARDS[c.type].name}.`,
             );
-            if (c.type === "reroll") {
+            if (c.type === "reroll")
               this.remaining = this.lastRoll = this.dice();
-            } else if (c.type === "step") {
-              this.remaining++;
-            } else if (c.type === "back") {
-              this.phase = "card-target";
+            else if (c.type === "step" || c.type === "sprint")
+              this.remaining += c.type === "step" ? 1 : 2;
+            else if (c.type === "back") this.phase = "card-target";
+            else if (c.type === "block") {
+              this.cardResume = this.phase;
+              this.phase = "predator-target";
             } else if (c.type === "street") {
               const p = this.pending;
               this.pending = null;
@@ -4007,18 +4899,29 @@
                 this.tokens.find((t) => t.id === p.token),
                 true,
               );
-              p.done();
+              if (!this.checkEnd()) p.done();
             } else if (c.type === "dead") {
               const p = this.pending;
               this.pending = null;
-              this.movePredator(
-                this.predators[p.predId],
-                (this.lastRoll = this.dice()),
-                p.done,
+              const t = this.tokens.find((t) => t.id === p.token);
+              this.placement = {
+                kind: "dead",
+                target: t.id,
+                predId: p.predId,
+                done: p.done,
+              };
+              this.phase = "predator-place";
+              this.record(
+                "Play Dead: keep your animal and fruit in place. Choose an empty adjacent green block for the predator.",
               );
+            } else if (["reengage", "struggle"].includes(c.type)) {
+              if (c.type === "struggle") this.players[owner].food--;
+              this.phase = "contest-roll";
+              this.rollContest();
             }
             return true;
           }
+
           targetEnemy(id) {
             if (
               this.phase !== "card-target" ||
@@ -4056,6 +4959,199 @@
               };
             } else this.resolveLanding(t, done);
             return true;
+          }
+          confirmContest() {
+            if (this.phase !== "contest-review") return false;
+            this.phase = this.canStealContest() ? "contest-food" : "push";
+            return true;
+          }
+          greenPlacements(t) {
+            if (!t) return [];
+            return this.neighbours(t.r, t.s, t.owner).filter(
+              (p) =>
+                PREDATOR_LANES.includes(p.r) &&
+                !this.occupied(p.r, p.s) &&
+                !this.predatorAt(p.r, p.s),
+            );
+          }
+          blockTargets() {
+            return this.tokens.filter(
+              (t) =>
+                !t.out &&
+                !t.settled &&
+                t.owner !== this.active &&
+                t.r > 0 &&
+                this.greenPlacements(t).length,
+            );
+          }
+          choosePredatorTarget(id) {
+            if (
+              this.phase !== "predator-target" ||
+              !this.blockTargets().some((t) => t.id === id)
+            )
+              return false;
+            this.placement = {
+              kind: "card",
+              target: id,
+              done: () => {
+                this.phase = this.cardResume;
+                this.cardResume = null;
+              },
+            };
+            this.phase = "predator-place";
+            return true;
+          }
+          placementSpaces() {
+            if (this.phase !== "predator-place") return [];
+            return this.greenPlacements(
+              this.tokens.find((t) => t.id === this.placement?.target),
+            );
+          }
+          placePredator(r, s) {
+            if (
+              !this.placementSpaces().some((p) => key(p.r, p.s) === key(r, s))
+            )
+              return false;
+            const task = this.placement;
+            this.placement = null;
+            const existing = this.predators.find((p) => p.id === task.predId);
+            if (existing) {
+              existing.r = r;
+              existing.s = s;
+              this.record(
+                "Predator relocated; your animal and fruit stay safe.",
+              );
+              task.done();
+            } else this.addPredator(r, s, task.done);
+            return true;
+          }
+          addPredator(r, s, done) {
+            if (this.predators.length >= this.predatorLimit) {
+              this.placement = { kind: "pool", r, s, done };
+              this.phase = "predator-source";
+              this.record(
+                "All 50 predators are deployed. Select an existing predator to relocate to the new space.",
+              );
+              return;
+            }
+            this.predators.push({
+              id: this.nextPredatorId++,
+              r,
+              s,
+              kind: PREDATOR_KINDS[this.nextPredatorId % PREDATOR_KINDS.length],
+              on: true,
+              placed: true,
+            });
+            this.record(
+              `Predator placed (${this.predators.length}/50 on board).`,
+            );
+            done();
+          }
+          relocatePredator(id) {
+            if (this.phase !== "predator-source") return false;
+            const pred = this.predators.find((p) => p.id === id);
+            if (!pred) return false;
+            const task = this.placement;
+            this.placement = null;
+            pred.r = task.r;
+            pred.s = task.s;
+            this.record("Existing predator relocated; the pool remains at 50.");
+            task.done();
+            return true;
+          }
+          stealth() {
+            if (this.phase !== "stealth") return false;
+            const p = this.pending;
+            this.pending = null;
+            const t = this.tokens.find((t) => t.id === p.token);
+            const neighbours = this.neighbours(t.r, t.s, t.owner);
+            if (
+              neighbours.length &&
+              neighbours.every((q) => this.predatorAt(q.r, q.s))
+            ) {
+              this.lastStealth = "predator";
+              this.record(
+                "Predators block every escape route. The animal is caught.",
+              );
+              this.hit(
+                t,
+                "predator",
+                p.done,
+                this.predatorAt(neighbours[0].r, neighbours[0].s)?.id,
+              );
+              return true;
+            }
+            const n = this.dice();
+            this.lastStealth = n === 1 ? "predator" : n <= 3 ? "safe" : "evade";
+            this.record(`Stealth: ${this.lastStealth.toUpperCase()}.`);
+            if (n === 1) {
+              this.addPredator(t.r, t.s, () => {
+                const pred = this.predatorAt(t.r, t.s);
+                this.hit(t, "predator", p.done, pred.id);
+              });
+            } else if (n <= 3) p.done();
+            else {
+              this.pending = p;
+              this.phase = "evade";
+              if (!this.evadeSpaces().length) {
+                this.pending = null;
+                const adjacent = this.neighbours(t.r, t.s, t.owner);
+                if (
+                  adjacent.length &&
+                  adjacent.every((q) => this.predatorAt(q.r, q.s))
+                )
+                  this.hit(
+                    t,
+                    "predator",
+                    p.done,
+                    this.predatorAt(adjacent[0].r, adjacent[0].s)?.id,
+                  );
+                else {
+                  this.record("No empty escape space. Stay here safely.");
+                  p.done();
+                }
+              }
+            }
+            return true;
+          }
+          evadeSpaces() {
+            if (this.phase !== "evade") return [];
+            const t = this.tokens.find((t) => t.id === this.pending.token);
+            return this.neighbours(t.r, t.s, t.owner).filter(
+              (p) => !this.occupied(p.r, p.s) && !this.predatorAt(p.r, p.s),
+            );
+          }
+          evade(r, s) {
+            if (!this.evadeSpaces().some((p) => key(p.r, p.s) === key(r, s)))
+              return false;
+            const p = this.pending;
+            this.pending = null;
+            const t = this.tokens.find((t) => t.id === p.token);
+            t.r = r;
+            t.s = r ? this.wrapLane(r, s) : 0;
+            this.record(
+              `${this.name(t)} evaded to an adjacent block. No second Stealth Check.`,
+            );
+            this.collect(t);
+            if (
+              ["finished", "extinction", "opener-complete"].includes(this.phase)
+            )
+              return true;
+            if (this.phase === "hunter") {
+              const before = this.pending.done;
+              this.pending.done = () => {
+                before();
+                if (!this.checkEnd()) this.resolveLanding(t, p.done, true);
+              };
+            } else this.resolveLanding(t, p.done, true);
+            return true;
+          }
+          readyToEnd() {
+            if (this.checkEnd()) return;
+            this.phase = "turn-end";
+            this.record(
+              "Landing resolved. Play an eligible Predator Block card now, or end your turn.",
+            );
           }
         }
         globalThis.FragmentedHabitat = {
@@ -4269,6 +5365,7 @@
           "#bba877",
           "#d5ba68",
           "#82d2ac",
+          "#c4b1ef",
         ];
         const ANGLE = 360 / SECTORS;
         const { squareCoordinate, SQUARE_HOME, SQUARE_UNIT } =
@@ -4288,7 +5385,7 @@
           6.55,
         ];
         // Logical rings always count steps from habitat to food; only their physical
-        // placement changes. Road checks and predator movement share one rules engine.
+        // placement changes. Road checks and stationary predator encounters share one rules engine.
         function bounds(r) {
           if (game.mode !== "reverse")
             return r ? [radii[r - 1] + 0.035, radii[r]] : [0, radii[0]];
@@ -4412,6 +5509,7 @@
           capybara: "#dfc38d",
           tarsier: "#edd892",
           beetle: "#9fe0bd",
+          koala: "#c4b8df",
           snake: "#9ddd9c",
           fox: "#ffb776",
           coyote: "#dec691",
@@ -4434,6 +5532,19 @@
           );
           defs.append(grad);
         }
+        FACES.koala = [
+          ".ggg......ggg.",
+          "ggagg....ggagg",
+          "ggaaggggggaagg",
+          ".ggaggggggagg.",
+          "..ggnggggngg..",
+          "..ggkggggkgg..",
+          "..ggggkkgggg..",
+          "...ggkkkkgg...",
+          "...ggkkkkgg...",
+          "....ggppgg....",
+          ".....gggg.....",
+        ];
         for (const [k, rows] of Object.entries(FACES)) {
           const sym = svg("symbol", { id: "pixel-" + k, viewBox: "0 0 16 16" });
           rows.forEach((row, y) =>
@@ -4934,13 +6045,21 @@
             innerWidth <= 800 ? "100 0 900 850" : "0 0 1100 850",
           );
           const possible =
-              game.phase === "push"
-                ? game.pushes()
-                : game.phase === "card-destination"
-                  ? game.enemyMoves()
-                  : game.phase === "card-target"
-                    ? game.backwardTargets()
-                    : game.legalMoves(),
+              game.phase === "evade"
+                ? game.evadeSpaces()
+                : game.phase === "predator-place"
+                  ? game.placementSpaces()
+                  : game.phase === "predator-target"
+                    ? game.blockTargets()
+                    : game.phase === "predator-source"
+                      ? game.predators
+                      : game.phase === "push"
+                        ? game.pushes()
+                        : game.phase === "card-destination"
+                          ? game.enemyMoves()
+                          : game.phase === "card-target"
+                            ? game.backwardTargets()
+                            : game.legalMoves(),
             legal = new Set(
               possible.filter((p) => p.r <= RESOURCE).map((p) => key(p.r, p.s)),
             );
@@ -5467,6 +6586,26 @@
                   .includes(s)
               )
                 return;
+              if (game.phase === "evade") {
+                act(() => game.evade(r, s));
+                return;
+              }
+              if (game.phase === "predator-place") {
+                act(() => game.placePredator(r, s));
+                return;
+              }
+              if (game.phase === "predator-source") {
+                const pred = game.predatorAt(r, s);
+                if (pred) act(() => game.relocatePredator(pred.id));
+                return;
+              }
+              if (game.phase === "predator-target") {
+                const t = tokens.find((t) =>
+                  game.blockTargets().some((q) => q.id === t.id),
+                );
+                if (t) act(() => game.choosePredatorTarget(t.id));
+                return;
+              }
               if (game.phase === "card-target") {
                 const t = tokens.find((t) =>
                   game.backwardTargets().some((x) => x.id === t.id),
@@ -5547,7 +6686,7 @@
             game.beginClassicFromOpener();
             $("opener-result").textContent =
               game.openerResult +
-              " Everyone starts Classic with one animal, five food and two new cards. Turn order follows the first player clockwise through the player list.";
+              " Everyone starts Classic with one animal, five food and four new cards. Turn order follows the first player clockwise through the player list.";
             $("opener-dialog").showModal();
           }
           if (game.phase === "extinction") {
@@ -5610,7 +6749,7 @@
           $("predator-results").hidden =
             !game.predatorRolls.length && game.policeRoll === null;
           $("predator-results").textContent =
-            "Patrol rolls · " +
+            "Officer roll · " +
             game.predatorRolls
               .map((p) => `${p.label || `Lane ${p.lane}`}: ${p.roll}`)
               .concat(
@@ -5722,6 +6861,58 @@
             },
             ["rescue", "traffic"].includes(game.phase),
           );
+          const phaseLabels = {
+            stealth: "Roll Stealth Die",
+            "turn-end": "End turn",
+            "contest-review": "Accept contest result",
+          };
+          setButton(
+            "phase-action",
+            phaseLabels[game.phase] || "",
+            () =>
+              game.phase === "stealth"
+                ? game.stealth()
+                : game.phase === "turn-end"
+                  ? game.endTurn()
+                  : game.confirmContest(),
+            !!phaseLabels[game.phase],
+          );
+          setButton(
+            "response-cards",
+            "View losing player's cards",
+            () => {
+              const t = game.tokens.find((t) => t.id === game.contest?.loser);
+              if (t) openHand(t.owner);
+              return false;
+            },
+            game.phase === "contest-review",
+          );
+          if (game.phase === "stealth")
+            $("phase-action").onclick = () => animateRoll(() => game.stealth());
+          $("stealth-dice").textContent =
+            game.lastStealth === "predator"
+              ? "⚑"
+              : game.lastStealth === "safe"
+                ? "✓"
+                : game.lastStealth === "evade"
+                  ? "➜"
+                  : "?";
+          const stealthDescriptions = {
+            stealth:
+              "Roll Stealth: 1 predator face, 2 safe faces, 3 evade faces.",
+            evade:
+              "Choose an empty adjacent block to evade. Roads require a traffic check.",
+            "turn-end": "Play Predator Block if you want, then end your turn.",
+            "predator-target": "Choose an opponent's animal to block.",
+            "predator-place":
+              "Choose a glowing empty green block for the predator.",
+            "predator-source":
+              "Choose an existing predator to relocate (50-token pool is full).",
+            "contest-review":
+              "Losing player: use a competition reroll card, or accept the result.",
+          };
+          if (stealthDescriptions[game.phase])
+            $("turn-help").textContent = stealthDescriptions[game.phase];
           $("parity").hidden = game.phase !== "contest-choice";
           $("odd").onclick = () => act(() => game.chooseParity("odd"));
           $("even").onclick = () => act(() => game.chooseParity("even"));
@@ -5771,11 +6962,12 @@
             row.append(food);
             $("roster").append(row);
           });
-          $("deck").disabled = game.phase !== "draw";
+          $("deck").disabled = false;
+          $("deck").setAttribute("aria-label", "View current player cards");
           $("deck-caption").textContent =
             game.phase === "draw"
               ? `Player ${game.pendingDraw.owner + 1}: DRAW ONE`
-              : `${game.deck.length} in deck · ${game.discard.length} discarded`;
+              : `${game.deck.length} in deck · ${game.predators.length}/50 predators`;
           $("deck-caption").classList.toggle("pending", game.phase === "draw");
           $("event-log").textContent = game.log.slice(-8).join("\n");
           if ($("hand-dialog").open) renderHand();
@@ -5793,18 +6985,23 @@
           rolling = true;
           document.querySelector(".app").classList.add("rolling");
           $("roll").disabled = true;
-          const die = ["traffic", "hunter"].includes(game.phase)
-            ? $("traffic-dice")
-            : $("dice");
+          const die =
+            game.phase === "stealth"
+              ? $("stealth-dice")
+              : ["traffic", "hunter"].includes(game.phase)
+                ? $("traffic-dice")
+                : $("dice");
           die.classList.add("is-rolling");
           let tick = 0;
           const timer = setInterval(() => {
             die.textContent =
-              die.id === "traffic-dice"
-                ? ++tick % 2
-                  ? "☀"
-                  : "☾"
-                : ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][++tick % 6];
+              die.id === "stealth-dice"
+                ? ["⚑", "✓", "➜"][++tick % 3]
+                : die.id === "traffic-dice"
+                  ? ++tick % 2
+                    ? "☀"
+                    : "☾"
+                  : ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"][++tick % 6];
           }, 65);
           await new Promise((resolve) => setTimeout(resolve, 400));
           clearInterval(timer);
@@ -5852,7 +7049,7 @@
           if (!p.hand.length) {
             const empty = document.createElement("p");
             empty.textContent =
-              "No cards held. Win a contest or survive a traffic or hunter check to draw one.";
+              "No cards held. Draw one replacement automatically at the start of your next turn.";
             $("hand-list").append(empty);
           }
           p.hand.forEach((c, i) => {
@@ -5884,7 +7081,7 @@
           renderHand();
           if (!$("hand-dialog").open) $("hand-dialog").showModal();
         }
-        $("deck").onclick = () => act(() => game.drawCard());
+        $("deck").onclick = () => openHand(game.active);
         $("help").onclick = () => {
           $("help-dialog").showModal();
           $("help-dialog").scrollTop = 0;

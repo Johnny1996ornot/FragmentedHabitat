@@ -3168,7 +3168,7 @@
             home. Carried fruit cannot pay the cost. An eligible rescue card may
             be used first. Play Dead keeps the animal and fruit in place while
             you move the predator to a different adjacent empty green block.
-            Angel Conservationists revives for free after a car or hunter hit;
+            Conservation Program revives for free after a car or hunter hit;
             its fruit still returns to the patch.
           </p>
           <h4>
@@ -3346,7 +3346,7 @@
                       d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
                       fill="#9ddfba"
                     /></svg></span
-                >Angel Conservationists ×2
+                >Conservation Program ×2
               </h4>
               <p>
                 After a car or hunter hit, revive at home free. Carried fruit
@@ -3361,7 +3361,7 @@
                       d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
                       fill="#9ddfba"
                     /></svg></span
-                >Predator Block ×12
+                >Predator Block ×5
               </h4>
               <p>
                 Before rolling or before ending your turn, choose an opponent
@@ -3495,9 +3495,7 @@
       >
       <label
         >Classic board shape<select id="shape-select">
-          <option value="octagon">Octagon</option>
-          <option value="circle">Circle</option>
-          <option value="square">Square</option>
+          <option value="square" selected>Square</option>
         </select></label
       >
       <label hidden
@@ -3645,16 +3643,16 @@
             text: "Survive a predator on the same space, keeping your fruit. Place the predator on an empty adjacent green block instead.",
           },
           angel: {
-            name: "Angel Conservationists",
+            name: "Conservation Program",
             count: 2,
             icon: "✦",
             text: "After a car or hunter hit, revive at home for free. Carried fruit returns to its original patch.",
           },
           block: {
             name: "Predator Block",
-            count: 12,
+            count: 5,
             icon: "⚑",
-            text: "Before rolling or before ending your turn, place a predator on an empty green block adjacent to an opponent.",
+            text: "Before rolling or before ending your turn, choose any empty green block and place a predator there.",
           },
           reengage: {
             name: "Interspecific Re-engagement",
@@ -3754,12 +3752,7 @@
             this.classicShape = shape;
             this.mode =
               this.isOpening || mode === "reverse" ? "reverse" : "classic";
-            this.boardShape =
-              this.mode === "reverse"
-                ? "octagon"
-                : ["square", "circle", "octagon"].includes(shape)
-                  ? shape
-                  : "octagon";
+            this.boardShape = "square";
             this.resourceSpaces =
               this.boardShape === "square"
                 ? RESOURCE_SPACES.map((s) =>
@@ -3769,10 +3762,7 @@
             this.goldenSpaces = new Set(
               [...CORNUCOPIA].map((s) => this.resourceSpaces[s]),
             );
-            this.predatorCount = Math.max(
-              1,
-              Math.min(6, Number(predatorCount) || 4),
-            );
+            this.predatorCount = 5;
             this.predatorRollMode = ["shared", "individual", "lane"].includes(
               predatorRollMode,
             )
@@ -4488,8 +4478,15 @@
               return;
             }
             if (PREDATOR_LANES.includes(t.r) && !skipStealth) {
+              const nearPredator = this.predators.some((pred) => {
+                if (this.boardShape === "square") {
+                  const a = squareCoordinate(t.r, t.s), b = squareCoordinate(pred.r, pred.s);
+                  return Math.max(Math.abs(a.x - b.x), Math.abs(a.z - b.z)) <= 1;
+                }
+                return this.neighbours(t.r, t.s, t.owner).some((q) => q.r === pred.r && q.s === pred.s);
+              });
               this.phase = "stealth";
-              this.pending = { token: t.id, done };
+              this.pending = { token: t.id, done, proximityRerolls: nearPredator ? 1 : 0 };
               this.record(
                 `${this.name(t)} stopped on green. Roll Stealth: 1 predator, 2–3 safe, 4–6 evade.`,
               );
@@ -4887,7 +4884,8 @@
             else if (c.type === "back") this.phase = "card-target";
             else if (c.type === "block") {
               this.cardResume = this.phase;
-              this.phase = "predator-target";
+              this.placement = { kind: "card", target: null, done: () => { this.phase = this.cardResume; this.cardResume = null; } };
+              this.phase = "predator-place";
             } else if (c.type === "street") {
               const p = this.pending;
               this.pending = null;
@@ -4966,7 +4964,15 @@
             return true;
           }
           greenPlacements(t) {
-            if (!t) return [];
+            if (!t) {
+              const spaces = [];
+              for (const r of PREDATOR_LANES) {
+                for (let s = 0; s < this.laneSize(r); s++) {
+                  if (!this.occupied(r, s) && !this.predatorAt(r, s)) spaces.push({r, s});
+                }
+              }
+              return spaces;
+            }
             return this.neighbours(t.r, t.s, t.owner).filter(
               (p) =>
                 PREDATOR_LANES.includes(p.r) &&
@@ -5004,7 +5010,7 @@
           placementSpaces() {
             if (this.phase !== "predator-place") return [];
             return this.greenPlacements(
-              this.tokens.find((t) => t.id === this.placement?.target),
+              this.placement?.target == null ? null : this.tokens.find((t) => t.id === this.placement?.target),
             );
           }
           placePredator(r, s) {
@@ -5089,8 +5095,21 @@
                 const pred = this.predatorAt(t.r, t.s);
                 this.hit(t, "predator", p.done, pred.id);
               });
-            } else if (n <= 3) p.done();
-            else {
+            } else if (n <= 3) {
+              if (p.proximityRerolls > 0) {
+                p.proximityRerolls--;
+                this.pending = p;
+                this.phase = "stealth";
+                this.record("A nearby predator makes this route riskier. Roll Stealth one more time.");
+              } else p.done();
+            } else {
+              if (p.proximityRerolls > 0) {
+                p.proximityRerolls--;
+                this.pending = p;
+                this.phase = "stealth";
+                this.record("A nearby predator makes this route riskier. Roll Stealth one more time.");
+                return true;
+              }
               this.pending = p;
               this.phase = "evade";
               if (!this.evadeSpaces().length) {
@@ -6903,7 +6922,7 @@
             evade:
               "Choose an empty adjacent block to evade. Roads require a traffic check.",
             "turn-end": "Play Predator Block if you want, then end your turn.",
-            "predator-target": "Choose an opponent's animal to block.",
+            "predator-target": "Choose any empty green block for the predator.",
             "predator-place":
               "Choose a glowing empty green block for the predator.",
             "predator-source":

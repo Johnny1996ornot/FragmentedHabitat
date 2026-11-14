@@ -1980,7 +1980,7 @@
       .habitat-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; margin-top:10px; }
       .habitat-plot { aspect-ratio:1; min-width:0; border:1px solid #476354; border-radius:7px; background:#183b2b; color:#eaf6e9; font-size:clamp(12px,2vw,20px); cursor:pointer; display:grid; place-items:center; padding:0; }
       .habitat-plot:disabled { cursor:default; opacity:1; }
-      .habitat-plot.empty { background:#244d37; border-style:dashed; color:#9ddfba; }
+      .habitat-plot.empty { background:#9fc88a !important; border:2px solid #315b3d; border-style:solid; color:#24452f; font-weight:800; }
       .habitat-plot .owner { font-size:9px; font-weight:800; }
       .muted { color:var(--muted); font-size:12px; line-height:1.45; }
     </style>
@@ -2006,7 +2006,7 @@
         </div>
 
         <footer>
-          VERSION 32 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
+          VERSION 33 · LOCAL MULTIPLAYER<br /><button class="btn" id="history">
             Recent events
           </button>
         </footer>
@@ -2817,6 +2817,22 @@
                   ><svg viewBox="0 0 32 32">
                     <path
                       d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
+                      fill="#ff9b55"
+                    /></svg></span
+                >Wildfire ×1
+              </h4>
+              <p>
+                Play during your turn. Every player, including the player who
+                played this card, loses one owned habitat plot. A player with
+                no plots has none to lose. Vacated plots become available again.
+              </p>
+            </section>
+            <section class="rule-card">
+              <h4>
+                <span class="book-mark" aria-hidden="true"
+                  ><svg viewBox="0 0 32 32">
+                    <path
+                      d="M16 3 20 12 30 16 20 20 16 30 12 20 3 16 12 12Z"
                       fill="#9ddfba"
                     /></svg></span
                 >Interspecific Re-engagement ×6
@@ -3027,7 +3043,7 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <script id="game-engine">
-      /* Fragmented Habitat v32 — rules engine, independent of the display. */
+      /* Fragmented Habitat v33 — rules engine, independent of the display. */
       (() => {
         "use strict";
         const SECTORS = 24;
@@ -3109,6 +3125,12 @@
             count: 2,
             icon: "+2",
             text: "Add two steps to your movement this turn.",
+          },
+          wildfire: {
+            name: "Wildfire",
+            count: 1,
+            icon: "🔥",
+            text: "Every player loses one owned habitat plot. A player with no plots loses none.",
           },
         };
         const wrap = (n) => ((n % SECTORS) + SECTORS) % SECTORS;
@@ -4271,6 +4293,9 @@
                 ["roll", "move", "turn-end"].includes(this.phase) &&
                 this.greenPlacements().length > 0
               );
+            if (type === "wildfire")
+              return owner === this.active &&
+                ["roll", "move", "turn-end"].includes(this.phase);
             if (type === "sprint")
               return owner === this.active && this.phase === "move";
             if (type === "reroll")
@@ -4310,6 +4335,21 @@
               this.cardResume = this.phase;
               this.placement = { kind: "card", target: null, done: () => { this.phase = this.cardResume; this.cardResume = null; } };
               this.phase = "predator-place";
+            } else if (c.type === "wildfire") {
+              const losses = [];
+              this.players.forEach((player) => {
+                const plot = this.habitatPlots.findIndex((ownerId) => ownerId === player.id);
+                if (plot >= 0) {
+                  this.habitatPlots[plot] = null;
+                  losses.push(`Player ${player.id + 1}`);
+                }
+              });
+              this.record(
+                losses.length
+                  ? `Wildfire swept through the habitat! Every player with a house lost one: ${losses.join(", ")}.`
+                  : "Wildfire swept through the habitat, but no player had a house to lose.",
+              );
+              this.checkEnd();
             } else if (c.type === "street") {
               const p = this.pending;
               this.pending = null;
@@ -5504,16 +5544,23 @@
           const habitatLayer = svg("g", { class: "central-habitat-plots" });
           game.habitatPlots.forEach((owner, index) => {
             const row = Math.floor(index / 6), col = index % 6;
-            const cx = (col - 2.5) * 0.29, cz = (row - 2.5) * 0.29, half = 0.13;
+            // Slightly enlarge the 6 x 6 plots so the complete grid is visible
+            // above the central forest artwork.
+            const pitch = 0.37, half = 0.178;
+            const cx = (col - 2.5) * pitch, cz = (row - 2.5) * pitch;
             const corners = [
               { x: cx - half, z: cz - half }, { x: cx + half, z: cz - half },
               { x: cx + half, z: cz + half }, { x: cx - half, z: cz + half },
             ];
             const tile = svg("polygon", {
               points: corners.map((v) => { const q = project(v, 0.025); return `${q.x},${q.y}`; }).join(" "),
-              fill: owner === null ? "#315d42" : COLORS[owner],
-              stroke: "#d9e9c9", "stroke-width": 1.2 * zoom,
-              "fill-opacity": owner === null ? 0.88 : 0.96,
+              fill: owner === null
+                ? ((row + col) % 2 === 0 ? "#a8cf91" : "#8fbd80")
+                : COLORS[owner],
+              stroke: owner === null ? "#294f39" : "#f5f2d9",
+              "stroke-width": (owner === null ? 2.4 : 1.8) * zoom,
+              "stroke-linejoin": "round",
+              "fill-opacity": owner === null ? 0.78 : 0.96,
               "data-habitat-plot": index, role: "button",
               "aria-label": owner === null ? `Empty habitat plot ${index + 1}` : `Habitat plot ${index + 1}, Player ${owner + 1}`,
             });
@@ -5528,7 +5575,6 @@
               habitatLayer.append(svg("text", { x: q.x, y: q.y + 4 * zoom, "text-anchor": "middle", fill: "#ffffff", "font-size": 10 * zoom, "font-weight": 900, "pointer-events": "none" }, habitatMarker(owner)));
             }
           });
-          root.append(habitatLayer);
           root.setAttribute(
             "viewBox",
             innerWidth <= 800 ? "100 0 900 850" : "0 0 1100 850",
@@ -6158,6 +6204,9 @@
             });
             root.append(g);
           }
+          // Render the habitat grid last so board tiles and forest artwork
+          // cannot cover the 36 permanent plot boundaries.
+          root.append(habitatLayer);
           $("zoom").textContent = `${Math.round(zoom * 100)}%`;
         }
         function setButton(id, label, action, show = true, enabled = true) {
@@ -6455,7 +6504,7 @@
               const plot = document.createElement("button");
               plot.type = "button";
               plot.className = "habitat-plot " + (owner === null ? "empty" : "owned");
-              plot.style.background = owner === null ? "#244d37" : COLORS[owner];
+              plot.style.background = owner === null ? (((Math.floor(index / 6) + index % 6) % 2 === 0) ? "#a8cf91" : "#8fbd80") : COLORS[owner];
               plot.innerHTML = owner === null ? "＋" : `<span class="owner">P${owner + 1}</span><span>${habitatMarker(owner)}</span>`;
               plot.title = owner === null ? `Empty plot ${index + 1} · exchange 1 food` : `Plot ${index + 1} · Player ${owner + 1} · ${game.players[owner]?.animal || "Animal"} marker`;
               plot.disabled = owner !== null || game.phase !== "roll" || game.player.food < 1;

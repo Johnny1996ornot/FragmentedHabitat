@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#071527" />
     <meta
       name="description"
-      content="Fragmented Habitat: a competitive animal board game on a square board. Start with 5 food, cross habitat lanes and roads, gather fruit, and navigate predators and hunters with a 53-card deck."
+      content="Fragmented Habitat: a competitive animal board game on a square board. Build habitat territory with food, survive predators and hunters, and compete for 36 central habitat plots."
     />
     <title>Fragmented Habitat</title>
     <link
@@ -1975,6 +1975,14 @@
           max-height: 370px;
         }
       }
+
+      .habitat-panel { margin-top: 12px; }
+      .habitat-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; margin-top:10px; }
+      .habitat-plot { aspect-ratio:1; min-width:0; border:1px solid #476354; border-radius:7px; background:#183b2b; color:#eaf6e9; font-size:clamp(12px,2vw,20px); cursor:pointer; display:grid; place-items:center; padding:0; }
+      .habitat-plot:disabled { cursor:default; opacity:1; }
+      .habitat-plot.empty { background:#244d37; border-style:dashed; color:#9ddfba; }
+      .habitat-plot .owner { font-size:9px; font-weight:800; }
+      .muted { color:var(--muted); font-size:12px; line-height:1.45; }
     </style>
   </head>
   <body>
@@ -2112,8 +2120,14 @@
           <p id="status" class="status" aria-live="polite"></p>
         </section>
         <section class="panel">
-          <p class="section-label">Players · held cards · banked food</p>
+          <p class="section-label">Players · habitat plots · food reserve</p>
           <div id="roster"></div>
+        </section>
+        <section class="panel habitat-panel">
+          <p class="section-label">Central habitat · 36 plots</p>
+          <p class="muted">Exchange one food for one plot. Select any empty plot. Starting plots are shown in each player's color.</p>
+          <div id="habitat-grid" class="habitat-grid" aria-label="36 claimable habitat plots"></div>
+          <p id="habitat-help" class="muted" aria-live="polite">Select an empty plot while it is your turn and you have food.</p>
         </section>
       </aside>
     </main>
@@ -2126,7 +2140,7 @@
     <dialog id="help-dialog">
       <header class="book-header">
         <div>
-          <span class="book-eyebrow">FRAGMENTED HABITAT · RULEBOOK · V32</span>
+          <span class="book-eyebrow">FRAGMENTED HABITAT · RULEBOOK · HABITAT EDITION</span>
           <h2>How to play</h2>
         </div>
         <div class="book-actions">
@@ -2138,8 +2152,7 @@
       </header>
       <div class="book-content">
         <p class="book-intro">
-          Cross the landscape, find food and make it home. Luck shapes each
-          encounter; your routes, cards and rivals shape what happens next.
+          Cross the landscape, collect food, survive hunters and predators, and expand your habitat. Each player begins with two habitat plots. Exchange delivered food at one food per plot; surrender one plot or spend one food to revive a champion. The player with the most plots wins when all 36 plots are occupied, or when only one player has surviving animals.
         </p>
         <nav class="book-nav">
           <a href="#book-classic">Classic</a
@@ -2150,7 +2163,7 @@
         </nav>
         <div class="book-setup">
           <strong>1–8 players · each starts with</strong><span>1 animal</span
-          ><span>5 banked food</span><span>4 cards · ready immediately</span>
+          ><span>2 habitat plots</span><span>4 cards · ready immediately</span>
         </div>
         <section class="board-guide" id="book-map">
           <h3>Read the board</h3>
@@ -2287,13 +2300,7 @@
               >Gather food and come home
             </h4>
             <p>
-              Start in the central habitat. Cross the green lanes and roads,
-              collect fruit at the edge, then return home to bank it. An
-              ordinary resource patch provides <strong>1 fruit</strong>; a
-              golden horn provides <strong>3 fruit</strong> but requires a
-              hunter check: moon means safe, sun means a hit. Each animal
-              collects one load per trip. A harvested patch stays empty unless
-              its fruit returns after a hit or officer escort.
+              Start in the central habitat. Cross the green lanes and roads, collect food at the edge, then return home. An ordinary food patch provides <strong>1 food</strong>; a rich habitat patch provides <strong>3 food</strong>, but requires a hunter check: moon means safe, sun means a hit. An animal can carry up to three food from one rich patch. Each food delivered can be exchanged for one habitat plot. Food not exchanged remains available for revival.
             </p>
             <h4>
               <span class="book-mark" aria-hidden="true"
@@ -2305,7 +2312,7 @@
               >Add an animal · optional
             </h4>
             <p>
-              Before rolling, spend <strong>2 banked food</strong> to add an
+              Before rolling, use the existing recruitment rules to add an
               animal at home. Its parent can be anywhere. Keep at most three
               living animals; move only one per turn.
             </p>
@@ -2320,8 +2327,7 @@
             </h4>
             <ul>
               <li>
-                Reach the chosen banked-food target first:
-                <strong>10</strong> by default.
+                Claim the most habitat plots. Each player begins with two plots; delivered food can be exchanged one-for-one for additional plots.
               </li>
               <li>
                 Be the only player with animals remaining. Resolve the complete
@@ -2329,7 +2335,7 @@
               </li>
               <li>
                 If all resource patches are empty, finish pending checks, then
-                compare banked food plus carried fruit. Ties share the win.
+                compare the number of owned habitat plots. Ties share the win.
               </li>
             </ul>
             <h4>
@@ -2343,7 +2349,7 @@
             </h4>
             <p>
               If no animals remain, nobody wins Classic. A fresh full
-              Colonization game begins: one animal, five food and four new cards
+              Colonization game begins: one animal, two habitat plots and four new cards
               each. Old totals, predators and cards reset.
             </p>
           </section>
@@ -2353,9 +2359,7 @@
             >
             <h3>Habitat Colonization</h3>
             <p>
-              Travel from separate edge habitats to the shared central habitat.
-              Arriving animals stay as settlers; there is no return trip, food
-              collection, hunter or golden harvest.
+              Travel from separate edge habitats toward the shared central habitat. A successful arrival establishes one habitat plot. This mode focuses on crossing the fragmented landscape and reaching the shared settlement habitat.
             </p>
             <h4>
               <span class="book-mark" aria-hidden="true"
@@ -2367,9 +2371,7 @@
               >Settlement and recruitment
             </h4>
             <p>
-              First to <strong>6 settlers</strong> wins. If the habitat reaches
-              its carrying capacity first (12 by default), most settlers wins;
-              ties share the win. Settlers cannot be targeted or pushed and
+              The player with the most claimed habitat plots wins. The shared central habitat contains 36 claimable plots. Reaching the center establishes a plot; delivered food can be exchanged for further plots. Settlers cannot be targeted or pushed and
               count as surviving animals. Before rolling, recruit at your edge
               habitat for free, with at most three travelling animals at once.
               If none are travelling and you remain in the game, recruit to take
@@ -2388,7 +2390,7 @@
               Choose Classic and enable Colonization opener in Settings. The
               first arrival chooses the first Classic player. If only one player
               survives, that player starts; if none survive, Player 1 starts.
-              Then everyone begins fresh Classic with one animal, five food and
+              Then everyone begins fresh Classic with one animal, two habitat plots and
               four cards. The chosen order repeats each round.
             </p>
             <h4>
@@ -2589,7 +2591,7 @@
             officers clockwise. They skip refuges; only ordinary median blocks
             count as steps. Stopping on an officer, or having one stop on your
             animal, sends it home. Carried fruit returns to its original patch;
-            banked food is unchanged and no revival cost is paid.
+            stored food is unchanged and no revival cost is paid.
           </p>
         </section>
         <section id="book-hits">
@@ -2605,8 +2607,8 @@
           </h4>
           <p>
             A predator, car, hunter or off-board hit returns carried fruit to
-            its original patch. Pay <strong>2 banked food</strong> to revive at
-            home. Carried fruit cannot pay the cost. An eligible rescue card may
+            its original patch. Pay <strong>1 food or surrender 1 owned habitat plot</strong> to revive at
+            home. Revival choices are made on the player’s turn. Carried fruit cannot pay the cost. An eligible rescue card may
             be used first. Play Dead keeps the animal and fruit in place while
             you move the predator to a different adjacent empty green block.
             Conservation Program revives for free after a car or hunter hit;
@@ -2663,7 +2665,7 @@
           </h4>
           <p>
             In Classic, a winner carrying no fruit may take the loser’s entire
-            load before pushing it, or leave the load. Banked food cannot be
+            load before pushing it, or leave the load. Stored food cannot be
             stolen. Stolen fruit counts only after reaching home; a hit returns
             it to its original patch. Losing a load does not allow another
             harvest on the same trip, but it can be won back in a later contest.
@@ -2835,7 +2837,7 @@
                 >Desperate Struggle ×2
               </h4>
               <p>
-                After losing a competition roll, spend 1 banked food and reroll
+                After losing a competition roll, spend 1 stored food and reroll
                 before the push. Odd/even contests have no ties.
               </p>
             </section>
@@ -2920,7 +2922,7 @@
           <option>8</option>
         </select></label
       ><label
-        >Food to win
+        >Legacy food setting (unused)
         <select id="target">
           <option selected>10</option>
           <option>15</option>
@@ -2978,8 +2980,7 @@
       <h2 id="reset-title">Start again?</h2>
       <p id="mode-warning" hidden></p>
       <p>
-        This clears all food, cards and positions. Each player restarts with 5
-        food.
+        This clears all food, cards and positions. Each player restarts with 2 habitat plots and no starting food.
       </p>
       <div class="toolbar">
         <button id="confirm-reset" class="btn primary">Reset game</button
@@ -3000,10 +3001,7 @@
         Habitat Colonization.
       </p>
       <p>
-        Each player starts a new population with one animal, five food and two
-        starting cards at an edge habitat. Guide these animals into the central
-        habitat: the first player to establish six settlers wins, or the largest
-        population wins when its carrying capacity is reached.
+        Each player starts a new population with one animal, two habitat plots, and starting cards at an edge habitat. Guide animals toward the central habitat and compete to claim its 36 plots.
       </p>
       <button class="btn primary" data-close="extinction-dialog">
         Continue to Colonization
@@ -3104,7 +3102,7 @@
             name: "Desperate Struggle",
             count: 2,
             icon: "✹",
-            text: "After losing a contest roll, spend 1 banked food and reroll before the push.",
+            text: "After losing a contest roll, spend 1 stored food and reroll before the push.",
           },
           sprint: {
             name: "Quick Sprint",
@@ -3222,11 +3220,18 @@
               (_, id) => ({
                 id,
                 animal: ANIMALS[id],
-                food: 5,
+                food: 0,
                 hand: [],
                 eliminated: false,
               }),
             );
+            this.habitatPlots = Array(36).fill(null);
+            this.players.forEach((p) => {
+              for (let n = 0; n < 2; n++) {
+                const slot = this.habitatPlots.findIndex((v) => v === null);
+                if (slot >= 0) this.habitatPlots[slot] = p.id;
+              }
+            });
             this.turnOrder = this.players.map((p) => p.id);
             this.tokens = this.players.map((p) => ({
               id: p.id + 1,
@@ -3276,7 +3281,7 @@
             this.resourceCapacity = 24;
             this.resourceVisits = 0;
             this.log = [
-              "No predators start on the board. Stop on green to roll Stealth. Each player starts with 5 food and 4 cards.",
+              "No predators start on the board. Stop on green to roll Stealth. Each player starts with two habitat plots and four cards.",
             ];
             this.deck = Object.entries(CARDS).flatMap(([type, c]) =>
               Array(c.count).fill(type),
@@ -3291,7 +3296,7 @@
                 p.hand.push({ type: this.deck.pop(), availableRound: 1 }),
               );
             this.record(
-              "Each player has four starting cards, ready now. Click the card icon beside your name to view them.",
+              "Each player starts with two habitat plots and no food. Delivered food can be exchanged one-for-one for additional plots. Click the card icon beside your name to view cards.",
             );
           }
           laneSize(r) {
@@ -3340,7 +3345,7 @@
             Object.assign(this, next);
             this.previousExtinction = previous;
             this.record(
-              "Local extinction occurred in the original habitat. A new population starts Habitat Colonization: one animal, 5 food and four starting cards per player.",
+              "Local extinction occurred in the original habitat. A new population starts Habitat Colonization: one animal, two habitat plots and four starting cards per player.",
             );
             return true;
           }
@@ -3371,7 +3376,7 @@
             this.openerResult = reason;
             this.record(
               reason +
-                " Classic starts fresh: one animal, five food and four cards each.",
+                " Classic starts fresh: one animal, two habitat plots and four cards each.",
             );
             return true;
           }
@@ -3524,71 +3529,47 @@
             );
             return true;
           }
+          claimPlot(index) {
+            if (this.phase !== "roll" || !Number.isInteger(index) || index < 0 || index >= 36) return false;
+            if (this.habitatPlots[index] !== null || this.player.food < 1) return false;
+            this.player.food -= 1;
+            this.habitatPlots[index] = this.active;
+            this.record(`Player ${this.active + 1} exchanged 1 food for habitat plot ${index + 1}.`);
+            this.checkEnd();
+            return true;
+          }
+          plotScore(owner) { return this.habitatPlots.filter((v) => v === owner).length; }
           score(owner) {
-            if (this.mode === "reverse") return this.settlers(owner).length;
+            return this.plotScore(owner);
             return (
               this.players[owner].food +
               this.animals(owner).reduce((sum, t) => sum + t.cargo, 0)
             );
           }
           checkEnd() {
-            if (
-              ["finished", "extinction", "opener-complete"].includes(this.phase)
-            )
-              return true;
-            if (this.mode === "classic" && !this.tokens.some((t) => !t.out)) {
-              this.phase = "extinction";
-              this.hazardPatrol = false;
-              this.winners = [];
-              this.winner = null;
-              this.endReason = "Local extinction";
-              this.pending = this.pendingDraw = this.contest = null;
-              this.record(
-                "No animals remain in the original habitat. Local extinction triggers Habitat Colonization.",
-              );
-              return true;
-            }
-            if (this.mode === "reverse" && !this.tokens.some((t) => !t.out))
-              return this.colonyEnd();
-            // Resolve the complete environmental patrol before declaring a last
-            // survivor. Other animals can still be hit in the same round.
+            if (["finished", "extinction", "opener-complete"].includes(this.phase)) return true;
             if (this.hazardPatrol) return false;
-            if (this.mode === "reverse") return this.colonyEnd();
-            const live = this.players.filter((p) => this.animals(p.id).length);
-            const target = this.players.find((p) => p.food >= this.target);
-            let winners, reason;
-            if (target) {
-              winners = [target.id];
-              reason = "Food target reached";
-            } else if (this.players.length > 1 && live.length === 1) {
-              winners = [live[0].id];
-              reason = "Only one player remains";
-            } else if (
-              !live.length ||
-              (this.mode === "reverse"
-                ? this.resourceVisits >= this.resourceCapacity
-                : this.harvested.size === this.resourceSpaces.length)
-            ) {
-              const best = Math.max(
-                ...this.players.map((p) => this.score(p.id)),
-              );
-              winners = this.players
-                .filter((p) => this.score(p.id) === best)
-                .map((p) => p.id);
-              reason = live.length
-                ? this.mode === "reverse"
-                  ? "Shared resource patch depleted"
-                  : "All resource patches are empty"
-                : "No animals remain";
+            const livePlayers = this.players.filter((p) => this.animals(p.id).length + this.settlers(p.id).length > 0);
+            const occupied = this.habitatPlots.filter((v) => v !== null).length;
+            let winners = null, reason = "";
+            if (occupied >= 36) {
+              const best = Math.max(...this.players.map((p) => this.plotScore(p.id)));
+              winners = this.players.filter((p) => this.plotScore(p.id) === best).map((p) => p.id);
+              reason = "All 36 habitat plots are occupied";
+            } else if (this.players.length > 1 && livePlayers.length === 1) {
+              winners = [livePlayers[0].id];
+              reason = "Only one player has surviving animals";
+            } else if (livePlayers.length === 0) {
+              const best = Math.max(...this.players.map((p) => this.plotScore(p.id)));
+              winners = this.players.filter((p) => this.plotScore(p.id) === best).map((p) => p.id);
+              reason = "All animals have become extinct";
             } else return false;
             this.winners = winners;
             this.winner = winners.length === 1 ? winners[0] : null;
             this.endReason = reason;
             this.phase = "finished";
             this.pending = this.pendingDraw = this.contest = null;
-            this.record(
-              `${reason}. ${winners.map((id) => `Player ${id + 1} — ${this.players[id].animal} (${this.score(id)} food)`).join(" and ")} ${winners.length > 1 ? "share the win" : "wins"}.`,
-            );
+            this.record(`${reason}. ${winners.map((id) => `Player ${id + 1}: ${this.plotScore(id)} habitat plots`).join(" · ")} ${winners.length > 1 ? "share the win" : "wins"}.`);
             return true;
           }
           rewardCard(owner, reason, done) {
@@ -3823,12 +3804,14 @@
               !t.settled
             ) {
               t.settled = true;
+              const freePlot = this.habitatPlots.findIndex((v) => v === null);
+              if (freePlot >= 0) this.habitatPlots[freePlot] = t.owner;
               t.s = 0;
               t.cargo = 0;
               t.sourcePatch = null;
               t.loaded = false;
               this.record(
-                `${this.name(t)} reached the central habitat and stays. Player ${t.owner + 1}: ${this.settlers(t.owner).length}/${this.colonyTarget} settlers.`,
+                `${this.name(t)} reached the central habitat, established a habitat plot, and stays. Player ${t.owner + 1}: ${this.plotScore(t.owner)} plots.`,
               );
               if (!this.checkEnd() && t.id === this.selected && !this.contest)
                 this.endTurn();
@@ -4014,13 +3997,14 @@
             if (t.id === this.selected) this.remaining = 0;
             const owner = this.players[t.owner];
             this.returnFruit(t);
-            if (free || owner.food >= 2) {
-              if (!free) owner.food -= 2;
+            const ownedPlot = this.habitatPlots.findIndex((v) => v === t.owner);
+            if (free || owner.food >= 1 || ownedPlot >= 0) {
+              let cost = "free";
+              if (!free && owner.food >= 1) { owner.food -= 1; cost = "1 food"; }
+              else if (!free && ownedPlot >= 0) { this.habitatPlots[ownedPlot] = null; cost = "1 habitat plot"; }
               t.r = 0;
               t.s = 0;
-              this.record(
-                `${this.name(t)} revived at home${free ? " for free" : " for 2 food"}.`,
-              );
+              this.record(`${this.name(t)} revived at home by spending ${cost}.`);
             } else {
               t.out = true;
               this.record(
@@ -5507,6 +5491,36 @@
             }),
           );
           boardBase(root);
+          // The central forest is a real 6 x 6 habitat grid. Each plot is
+          // individually owned and can be selected to exchange one food.
+          const habitatLayer = svg("g", { class: "central-habitat-plots" });
+          game.habitatPlots.forEach((owner, index) => {
+            const row = Math.floor(index / 6), col = index % 6;
+            const cx = (col - 2.5) * 0.29, cz = (row - 2.5) * 0.29, half = 0.13;
+            const corners = [
+              { x: cx - half, z: cz - half }, { x: cx + half, z: cz - half },
+              { x: cx + half, z: cz + half }, { x: cx - half, z: cz + half },
+            ];
+            const tile = svg("polygon", {
+              points: corners.map((v) => { const q = project(v, 0.025); return `${q.x},${q.y}`; }).join(" "),
+              fill: owner === null ? "#315d42" : COLORS[owner],
+              stroke: "#d9e9c9", "stroke-width": 1.2 * zoom,
+              "fill-opacity": owner === null ? 0.88 : 0.96,
+              "data-habitat-plot": index, role: "button",
+              "aria-label": owner === null ? `Empty habitat plot ${index + 1}` : `Habitat plot ${index + 1}, Player ${owner + 1}`,
+            });
+            tile.style.cursor = owner === null && game.phase === "roll" && game.player.food > 0 ? "pointer" : "default";
+            tile.addEventListener("click", (event) => {
+              event.stopPropagation();
+              if (owner === null) act(() => game.claimPlot(index));
+            });
+            habitatLayer.append(tile);
+            if (owner !== null) {
+              const q = project({ x: cx, z: cz }, 0.035);
+              habitatLayer.append(svg("text", { x: q.x, y: q.y + 4 * zoom, "text-anchor": "middle", fill: "#ffffff", "font-size": 10 * zoom, "font-weight": 900, "pointer-events": "none" }, "✿"));
+            }
+          });
+          root.append(habitatLayer);
           root.setAttribute(
             "viewBox",
             innerWidth <= 800 ? "100 0 900 850" : "0 0 1100 850",
@@ -6153,7 +6167,7 @@
             game.beginClassicFromOpener();
             $("opener-result").textContent =
               game.openerResult +
-              " Everyone starts Classic with one animal, five food and four new cards. Turn order follows the first player clockwise through the player list.";
+              " Everyone starts Classic with one animal, two habitat plots and four new cards. Turn order follows the first player clockwise through the player list.";
             $("opener-dialog").showModal();
           }
           if (game.phase === "extinction") {
@@ -6187,8 +6201,8 @@
           $("goal").textContent = game.isOpening
             ? "Colonization opener · first arrival chooses the first Classic player"
             : game.mode === "reverse"
-              ? `Goal: 6 settlers · Habitat: ${game.tokens.filter((t) => t.settled).length}/${game.capacity} animals`
-              : `Target: ${game.target} food · ${game.resourceSpaces.length - game.harvested.size} patches left · Start: 5 each`;
+              ? `Goal: most habitat plots · ${game.habitatPlots.filter((v) => v !== null).length}/36 occupied`
+              : `Goal: most habitat plots · ${game.habitatPlots.filter((v) => v !== null).length}/36 occupied · Food converts 1:1`;
           const descriptions = {
             roll:
               game.mode === "reverse" && !game.animals().length
@@ -6406,10 +6420,7 @@
             const bold = document.createElement("strong");
             bold.textContent = `Player ${p.id + 1} · ${p.animal}`;
             const small = document.createElement("small");
-            small.textContent =
-              game.mode === "reverse"
-                ? `${game.settlers(p.id).length}/6 settled · ${game.animals(p.id).length} travelling`
-                : `${game.animals(p.id).length} animals · ${game.animals(p.id).reduce((n, t) => n + t.cargo, 0)} carrying`;
+            small.textContent = `${game.plotScore(p.id)} habitat plots · ${game.animals(p.id).length + game.settlers(p.id).length} surviving animals`;
             name.append(bold, small);
             row.append(name);
             const card = document.createElement("button");
@@ -6425,10 +6436,26 @@
             const food = document.createElement("div");
             food.className = "food";
             food.textContent = p.food;
-            food.title = "Banked player food";
+            food.title = "Food available for habitat exchange or revival";
             row.append(food);
             $("roster").append(row);
           });
+          const habitatGrid = $("habitat-grid");
+          if (habitatGrid) {
+            habitatGrid.replaceChildren();
+            game.habitatPlots.forEach((owner, index) => {
+              const plot = document.createElement("button");
+              plot.type = "button";
+              plot.className = "habitat-plot " + (owner === null ? "empty" : "owned");
+              plot.style.background = owner === null ? "#244d37" : COLORS[owner];
+              plot.innerHTML = owner === null ? "＋" : `<span class="owner">P${owner + 1}</span><span>✿</span>`;
+              plot.title = owner === null ? `Empty plot ${index + 1} · exchange 1 food` : `Plot ${index + 1} · Player ${owner + 1}`;
+              plot.disabled = owner !== null || game.phase !== "roll" || game.player.food < 1;
+              plot.addEventListener("click", () => act(() => game.claimPlot(index)));
+              habitatGrid.append(plot);
+            });
+            $("habitat-help").textContent = `Your food: ${game.player.food} · Your plots: ${game.plotScore(game.active)} · Select an empty plot to exchange 1 food for 1 habitat marker.`;
+          }
           $("deck").disabled = false;
           $("deck").setAttribute("aria-label", "View current player cards");
           $("deck-caption").textContent =
@@ -6560,7 +6587,7 @@
           $("mode-warning").hidden = false;
           $("mode-warning").textContent =
             requestedMode === "reverse"
-              ? "Habitat Colonization: start at the edges and settle animals in the central habitat. First to six settlers wins, or most settlers when capacity is reached."
+              ? "Habitat Colonization: start at the edges and reach the central habitat to establish territory. Most habitat plots wins."
               : "Classic: start in the central habitat and collect food at the edges.";
           $("reset-dialog").showModal();
         };

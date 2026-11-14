@@ -5476,6 +5476,14 @@
             }),
           );
         }
+        // Each player's animal determines the visual symbol used on its habitat plots.
+        // Rat = leaf; Squirrel = acorn. Other species keep a neutral flower until
+        // their own marker symbols are assigned.
+        function habitatMarker(owner) {
+          const animal = game.players[owner]?.animal;
+          const markers = { Rat: "🍃", Squirrel: "🌰" };
+          return markers[animal] || "✿";
+        }
         function board() {
           const root = $("board");
           root
@@ -5517,7 +5525,7 @@
             habitatLayer.append(tile);
             if (owner !== null) {
               const q = project({ x: cx, z: cz }, 0.035);
-              habitatLayer.append(svg("text", { x: q.x, y: q.y + 4 * zoom, "text-anchor": "middle", fill: "#ffffff", "font-size": 10 * zoom, "font-weight": 900, "pointer-events": "none" }, "✿"));
+              habitatLayer.append(svg("text", { x: q.x, y: q.y + 4 * zoom, "text-anchor": "middle", fill: "#ffffff", "font-size": 10 * zoom, "font-weight": 900, "pointer-events": "none" }, habitatMarker(owner)));
             }
           });
           root.append(habitatLayer);
@@ -6448,8 +6456,8 @@
               plot.type = "button";
               plot.className = "habitat-plot " + (owner === null ? "empty" : "owned");
               plot.style.background = owner === null ? "#244d37" : COLORS[owner];
-              plot.innerHTML = owner === null ? "＋" : `<span class="owner">P${owner + 1}</span><span>✿</span>`;
-              plot.title = owner === null ? `Empty plot ${index + 1} · exchange 1 food` : `Plot ${index + 1} · Player ${owner + 1}`;
+              plot.innerHTML = owner === null ? "＋" : `<span class="owner">P${owner + 1}</span><span>${habitatMarker(owner)}</span>`;
+              plot.title = owner === null ? `Empty plot ${index + 1} · exchange 1 food` : `Plot ${index + 1} · Player ${owner + 1} · ${game.players[owner]?.animal || "Animal"} marker`;
               plot.disabled = owner !== null || game.phase !== "roll" || game.player.food < 1;
               plot.addEventListener("click", () => act(() => game.claimPlot(index)));
               habitatGrid.append(plot);

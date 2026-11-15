@@ -1998,7 +1998,8 @@
       .builder-cell.road{background:#69777a;border-color:#e0d5ad;color:#fff}
       .builder-cell.habitat{background:#347e59;border:2px solid #c5f2b5;color:white}
       .builder-cell.food{background:#e8bd68;border-color:#9c7139;color:#402b12}
-      .builder-cell.island{background:#4f9c73;border-color:#c2e9ad;color:white}
+      .builder-cell.rest{background:#4f9c73;border:2px solid #c2e9ad;color:white;font-size:clamp(9px,1.6vw,19px)}
+      .builder-cell.road{background:#69777a;border-color:#e0d5ad;color:#fff}
       .builder-cell:focus-visible{outline:2px solid white;z-index:1}
       .builder-tools{display:grid;gap:9px}
       .builder-tools button,.builder-tools select{width:100%}
@@ -2012,6 +2013,7 @@
   </head>
   <body>
     <button id="prototype-build-trigger" type="button">⚒ PROTOTYPE · BUILD A BOARD</button>
+    <div id="prototype-deploy-notice" hidden style="position:fixed;left:18px;bottom:66px;z-index:79;background:#163b2d;color:#d9f4df;border:1px solid #78b58b;border-radius:9px;padding:8px 12px;font-size:12px">Custom prototype layout displayed in the game board. <button id="prototype-standard-board" type="button" style="margin-left:8px">Return to standard board</button></div>
     <main class="app">
       <aside class="sidebar">
         <div class="eyebrow">A little world. A risky journey.</div>
@@ -5665,12 +5667,43 @@
             }, habitatMarker(owner)));
           });
         }
+        function drawPrototypeBoard(root, data) {
+          root.setAttribute("viewBox", "0 0 1000 1000");
+          root.append(svg("rect", {x:24,y:24,width:952,height:952,rx:14,fill:"#315c42",stroke:"#8fb58a","stroke-width":8}));
+          const n=data.gridSize||20, pad=32, size=936/n, map=new Map(data.cells.map(c=>[`${c.row},${c.col}`,c]));
+          for(let r=0;r<n;r++) for(let c=0;c<n;c++) {
+            const x=pad+c*size,y=pad+r*size, item=map.get(`${r},${c}`), type=item?.type||"empty";
+            const fill=type==="road"?"#748184":type==="habitat"?(COLORS[item.owner]||"#347e59"):type==="food"?"#e8bd68":type==="rest"?"#4f9c73":((r+c)%2?"#b5d5a3":"#a8cf91");
+            root.append(svg("rect",{x,y,width:size,height:size,fill,stroke:type==="road"?"#e8dfbd":"#547b59","stroke-width":type==="road"?1.8:1.2}));
+            if(type==="habitat") {
+              root.append(svg("text",{x:x+size/2,y:y+size*.42,"text-anchor":"middle","font-size":size*.42,fill:"#fff","font-weight":800},`P${(item.owner??0)+1}`));
+              const animal=game.players[item.owner??0]?.animal||"";
+              const marks={Rat:"🐀",Squirrel:"🐿️",Raccoon:"🦝",Rabbit:"🐇",Capybara:"🦫",Tarsier:"🐒",Beetle:"🪲",Koala:"🐨"};
+              root.append(svg("text",{x:x+size/2,y:y+size*.82,"text-anchor":"middle","font-size":size*.55},marks[animal]||"⌂"));
+            }
+            if(type==="food") root.append(svg("text",{x:x+size/2,y:y+size*.68,"text-anchor":"middle","font-size":size*.58},"🍎"));
+            if(type==="rest") root.append(svg("text",{x:x+size/2,y:y+size*.72,"text-anchor":"middle","font-size":size*.72},"🌳"));
+          }
+          // Centre the yellow road marking inside each connected road run.
+          for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(map.get(`${r},${c}`)?.type==="road") {
+            const horiz=[[-1,0],[1,0]].some(([dr,dc])=>map.get(`${r+dr},${c+dc}`)?.type==="road");
+            const vert=[ [0,-1],[0,1] ].some(([dr,dc])=>map.get(`${r+dr},${c+dc}`)?.type==="road");
+            if(horiz||vert){const x=pad+(c+.5)*size,y=pad+(r+.5)*size;root.append(svg("path",{d:horiz&&vert?`M${x-size*.35},${y}L${x+size*.35},${y} M${x},${y-size*.35}L${x},${y+size*.35}`:horiz?`M${x-size*.42},${y}L${x+size*.42},${y}`:`M${x},${y-size*.42}L${x},${y+size*.42}`,stroke:"#f4e6a9","stroke-width":2.4,"stroke-dasharray":"5 4","pointer-events":"none"}));}
+          }
+          root.append(svg("text",{x:500,y:16,"text-anchor":"middle",fill:"#e5f4df","font-size":13,"font-weight":800},"PROTOTYPE BOARD · DEPLOYED LAYOUT"));
+          root.append(svg("text",{x:500,y:995,"text-anchor":"middle",fill:"#e5f4df","font-size":11},"Visual prototype preview · existing turn and movement rules are not yet converted to this grid"));
+        }
         function board() {
           const root = $("board");
           root
             .querySelectorAll(":scope > :not(defs)")
             .forEach((n) => n.remove());
           root.classList.toggle("panning", moveMode);
+          const deployedPrototype = globalThis.fragmentedHabitatPrototypeBoard;
+          if (deployedPrototype && Array.isArray(deployedPrototype.cells)) {
+            drawPrototypeBoard(root, deployedPrototype);
+            return;
+          }
           root.append(
             svg("polygon", {
               points: polygon(outline(6.95), -0.8),
@@ -7013,7 +7046,7 @@
 
     <dialog id="board-builder-dialog">
       <div class="builder-head">
-        <div><div class="eyebrow">FRAGMENTED HABITAT · EXPERIMENTAL TOOL</div><h2>Prototype: Build a Board</h2><p>Design a custom landscape on a 20 × 20 light-green grid. Add a continuous road route, player habitats, food patches and an optional centre island. This prototype saves and previews your layout without changing the live match.</p></div>
+        <div><div class="eyebrow">FRAGMENTED HABITAT · EXPERIMENTAL TOOL</div><h2>Prototype: Build a Board</h2><p>Design a custom landscape on a 20 × 20 light-green grid. Place roads in 3 × 3 sections, choose player habitats, add food patches and place tree resting spaces. Deploy the layout into the game board as a prototype preview.</p></div>
         <button class="btn" id="builder-close" type="button">✕ Close</button>
       </div>
       <div class="builder-layout">
@@ -7023,10 +7056,10 @@
           <button class="btn selected" data-builder-tool="road" type="button">▰ Road block</button>
           <button class="btn" data-builder-tool="habitat" type="button">⌂ Habitat block</button>
           <button class="btn" data-builder-tool="food" type="button">✿ Food patch</button>
-          <button class="btn" data-builder-tool="island" type="button">🌿 Centre island</button>
+          <button class="btn" data-builder-tool="rest" type="button">🌳 Tree resting place</button>
           <button class="btn" data-builder-tool="erase" type="button">⌫ Erase block</button>
           <label>Habitat owner<select id="builder-owner"><option value="0">Player 1 · Blue</option><option value="1">Player 2 · Red</option><option value="2">Player 3 · Yellow</option><option value="3">Player 4 · Purple</option><option value="4">Player 5</option><option value="5">Player 6</option></select></label>
-          <button class="btn" id="builder-road-template" type="button">Place 9 × 9 road loop</button>
+          <button class="btn" id="builder-road-template" type="button">Place 3 × 3 road section</button>
           <div class="builder-stat" id="builder-stats">Road blocks: 0<br>Habitats: 0<br>Food patches: 0</div>
           <div class="builder-stat">Road rule: the road must form one continuous route connecting opposite board edges. The 9 × 9 template is a starting layout; extend it to the edges.</div>
           <div id="builder-message" aria-live="polite">Select a tool, then click grid squares.</div>
@@ -7035,7 +7068,7 @@
       <div class="builder-actions">
         <button class="btn" id="builder-clear" type="button">Clear board</button>
         <button class="btn" id="builder-export" type="button">Export layout JSON</button>
-        <button class="btn primary" id="builder-deploy" type="button">Deploy prototype board</button>
+        <button class="btn primary" id="builder-deploy" type="button">Deploy board in game</button>
       </div>
     </dialog>
 
@@ -7047,28 +7080,53 @@
   const N=20, grid=document.getElementById('builder-grid'), msg=document.getElementById('builder-message'), stats=document.getElementById('builder-stats');
   let cells=Array.from({length:N*N},()=>({type:'empty',owner:null})), tool='road';
   const key=(r,c)=>r*N+c;
-  const glyph=c=>c.type==='road'?'':c.type==='habitat'?['🏠','🏡','🏘️','🏠','🏡','🏘️'][c.owner||0]:c.type==='food'?'🍎':c.type==='island'?'🌿':'';
+  const glyph=c=>c.type==='habitat'?['🏠','🏡','🏘️','🏠','🏡','🏘️'][c.owner||0]:c.type==='food'?'🍎':c.type==='rest'?'🌳':'';
   function paint(){
     grid.replaceChildren();
-    cells.forEach((c,i)=>{const b=document.createElement('button');b.type='button';b.className='builder-cell '+(c.type==='empty'?'':c.type);b.setAttribute('role','gridcell');b.setAttribute('aria-label',`${Math.floor(i/N)+1}, ${i%N+1}: ${c.type}`);b.textContent=glyph(c);b.addEventListener('click',()=>{cells[i]=tool==='erase'?{type:'empty',owner:null}:tool==='habitat'?{type:'habitat',owner:Number(document.getElementById('builder-owner').value)}:tool==='island'?{type:'island',owner:null}:{type:tool,owner:null};paint();});grid.append(b);});
+    cells.forEach((c,i)=>{const b=document.createElement('button');b.type='button';b.className='builder-cell '+(c.type==='empty'?'':c.type);b.setAttribute('role','gridcell');b.setAttribute('aria-label',`${Math.floor(i/N)+1}, ${i%N+1}: ${c.type}`);b.textContent=glyph(c);b.addEventListener('click',()=>{
+      const r=Math.floor(i/N), col=i%N;
+      if(tool==='road'){
+        // One click paints a complete 3 × 3 road section, clipped at board edges.
+        for(let rr=Math.max(0,r-1);rr<=Math.min(N-1,r+1);rr++)for(let cc=Math.max(0,col-1);cc<=Math.min(N-1,col+1);cc++)cells[key(rr,cc)]={type:'road',owner:null};
+      } else if(tool==='erase') cells[i]={type:'empty',owner:null};
+      else if(tool==='habitat') cells[i]={type:'habitat',owner:Number(document.getElementById('builder-owner').value)};
+      else if(tool==='rest') cells[i]={type:'rest',owner:null};
+      else cells[i]={type:'food',owner:null};
+      paint();
+    });grid.append(b);});
     const count=t=>cells.filter(c=>c.type===t).length;
-    stats.innerHTML=`Road blocks: ${count('road')}<br>Habitats: ${count('habitat')}<br>Food patches: ${count('food')}<br>Island blocks: ${count('island')}`;
+    stats.innerHTML=`Road blocks: ${count('road')}<br>Habitats: ${count('habitat')}<br>Food patches: ${count('food')}<br>Tree resting places: ${count('rest')}<br><small>Each road click paints up to 9 blocks.</small>`;
   }
-  function setTool(t){tool=t;document.querySelectorAll('[data-builder-tool]').forEach(b=>b.classList.toggle('selected',b.dataset.builderTool===t));msg.textContent=`${t[0].toUpperCase()+t.slice(1)} tool selected.`;}
+  function setTool(t){tool=t;document.querySelectorAll('[data-builder-tool]').forEach(b=>b.classList.toggle('selected',b.dataset.builderTool===t));msg.textContent=t==='road'?'Road tool: each click places a 3 × 3 section.':`${t[0].toUpperCase()+t.slice(1)} tool selected.`;}
   function roadConnectsOppositeEdges(){
     const roads=new Set(cells.map((c,i)=>c.type==='road'?i:-1).filter(i=>i>=0));
     const connected=(starts,target)=>{const seen=new Set(starts),todo=[...starts];while(todo.length){const i=todo.pop(),r=Math.floor(i/N),c=i%N;if(target(i,r,c))return true;for(const j of [r>0?i-N:-1,r<N-1?i+N:-1,c>0?i-1:-1,c<N-1?i+1:-1])if(j>=0&&roads.has(j)&&!seen.has(j)){seen.add(j);todo.push(j);}}return false;};
     const top=[],left=[];for(let i=0;i<N;i++){if(roads.has(i))top.push(i);const j=i*N;if(roads.has(j))left.push(j);}
     return connected(top,(i,r,c)=>r===N-1)||connected(left,(i,r,c)=>c===N-1);
   }
-  function layout(){return {version:1,gridSize:N,cells:cells.map((c,i)=>({row:Math.floor(i/N),col:i%N,type:c.type,owner:c.owner})).filter(c=>c.type!=='empty'),roadConnectsOppositeEdges:roadConnectsOppositeEdges(),createdAt:new Date().toISOString()};}
+  function layout(){return {version:2,gridSize:N,cells:cells.map((c,i)=>({row:Math.floor(i/N),col:i%N,type:c.type,owner:c.owner})).filter(c=>c.type!=='empty'),roadConnectsOppositeEdges:roadConnectsOppositeEdges(),createdAt:new Date().toISOString()};}
   document.getElementById('prototype-build-trigger').addEventListener('click',()=>dialog.showModal());
   document.getElementById('builder-close').addEventListener('click',()=>dialog.close());
   document.querySelectorAll('[data-builder-tool]').forEach(b=>b.addEventListener('click',()=>setTool(b.dataset.builderTool)));
   document.getElementById('builder-clear').addEventListener('click',()=>{cells=Array.from({length:N*N},()=>({type:'empty',owner:null}));paint();msg.textContent='Board cleared.';});
-  document.getElementById('builder-road-template').addEventListener('click',()=>{const start=5,end=14;for(let r=start;r<=end;r++)for(let c=start;c<=end;c++)if(r===start||r===end||c===start||c===end)cells[key(r,c)]={type:'road',owner:null};paint();msg.textContent='A 9 × 9 square road loop has been placed. Extend it to opposite board edges to satisfy the road rule.';});
-  document.getElementById('builder-deploy').addEventListener('click',()=>{const data=layout();if(!data.cells.length){msg.textContent='Add at least one board feature before deploying.';return;}if(!data.roadConnectsOppositeEdges){msg.textContent='Cannot deploy yet: connect the road network continuously from one board edge to the opposite edge.';return;}try{localStorage.setItem('fragmentedHabitatPrototypeBoard',JSON.stringify(data));msg.textContent='Prototype board deployed and saved in this browser. Export the JSON to use it in your project.';}catch(e){msg.textContent='Could not save in this browser. Use Export layout JSON instead.';}});
+  document.getElementById('builder-road-template').addEventListener('click',()=>{for(let r=8;r<=10;r++)for(let c=8;c<=10;c++)cells[key(r,c)]={type:'road',owner:null};paint();msg.textContent='Placed one 3 × 3 road section (nine blocks). Add more sections to connect opposite board edges.';});
+  document.getElementById('builder-deploy').addEventListener('click',()=>{
+    const data=layout();
+    if(!data.cells.length){msg.textContent='Add at least one board feature before deploying.';return;}
+    if(!data.roadConnectsOppositeEdges){msg.textContent='Cannot deploy yet: connect the road sections into one continuous route from one board edge to the opposite edge.';return;}
+    try{
+      localStorage.setItem('fragmentedHabitatPrototypeBoard',JSON.stringify(data));
+      globalThis.fragmentedHabitatPrototypeBoard=data;
+      if(typeof globalThis.qaRender==='function') globalThis.qaRender();
+      dialog.close();
+      msg.textContent='';
+      const notice=document.getElementById('prototype-deploy-notice'); if(notice) notice.hidden=false;
+    }catch(e){msg.textContent='Could not deploy this layout in the game. Export the JSON instead.';}
+  });
   document.getElementById('builder-export').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(layout(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='fragmented-habitat-prototype-board.json';a.click();URL.revokeObjectURL(url);msg.textContent='Layout JSON exported.';});
+  // Restore the last deployed prototype board when the page is reopened.
+  try{const saved=localStorage.getItem('fragmentedHabitatPrototypeBoard');if(saved){globalThis.fragmentedHabitatPrototypeBoard=JSON.parse(saved);const notice=document.getElementById('prototype-deploy-notice');if(notice)notice.hidden=false; if(typeof globalThis.qaRender==='function')globalThis.qaRender();}}catch(e){}
+  document.getElementById('prototype-standard-board').addEventListener('click',()=>{globalThis.fragmentedHabitatPrototypeBoard=null;try{localStorage.removeItem('fragmentedHabitatPrototypeBoard')}catch(e){};const notice=document.getElementById('prototype-deploy-notice');if(notice)notice.hidden=true;if(typeof globalThis.qaRender==='function')globalThis.qaRender();});
   paint();
 })();
 </script>

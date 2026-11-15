@@ -3080,6 +3080,12 @@
       #prototype-grid rect.cell{stroke:#638f70;stroke-width:.07;cursor:crosshair}
       #prototype-grid rect.cell:hover{stroke:#fff0a4;stroke-width:.24}
       #prototype-grid .road-mark{pointer-events:none;stroke:#ffdf6c;stroke-width:.16;stroke-dasharray:.28 .16;fill:none}
+      .prototype-tool-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+      .prototype-controls .prototype-tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:70px;padding:6px 2px;font-size:11px;line-height:1.2}
+      .prototype-tool span{font-size:25px;line-height:1.2}
+      .prototype-controls .prototype-tool.selected{background:#b7e6b9;color:#13392b;outline:2px solid #f9d777}
+      .prototype-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+      #prototype-grid .road-mark{stroke-linecap:round;stroke-linejoin:round}
       @media(max-width:750px){.prototype-layout{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}.prototype-controls{max-height:210px;display:grid;grid-template-columns:1fr 1fr}.prototype-controls small{grid-column:1/-1}}
     </style>
     <button id="prototype-launch" type="button">⚒ PROTOTYPE</button>
@@ -3087,11 +3093,22 @@
       <div class="prototype-header"><div><strong>⚒ PROTOTYPE — Blank square board builder</strong><p>Paint on the light-green board, then deploy to replace the default layout.</p></div><button class="btn" id="prototype-close">Close ✕</button></div>
       <div class="prototype-layout"><div id="prototype-grid-wrap"><svg id="prototype-grid" viewBox="-21.5 -21.5 43 43" role="img" aria-label="Editable square game board"></svg></div>
       <div class="prototype-controls">
-        <label>Brush<select id="prototype-brush"><option value="road">Road · 3×3 stamp</option><option value="road-single">Road · single tile</option><option value="habitat">Habitat / green ground</option><option value="rest">Grass resting place</option><option value="tree">Tree resting place</option><option value="roundabout">Roundabout · 4 roads + green center</option><option value="food">Food patch · 1 food</option><option value="rich">Rich Habitat · 3 food + hunter</option><option value="erase">Erase to light green</option></select></label>
-        <button id="prototype-clear">Clear to blank green</button><button id="prototype-undo">Undo last paint</button>
+        <div class="prototype-tool-grid" role="group" aria-label="Paint tools">
+          <button class="prototype-tool selected" data-brush="road" title="Paint 3 by 3 road surface"><span>🛣️</span>Road 3×3</button>
+          <button class="prototype-tool" data-brush="road-single"><span>➕</span>Road tile</button>
+          <button class="prototype-tool" data-brush="home"><span>🏡</span>Habitat</button>
+          <button class="prototype-tool" data-brush="food"><span>🍎</span>Food</button>
+          <button class="prototype-tool" data-brush="rich"><span>🌽</span>Rich food</button>
+          <button class="prototype-tool" data-brush="tree"><span>🌳</span>Trees</button>
+          <button class="prototype-tool" data-brush="rest"><span>🌿</span>Rest</button>
+          <button class="prototype-tool" data-brush="roundabout"><span>🔄</span>Roundabout</button>
+          <button class="prototype-tool" data-brush="erase"><span>🧽</span>Erase</button>
+        </div>
+        <div class="prototype-action-grid"><button id="prototype-clear">New blank board</button><button id="prototype-undo">Undo</button><button id="prototype-redo">Redo</button><button id="prototype-save">Save layout</button><button id="prototype-load">Load layout</button><button id="prototype-preview">Preview</button></div>
+        <input type="file" id="prototype-file" accept="application/json,.json" hidden>
         <button class="primary" id="prototype-deploy">Deploy custom board</button><button id="prototype-default">Restore default board</button>
         <small id="prototype-message" role="status">Light-green cells are blank. Road centerlines connect automatically in both directions and around corners.</small>
-        <small>Uses the original square-ring cell IDs and existing movement. The central habitat is protected. Custom food collection away from the outer resource ring is not yet supported by the game engine.</small>
+        <small>Uses the original square-ring cell IDs and existing movement. Default game stays unchanged until Deploy. Blank light-green cells are editable, including the center.</small>
       </div></div>
     </dialog>
     <script>
@@ -3903,27 +3920,26 @@
             }
             if (this.mode === "reverse") return;
             if (
-              t.r === RESOURCE &&
-              this.resourceSpaces.includes(t.s) &&
+              ((globalThis.FHPrototype.active && ['food','rich'].includes(globalThis.FHTile(t.r,t.s)?.type)) || (t.r === RESOURCE && this.resourceSpaces.includes(t.s))) &&
               !t.loaded &&
               (this.mode === "reverse"
                 ? this.resourceVisits < this.resourceCapacity
-                : !this.harvested.has(t.s))
+                : !this.harvested.has(globalThis.FHPrototype.active?key(t.r,t.s):t.s))
             ) {
               if (this.mode === "reverse") this.resourceVisits++;
-              else this.harvested.add(t.s);
+              else this.harvested.add(globalThis.FHPrototype.active?key(t.r,t.s):t.s);
               t.loaded = true;
               t.sourcePatch = t.s;
               t.cargo =
                 this.mode === "reverse"
                   ? 1
-                  : this.goldenSpaces.has(t.s)
+                  : (globalThis.FHPrototype.active?globalThis.FHTile(t.r,t.s)?.type==='rich':this.goldenSpaces.has(t.s))
                     ? 3
                     : 1;
               this.record(
                 `${this.name(t)} collected ${t.cargo} fruit. Bring it home.`,
               );
-              if (this.mode !== "reverse" && this.goldenSpaces.has(t.s)) {
+              if (this.mode !== "reverse" && (globalThis.FHPrototype.active?globalThis.FHTile(t.r,t.s)?.type==='rich':this.goldenSpaces.has(t.s))) {
                 this.phase = "hunter";
                 this.pending = {
                   token: t.id,
@@ -3940,7 +3956,7 @@
                   "Golden harvest: roll day/night for the hunter. Moon keeps your fruit; sun means a hit.",
                 );
               } else this.checkEnd();
-            } else if (t.r === 0) {
+            } else if (t.r === 0 || (globalThis.FHPrototype.active && globalThis.FHTile(t.r,t.s)?.type==='home')) {
               if (t.cargo) {
                 this.players[t.owner].food += t.cargo;
                 this.record(`${this.name(t)} banked ${t.cargo} food.`);
@@ -5272,6 +5288,8 @@
         function shape(r, s) {
           const custom=globalThis.FHTile(r,s);
           if(custom){
+            if(custom.type==='ground'||custom.type==='habitat')return {fill:'#a6d59d',side:'#6b9770',name:'Open grassy ground'};
+            if(custom.type==='home')return {fill:'#397b55',side:'#24563c',name:'Habitat home'};
             if(custom.type==='road')return {fill:'#78878b',side:'#48585b',name:'Custom road · traffic check'};
             if(custom.type==='green')return {fill:'#8bbf82',side:'#537b52',name:'Custom green · Stealth check'};
             if(custom.type==='rest'||custom.type==='tree')return {fill:'#367d55',side:'#28573c',name:'Custom resting refuge · safe stop'};
@@ -5816,20 +5834,30 @@
             );
             const q = project(p);
             const override=globalThis.FHTile(r,s);
-            if(override?.type==='road'){
-              const a=squareCoordinate(r,s);
-              for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
-                const adjacent=squarePosition(a.x+dx,a.z+dz);
-                if(adjacent.r===0||adjacent.r>RESOURCE)continue;
-                const adjacentType=globalThis.FHTile(adjacent.r,adjacent.s)?.type;
-                if(adjacentType==='road'){
-                  const b=centre(adjacent.r,adjacent.s),end=project({x:(p.x+b.x)/2,z:(p.z+b.z)/2},.055);
-                  g.append(svg('path',{d:`M${q.x} ${q.y}L${end.x} ${end.y}`,stroke:'#f6dc74','stroke-width':2*zoom,'stroke-dasharray':`${4*zoom} ${3*zoom}`,'pointer-events':'none'}));
+            if (globalThis.FHPrototype.active) {
+              const kind=override?.type||'ground';
+              if(r===0){
+                for(let n=-SQUARE_HOME;n<=SQUARE_HOME;n++)for(const axis of ['x','z']){
+                  const a=axis==='x'?{x:n*SQUARE_UNIT,z:-SQUARE_HOME*SQUARE_UNIT}:{x:-SQUARE_HOME*SQUARE_UNIT,z:n*SQUARE_UNIT};
+                  const b=axis==='x'?{x:n*SQUARE_UNIT,z:SQUARE_HOME*SQUARE_UNIT}:{x:SQUARE_HOME*SQUARE_UNIT,z:n*SQUARE_UNIT};
+                  const aa=project(a,.05),bb=project(b,.05);
+                  g.append(svg('path',{d:`M${aa.x} ${aa.y}L${bb.x} ${bb.y}`,stroke:'#638f70','stroke-width':.55*zoom,opacity:.6,'pointer-events':'none'}));
                 }
               }
-            }
-            if(override?.type==='tree')tree(g,p,.45);
-            if(override?.type==='rest')g.append(svg('text',{x:q.x,y:q.y+4*zoom,'text-anchor':'middle','font-size':13*zoom,'pointer-events':'none'},'✦'));
+              if(kind==='tree')tree(g,p,.42);
+              if(kind==='rest')g.append(svg('text',{x:q.x,y:q.y+4*zoom,'text-anchor':'middle','font-size':13*zoom,'pointer-events':'none'},'✦'));
+              if(kind==='home')g.append(svg('text',{x:q.x,y:q.y+5*zoom,'text-anchor':'middle','font-size':15*zoom,'pointer-events':'none'},'⌂'));
+              if((kind==='food'||kind==='rich')&&!game.harvested.has(key(r,s)))fruit(g,p,kind==='rich');
+              if(kind==='road'){
+                const xy0=squareCoordinate(r,s);
+                for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
+                  const other=squarePosition(xy0.x+dx,xy0.z+dz);
+                  if(globalThis.FHTile(other.r,other.s)?.type!=='road')continue;
+                  const half=project({x:p.x+dx*SQUARE_UNIT*.5,z:p.z+dz*SQUARE_UNIT*.5},.07);
+                  g.append(svg('path',{d:`M${q.x} ${q.y}L${half.x} ${half.y}`,fill:'none',stroke:'#f7df7b','stroke-width':1.65*zoom,'stroke-dasharray':`${3*zoom} ${2.5*zoom}`,'stroke-linecap':'round','pointer-events':'none'}));
+                }
+              }
+            } else {
             if (r === 0 && game.mode !== "reverse") {
               // The plot boundaries are part of the ground, beneath the scenery.
               drawHabitatPlots(g);
@@ -6082,6 +6110,7 @@
                 .forEach(() => sprite(g, "police", p, 29));
             }
             if ((r === 1 || r === 13) && s % 4 === 1) bush(g, p, 0.28);
+            }
             const predatorsHere = game.predators.filter(
               (pred) =>
                 pred.on && pred.placed && key(pred.r, pred.s) === key(r, s),
@@ -7036,16 +7065,16 @@
         const protoMessage=$('prototype-message');
         const protoStatus=(message)=>protoMessage.textContent=message;
         let defaultResources=game.resourceSpaces.slice(), defaultRich=new Set(game.goldenSpaces);
-        const protoHistory=[];
+        const protoHistory=[],protoFuture=[];
         const maxN=RESOURCE+SQUARE_HOME;
         const tileId=(r,s)=>`${r}:${s}`;
         const fromXZ=(x,z)=>squarePosition(x,z);
-        const inBounds=(x,z)=>Math.max(Math.abs(x),Math.abs(z))<=maxN && Math.max(Math.abs(x),Math.abs(z))>SQUARE_HOME;
+        const inBounds=(x,z)=>Math.max(Math.abs(x),Math.abs(z))<=maxN;
         function blankPrototype(){
           const tiles=Object.create(null);
           for(let x=-maxN;x<=maxN;x++)for(let z=-maxN;z<=maxN;z++){
             if(!inBounds(x,z))continue;
-            const q=fromXZ(x,z);tiles[tileId(q.r,q.s)]={type:'habitat'};
+            const q=fromXZ(x,z);tiles[tileId(q.r,q.s)]={type:'ground'};
           }
           return tiles;
         }
@@ -7055,18 +7084,18 @@
           game.resourceSpaces=[];game.goldenSpaces=new Set();
           for(const [id,entry] of Object.entries(proto.tiles)){
             const [r,s]=id.split(':').map(Number);
-            if(r===RESOURCE&&(entry.type==='food'||entry.type==='rich')){
-              game.resourceSpaces.push(s);if(entry.type==='rich')game.goldenSpaces.add(s);
+            if(entry.type==='food'||entry.type==='rich'){
+              if(r===RESOURCE)game.resourceSpaces.push(s);if(r===RESOURCE&&entry.type==='rich')game.goldenSpaces.add(s);
             }
           }
         }
         function tileAtXZ(x,z){
           if(!inBounds(x,z))return null;
-          const q=fromXZ(x,z);return proto.tiles[tileId(q.r,q.s)]?.type||'habitat';
+          const q=fromXZ(x,z);return proto.tiles[tileId(q.r,q.s)]?.type||'ground';
         }
         function drawPrototypeGrid(){
           protoGrid.replaceChildren();
-          const fill={habitat:'#a6d59d',green:'#a6d59d',road:'#79888b',rest:'#428a59',tree:'#286c45',food:'#d6b966',rich:'#71b6c2'};
+          const fill={ground:'#a6d59d',habitat:'#a6d59d',home:'#356b4a',green:'#a6d59d',road:'#79888b',rest:'#428a59',tree:'#286c45',food:'#d6b966',rich:'#71b6c2'};
           const road=(x,z)=>tileAtXZ(x,z)==='road';
           for(let z=-maxN;z<=maxN;z++)for(let x=-maxN;x<=maxN;x++){
             const q=fromXZ(x,z),valid=inBounds(x,z),type=valid?tileAtXZ(x,z):'center';
@@ -7075,8 +7104,10 @@
             protoGrid.append(rect);
             if(!valid)continue;
             if(type==='road'){
-              for(const [dx,dz] of [[1,0],[0,1]])if(road(x+dx,z+dz))
-                protoGrid.append(svg('path',{d:`M${x} ${z}L${x+dx} ${z+dz}`,class:'road-mark'}));
+              const dirs=[[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dz])=>road(x+dx,z+dz));
+              for(const [dx,dz] of dirs)protoGrid.append(svg('path',{d:`M${x} ${z}L${x+dx*.5} ${z+dz*.5}`,class:'road-mark'}));
+            }else if(type==='home'){
+              protoGrid.append(svg('text',{x,y:z+.22,'text-anchor':'middle','font-size':'.7','pointer-events':'none'},'⌂'));
             }else if(type==='food'||type==='rich'||type==='tree'||type==='rest'){
               protoGrid.append(svg('text',{x,y:z+.25,'text-anchor':'middle','font-size':'.7','pointer-events':'none'},type==='food'?'🍎':type==='rich'?'🍇':type==='tree'?'🌳':'✦'));
             }
@@ -7084,13 +7115,13 @@
         }
         function paintAt(x,z){
           if(!inBounds(x,z))return;
-          protoHistory.push(structuredClone(proto.tiles));if(protoHistory.length>30)protoHistory.shift();
+          protoHistory.push(structuredClone(proto.tiles));protoFuture.length=0;if(protoHistory.length>30)protoHistory.shift();
           const brush=proto.brush;
           const set=(xx,zz,type)=>{if(!inBounds(xx,zz))return;const q=fromXZ(xx,zz);proto.tiles[tileId(q.r,q.s)]={type};};
           if(brush==='road')for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)set(x+dx,z+dz,'road');
           else if(brush==='roundabout'){
-            set(x,z,'rest');for(const [dx,dz] of [[-1,0],[1,0],[0,-1],[0,1]])set(x+dx,z+dz,'road');
-          }else set(x,z,brush==='road-single'?'road':brush==='erase'?'habitat':brush);
+            set(x,z,'rest');for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)if(dx||dz)set(x+dx,z+dz,'road');
+          }else set(x,z,brush==='road-single'?'road':brush==='erase'?'ground':brush);
           drawPrototypeGrid();protoStatus(`Painted ${brush} at original square coordinate (${x}, ${z}).`);
         }
         let painting=false;
@@ -7099,11 +7130,16 @@
         protoGrid.addEventListener('pointermove',e=>{if(!painting||e.buttons!==1)return;const el=e.target.closest('rect.cell');if(!el)return;const pos=`${el.dataset.x}:${el.dataset.z}`;if(pos===protoGrid.dataset.last)return;protoGrid.dataset.last=pos;paintAt(+el.dataset.x,+el.dataset.z);});
         $('prototype-launch').onclick=()=>{try{if(!Object.keys(proto.tiles).length)proto.tiles=blankPrototype();drawPrototypeGrid();if(typeof protoDialog.showModal==='function')protoDialog.showModal();else protoDialog.setAttribute('open','');}catch(error){console.error('Prototype builder:',error);alert('Prototype editor error: '+error.message);}};
         $('prototype-close').onclick=()=>protoDialog.close();
-        $('prototype-brush').onchange=e=>proto.brush=e.target.value;
-        $('prototype-clear').onclick=()=>{protoHistory.push(structuredClone(proto.tiles));proto.tiles=blankPrototype();drawPrototypeGrid();protoStatus('Blank light-green board ready.');};
-        $('prototype-undo').onclick=()=>{if(!protoHistory.length)return;proto.tiles=protoHistory.pop();drawPrototypeGrid();protoStatus('Last edit undone.');};
-        $('prototype-deploy').onclick=()=>{proto.active=true;applyPrototypeResources();protoDialog.close();render();};
-        $('prototype-default').onclick=()=>{proto.active=false;applyPrototypeResources();protoDialog.close();render();};
+        document.querySelectorAll('.prototype-tool').forEach(button=>button.addEventListener('click',()=>{proto.brush=button.dataset.brush;document.querySelectorAll('.prototype-tool').forEach(b=>b.classList.toggle('selected',b===button));protoStatus('Selected '+button.textContent.trim());}));
+        $('prototype-clear').onclick=()=>{protoHistory.push(structuredClone(proto.tiles));protoFuture.length=0;proto.tiles=blankPrototype();drawPrototypeGrid();protoStatus('Blank light-green board ready.');};
+        $('prototype-undo').onclick=()=>{if(!protoHistory.length)return;protoFuture.push(structuredClone(proto.tiles));proto.tiles=protoHistory.pop();drawPrototypeGrid();protoStatus('Last edit undone.');};
+        $('prototype-redo').onclick=()=>{if(!protoFuture.length)return;protoHistory.push(structuredClone(proto.tiles));proto.tiles=protoFuture.pop();drawPrototypeGrid();protoStatus('Edit restored.');};
+        $('prototype-deploy').onclick=()=>{if(!Object.values(proto.tiles).some(t=>t.type==='home')){protoStatus('Place at least one 🏡 Habitat before deployment.');return;}proto.active=true;applyPrototypeResources();const homes=Object.entries(proto.tiles).filter(([,v])=>v.type==='home').map(([id])=>id.split(':').map(Number));game.tokens.forEach((t,i)=>{if(homes.length){const [r,s]=homes[i%homes.length];t.r=r;t.s=s;}});protoDialog.close();render();};
+        $('prototype-preview').onclick=()=>{drawPrototypeGrid();protoStatus('Preview shows the exact terrain that will replace the default board.');};
+        $('prototype-save').onclick=()=>{const blob=new Blob([JSON.stringify({version:2,tiles:proto.tiles},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Fragmented_Habitat_Custom_Board.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);};
+        $('prototype-load').onclick=()=>$('prototype-file').click();
+        $('prototype-file').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!data.tiles||typeof data.tiles!=='object')throw Error('Invalid layout');protoHistory.push(structuredClone(proto.tiles));proto.tiles=data.tiles;drawPrototypeGrid();protoStatus('Custom layout loaded. Not deployed.');}catch(err){protoStatus('Could not load layout: '+err.message);}e.target.value='';};
+        $('prototype-default').onclick=()=>{proto.active=false;applyPrototypeResources();game.tokens.forEach(t=>{t.r=0;t.s=0;});protoDialog.close();render();};
         globalThis.qaRender = render;
         globalThis.qaCamera = () => ({
           angle,

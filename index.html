@@ -3094,7 +3094,7 @@
       <div class="prototype-layout"><div id="prototype-grid-wrap"><svg id="prototype-grid" viewBox="-21.5 -21.5 43 43" role="img" aria-label="Editable square game board"></svg></div>
       <div class="prototype-controls">
         <div class="prototype-tool-grid" role="group" aria-label="Paint tools">
-          <button class="prototype-tool selected" data-brush="road" title="Place connected 3×3 road blocks: next block up, down, left or right"><span>🛣️</span>Connected road</button>
+          <button class="prototype-tool selected" data-brush="road" title="Place connected 3×3 road blocks: extend from any road block up, down, left or right"><span>🛣️</span>Connected road</button>
           <button class="prototype-tool" data-brush="road-single"><span>➕</span>Road branch</button>
           <button class="prototype-tool" data-brush="home"><span>🏡</span>Habitat</button>
           <button class="prototype-tool" data-brush="food"><span>🍎</span>Food</button>
@@ -3107,7 +3107,7 @@
         <div class="prototype-action-grid"><button id="prototype-clear">New blank board</button><button id="prototype-undo">Undo</button><button id="prototype-redo">Redo</button><button id="prototype-save">Save layout</button><button id="prototype-load">Load layout</button><button id="prototype-preview">Preview</button></div>
         <input type="file" id="prototype-file" accept="application/json,.json" hidden>
         <button class="primary" id="prototype-deploy">Deploy custom board</button><button id="prototype-default">Restore default board</button>
-        <small id="prototype-message" role="status">Place a complete 3×3 road block. Next blocks snap exactly 3 squares UP, DOWN, LEFT or RIGHT. The centerline connects automatically.</small>
+        <small id="prototype-message" role="status">Place a complete 3×3 road block. Extend from ANY road block: 3 squares UP, DOWN, LEFT or RIGHT. Branches and loops are allowed.</small>
         <small>Uses the original square-ring cell IDs and existing movement. Default game stays unchanged until Deploy. Blank light-green cells are editable, including the center.</small>
       </div></div>
     </dialog>
@@ -7081,7 +7081,18 @@
         const ROAD_STEP=3;
         const roadCenters=()=>Object.entries(proto.tiles).filter(([,v])=>v.type==='road'&&v.axis).map(([id])=>id);
         const axisAt=(x,z)=>isAxis(x,z);
-        const validRoadNext=(x,z)=>!proto.roadDone && Math.abs(x)<=maxN-1 && Math.abs(z)<=maxN-1 && (!proto.roadEnd || Math.abs(x-proto.roadEnd[0])+Math.abs(z-proto.roadEnd[1])===ROAD_STEP && (x===proto.roadEnd[0]||z===proto.roadEnd[1]));
+        // A road is a graph of 3x3 stamps. Any open cardinal neighbor of ANY
+        // stamp may receive another stamp; no last-click endpoint restriction.
+        const CARDINAL=[[3,0],[-3,0],[0,3],[0,-3]];
+        const roadNodeCoords=()=>Object.entries(proto.tiles).filter(([,v])=>v.type==='road'&&v.axis).map(([id])=>{
+          const q=id.startsWith('c:')?id.split(':').slice(1).map(Number):id.split(':').map(Number);
+          if(id.startsWith('c:'))return q;
+          const pos=squareCoordinate(q[0],q[1]);return [pos.x,pos.z];
+        });
+        const roadNodeAt=(x,z)=>axisAt(x,z);
+        const validRoadNext=(x,z)=>Math.abs(x)<=maxN-1&&Math.abs(z)<=maxN-1&&
+          !roadNodeAt(x,z)&&(!roadNodeCoords().length||CARDINAL.some(([dx,dz])=>roadNodeAt(x+dx,z+dz)));
+
         function blankPrototype(){
           const tiles=Object.create(null);
           for(let x=-maxN;x<=maxN;x++)for(let z=-maxN;z<=maxN;z++)tiles[cellId(x,z)]={type:'ground'};
@@ -7098,16 +7109,18 @@
           }
         }
         function markPath(group,x,z){
-          const dirs=[[ROAD_STEP,0],[-ROAD_STEP,0],[0,ROAD_STEP],[0,-ROAD_STEP]].filter(([dx,dz])=>axisAt(x+dx,z+dz));
-          // Draw a single continuous dashed centerline between 3×3 block centers.
-          // Negative directions are drawn by the neighboring block, preventing duplicates.
-          for(const [dx,dz] of dirs){
+          // Each connected pair is drawn exactly once, preserving the yellow
+          // dashed line at the center of the 3x3 asphalt footprint.
+          const directions=CARDINAL.filter(([dx,dz])=>axisAt(x+dx,z+dz));
+          for(const [dx,dz] of directions){
             if(dx<0||dz<0)continue;
             group.append(svg('path',{d:`M${x} ${z} L${x+dx} ${z+dz}`,class:'road-mark'}));
           }
-          // A lone block has a centered road marking, not nine independent markings.
-          if(!dirs.length)group.append(svg('path',{d:`M${x-1.2} ${z} L${x+1.2} ${z}`,class:'road-mark'}));
+          // Draw short center stubs toward free ends; don't decorate every tile.
+          if(directions.length===0)group.append(svg('path',{d:`M${x-1} ${z} L${x+1} ${z}`,class:'road-mark'}));
+          else if(directions.length===1){const [dx,dz]=directions[0];group.append(svg('path',{d:`M${x} ${z} L${x-dx/3} ${z-dz/3}`,class:'road-mark'}));}
         }
+
         function drawPrototypeGrid(){
           protoGrid.replaceChildren();
           const fill={ground:'#a6d59d',habitat:'#a6d59d',home:'#356b4a',green:'#a6d59d',road:'#738287',rest:'#428a59',tree:'#286c45',food:'#d6b966',rich:'#71b6c2'};
@@ -7127,23 +7140,14 @@
           if(!inBounds(x,z))return;
           const brush=proto.brush;
           if(brush==='road'||brush==='road-single'){
-            // Each click commits ONE complete 3×3 road block. Only rook-adjacent
-            // blocks (three original cells apart) may follow the current endpoint.
             if(!validRoadNext(x,z)){
-              protoStatus('Next 3×3 block must snap exactly THREE squares UP, DOWN, LEFT or RIGHT of the highlighted endpoint.');return;
+              protoStatus('Place a full 3×3 road block next to ANY existing road block (UP, DOWN, LEFT, RIGHT), or start on a blank board.');return;
             }
-            const prev=proto.roadEnd;
-            if(axisAt(x,z)){
-              if(prev && Math.abs(x-prev[0])+Math.abs(z-prev[1])===ROAD_STEP){
-                snapshot();proto.roadEnd=[x,z];proto.roadDone=true;drawPrototypeGrid();
-                protoStatus('Road connected to an existing road block. This route is complete; choose Road branch to start a new route.');
-              }return;
-            }
-            // The 3×3 stamp cannot overwrite player habitats, trees or resources.
+            // The whole 3x3 footprint must fit and cannot overwrite special terrain.
             for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){
               const t=entryAt(x+dx,z+dz);
               if(t && !['ground','habitat','road'].includes(t.type)){
-                protoStatus('This 3×3 road footprint overlaps a tree, habitat, resource or resting place. Erase it first.');return;
+                protoStatus('The 3×3 road overlaps a habitat, tree, resource or rest space. Erase that terrain first.');return;
               }
             }
             snapshot();
@@ -7152,12 +7156,9 @@
               if(!axisAt(xx,zz))setTile(xx,zz,'road');
             }
             setTile(x,z,'road',true);
-            proto.roadEnd=[x,z];
-            // Complete a route only on joining a previous road block or on a
-            // deliberately chosen edge terminus. Allow new routes via Road branch.
-            if(Math.abs(x)>=maxN-1||Math.abs(z)>=maxN-1){
-              proto.roadDone=true;protoStatus('Road reached the board edge. Its endpoint is capped. Choose Road branch to start another route.');
-            }else protoStatus(`3×3 road block placed at (${x}, ${z}). Next block: 3 squares UP, DOWN, LEFT or RIGHT.`);
+            proto.roadEnd=[x,z];proto.roadDone=false;
+            const count=CARDINAL.filter(([dx,dz])=>axisAt(x+dx,z+dz)).length;
+            protoStatus(`3×3 road connected (${count} neighboring sections). Extend from ANY road section, in any cardinal direction; loops and branches are allowed.`);
           }else if(brush==='roundabout'){
             if(Math.abs(x)>maxN-1||Math.abs(z)>maxN-1){protoStatus('Roundabout needs a 3×3 footprint inside the board.');return;}
             snapshot();

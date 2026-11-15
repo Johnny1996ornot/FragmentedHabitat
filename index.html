@@ -1998,7 +1998,9 @@
       .builder-cell.road{background:#69777a;border-color:#e0d5ad;color:#fff}
       .builder-cell.habitat{background:#347e59;border:2px solid #c5f2b5;color:white}
       .builder-cell.food{background:#e8bd68;border-color:#9c7139;color:#402b12}
-      .builder-cell.rest{background:#4f9c73;border:2px solid #c2e9ad;color:white;font-size:clamp(9px,1.6vw,19px)}
+      .builder-cell.rest{background:#4b8e59;border:2px solid #c2e9ad;color:white;font-size:clamp(9px,1.6vw,19px)}
+      .builder-cell.green{background:#78ad68;border:1px solid #477d4c;color:#efffe9}
+      .builder-cell.road{background:#707e7e;border-color:#526467;color:#f4e4a5}
       .builder-cell.road{background:#69777a;border-color:#e0d5ad;color:#fff}
       .builder-cell:focus-visible{outline:2px solid white;z-index:1}
       .builder-tools{display:grid;gap:9px}
@@ -5671,27 +5673,51 @@
           root.setAttribute("viewBox", "0 0 1000 1000");
           root.append(svg("rect", {x:24,y:24,width:952,height:952,rx:14,fill:"#315c42",stroke:"#8fb58a","stroke-width":8}));
           const n=data.gridSize||20, pad=32, size=936/n, map=new Map(data.cells.map(c=>[`${c.row},${c.col}`,c]));
+          const cellAt=(r,c)=>map.get(`${r},${c}`);
           for(let r=0;r<n;r++) for(let c=0;c<n;c++) {
-            const x=pad+c*size,y=pad+r*size, item=map.get(`${r},${c}`), type=item?.type||"empty";
-            const fill=type==="road"?"#748184":type==="habitat"?(COLORS[item.owner]||"#347e59"):type==="food"?"#e8bd68":type==="rest"?"#4f9c73":((r+c)%2?"#b5d5a3":"#a8cf91");
-            root.append(svg("rect",{x,y,width:size,height:size,fill,stroke:type==="road"?"#e8dfbd":"#547b59","stroke-width":type==="road"?1.8:1.2}));
+            const x=pad+c*size,y=pad+r*size, item=cellAt(r,c), type=item?.type||"empty";
+            const grass=((r+c)%2===0)?"#b9dba7":"#add397";
+            const fill=type==="road"?"#707e7e":type==="habitat"?(COLORS[item.owner]||"#347e59"):type==="food"?"#e8bd68":type==="rest"?"#4b8e59":type==="green"?"#78ad68":grass;
+            root.append(svg("rect",{x,y,width:size,height:size,fill,stroke:type==="road"?"#526467":"#638c60","stroke-width":type==="road"?1.1:1.0}));
             if(type==="habitat") {
-              root.append(svg("text",{x:x+size/2,y:y+size*.42,"text-anchor":"middle","font-size":size*.42,fill:"#fff","font-weight":800},`P${(item.owner??0)+1}`));
+              // Habitat symbol follows the animal assigned to that player, not a generic house.
               const animal=game.players[item.owner??0]?.animal||"";
-              const marks={Rat:"🐀",Squirrel:"🐿️",Raccoon:"🦝",Rabbit:"🐇",Capybara:"🦫",Tarsier:"🐒",Beetle:"🪲",Koala:"🐨"};
-              root.append(svg("text",{x:x+size/2,y:y+size*.82,"text-anchor":"middle","font-size":size*.55},marks[animal]||"⌂"));
+              const marks={Rat:"🍃",Squirrel:"🌰",Raccoon:"🌿",Rabbit:"🌼",Capybara:"🌱",Tarsier:"🍀",Beetle:"🍂",Koala:"🌿"};
+              root.append(svg("text",{x:x+size/2,y:y+size*.37,"text-anchor":"middle","font-size":size*.42,fill:"#fff","font-weight":900},`P${(item.owner??0)+1}`));
+              // Raised, shaded 3D-style animal token sitting on its habitat block.
+              root.append(svg("ellipse",{cx:x+size/2,cy:y+size*.78,rx:size*.31,ry:size*.12,fill:"#18392b",opacity:.42}));
+              root.append(svg("circle",{cx:x+size/2,cy:y+size*.68,r:size*.29,fill:"#294b3b",stroke:"#a7d7a4","stroke-width":1.5}));
+              root.append(svg("circle",{cx:x+size/2,cy:y+size*.64,r:size*.25,fill:"#e7d6a8",stroke:"#fff0c7","stroke-width":1}));
+              root.append(svg("text",{x:x+size/2,y:y+size*.75,"text-anchor":"middle","font-size":size*.38},marks[animal]||"🍃"));
             }
-            if(type==="food") root.append(svg("text",{x:x+size/2,y:y+size*.68,"text-anchor":"middle","font-size":size*.58},"🍎"));
-            if(type==="rest") root.append(svg("text",{x:x+size/2,y:y+size*.72,"text-anchor":"middle","font-size":size*.72},"🌳"));
+            if(type==="food") root.append(svg("text",{x:x+size/2,y:y+size*.69,"text-anchor":"middle","font-size":size*.58},"🍎"));
+            if(type==="rest") {
+              root.append(svg("ellipse",{cx:x+size/2,cy:y+size*.78,rx:size*.34,ry:size*.13,fill:"#24472e",opacity:.35}));
+              root.append(svg("text",{x:x+size/2,y:y+size*.70,"text-anchor":"middle","font-size":size*.72},"🌳"));
+              root.append(svg("text",{x:x+size/2,y:y+size*.91,"text-anchor":"middle","font-size":size*.14,fill:"#e7f5d5","font-weight":800},"REST"));
+            }
           }
-          // Centre the yellow road marking inside each connected road run.
-          for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(map.get(`${r},${c}`)?.type==="road") {
-            const horiz=[[-1,0],[1,0]].some(([dr,dc])=>map.get(`${r+dr},${c+dc}`)?.type==="road");
-            const vert=[ [0,-1],[0,1] ].some(([dr,dc])=>map.get(`${r+dr},${c+dc}`)?.type==="road");
-            if(horiz||vert){const x=pad+(c+.5)*size,y=pad+(r+.5)*size;root.append(svg("path",{d:horiz&&vert?`M${x-size*.35},${y}L${x+size*.35},${y} M${x},${y-size*.35}L${x},${y+size*.35}`:horiz?`M${x-size*.42},${y}L${x+size*.42},${y}`:`M${x},${y-size*.42}L${x},${y+size*.42}`,stroke:"#f4e6a9","stroke-width":2.4,"stroke-dasharray":"5 4","pointer-events":"none"}));}
+          // Draw only the road centreline path. Segments join at tile edges so
+          // the yellow marking reads as one continuous network, including bends.
+          const dirs={N:[-1,0],E:[0,1],S:[1,0],W:[0,-1]};
+          const opposite={N:"S",S:"N",E:"W",W:"E"};
+          const cx=pad+size/2, cy=pad+size/2;
+          for(let r=0;r<n;r++) for(let c=0;c<n;c++) {
+            const item=cellAt(r,c);
+            if(item?.type!=="road" || !item.path) continue;
+            const connections=[];
+            for(const [d,[dr,dc]] of Object.entries(dirs)) {
+              const next=cellAt(r+dr,c+dc);
+              if(next?.type==="road" && next.path && (next.pathDirs||[]).includes(opposite[d]) && (item.pathDirs||[]).includes(d)) connections.push(d);
+            }
+            if(!connections.length) continue;
+            const x=pad+(c+.5)*size, y=pad+(r+.5)*size, reach=size*.5;
+            const pts=connections.map(d=>d==="N"?[x,y-reach]:d==="S"?[x,y+reach]:d==="E"?[x+reach,y]:[x-reach,y]);
+            const pathD=pts.map(([px,py],i)=>`${i===0?"M":"L"}${px},${py}`).join(" ")+(pts.length===1?` L${x},${y}`:"");
+            root.append(svg("path",{d:pathD,fill:"none",stroke:"#f4e4a5","stroke-width":Math.max(2.4,size*.075),"stroke-dasharray":`${size*.18} ${size*.12}`,"stroke-linecap":"round","stroke-linejoin":"round","pointer-events":"none"}));
           }
-          root.append(svg("text",{x:500,y:16,"text-anchor":"middle",fill:"#e5f4df","font-size":13,"font-weight":800},"PROTOTYPE BOARD · DEPLOYED LAYOUT"));
-          root.append(svg("text",{x:500,y:995,"text-anchor":"middle",fill:"#e5f4df","font-size":11},"Visual prototype preview · existing turn and movement rules are not yet converted to this grid"));
+          root.append(svg("text",{x:500,y:16,"text-anchor":"middle",fill:"#e5f4df","font-size":13,"font-weight":800},"PROTOTYPE BOARD · ACTIVE BY PLAYER CHOICE"));
+          root.append(svg("text",{x:500,y:995,"text-anchor":"middle",fill:"#e5f4df","font-size":11},"Prototype layout preview"));
         }
         function board() {
           const root = $("board");
@@ -7046,7 +7072,7 @@
 
     <dialog id="board-builder-dialog">
       <div class="builder-head">
-        <div><div class="eyebrow">FRAGMENTED HABITAT · EXPERIMENTAL TOOL</div><h2>Prototype: Build a Board</h2><p>Design a custom landscape on a 20 × 20 light-green grid. Place roads in 3 × 3 sections, choose player habitats, add food patches and place tree resting spaces. Deploy the layout into the game board as a prototype preview.</p></div>
+        <div><div class="eyebrow">FRAGMENTED HABITAT · EXPERIMENTAL TOOL</div><h2>Prototype: Build a Board</h2><p>Build an optional experimental board on a 20 × 20 green grid. Place connected 3 × 3 straight or bent road pieces, player habitats, food patches, and optional darker-green resting grass. The original board remains the default unless players explicitly deploy this prototype.</p></div>
         <button class="btn" id="builder-close" type="button">✕ Close</button>
       </div>
       <div class="builder-layout">
@@ -7056,12 +7082,15 @@
           <button class="btn selected" data-builder-tool="road" type="button">▰ Road block</button>
           <button class="btn" data-builder-tool="habitat" type="button">⌂ Habitat block</button>
           <button class="btn" data-builder-tool="food" type="button">✿ Food patch</button>
+          <button class="btn" data-builder-tool="green" type="button">🌿 Greener grass · optional rest</button>
           <button class="btn" data-builder-tool="rest" type="button">🌳 Tree resting place</button>
           <button class="btn" data-builder-tool="erase" type="button">⌫ Erase block</button>
           <label>Habitat owner<select id="builder-owner"><option value="0">Player 1 · Blue</option><option value="1">Player 2 · Red</option><option value="2">Player 3 · Yellow</option><option value="3">Player 4 · Purple</option><option value="4">Player 5</option><option value="5">Player 6</option></select></label>
-          <button class="btn" id="builder-road-template" type="button">Place 3 × 3 road section</button>
+          <button class="btn" id="builder-road-straight" type="button">Straight road · 3 × 3 stamp</button>
+          <button class="btn" id="builder-road-bend" type="button">Bent road · 3 × 3 stamp</button>
+          <button class="btn" id="builder-road-rotate" type="button">Rotate road piece</button>
           <div class="builder-stat" id="builder-stats">Road blocks: 0<br>Habitats: 0<br>Food patches: 0</div>
-          <div class="builder-stat">Road rule: the road must form one continuous route connecting opposite board edges. The 9 × 9 template is a starting layout; extend it to the edges.</div>
+          <div class="builder-stat">Road pieces cover a 3 × 3 area (nine blocks). Choose straight or bent pieces. Yellow centre markings connect automatically where road paths meet. The complete road network must connect opposite board edges.</div>
           <div id="builder-message" aria-live="polite">Select a tool, then click grid squares.</div>
         </aside>
       </div>
@@ -7078,55 +7107,67 @@
   const dialog=document.getElementById('board-builder-dialog');
   if(!dialog) return;
   const N=20, grid=document.getElementById('builder-grid'), msg=document.getElementById('builder-message'), stats=document.getElementById('builder-stats');
-  let cells=Array.from({length:N*N},()=>({type:'empty',owner:null})), tool='road';
+  let cells=Array.from({length:N*N},()=>({type:'empty',owner:null})), tool='road', rotation=0, roadShape='straight';
   const key=(r,c)=>r*N+c;
-  const glyph=c=>c.type==='habitat'?['🏠','🏡','🏘️','🏠','🏡','🏘️'][c.owner||0]:c.type==='food'?'🍎':c.type==='rest'?'🌳':'';
+  const glyph=c=>c.type==='habitat'?(Number(c.owner)===0?'🍃':Number(c.owner)===1?'🌰':'🌿'):c.type==='food'?'🍎':c.type==='rest'?'🌳':c.type==='green'?'🌿':'';
+  const dirs={N:[-1,0],E:[0,1],S:[1,0],W:[0,-1]};
+  function rotateDir(d){return ({N:'E',E:'S',S:'W',W:'N'})[d];}
+  function rotatePattern(pattern){let out=pattern.map(([r,c,ds])=>[r,c,ds.slice()]);for(let k=0;k<rotation;k++)out=out.map(([r,c,ds])=>[c,2-r,ds.map(rotateDir)]);return out;}
+  const straight=[[1,0,['W','E']],[1,1,['W','E']],[1,2,['W','E']]];
+  const bend=[[1,0,['W','E']],[1,1,['W','S']],[2,1,['N','S']]];
   function paint(){
     grid.replaceChildren();
     cells.forEach((c,i)=>{const b=document.createElement('button');b.type='button';b.className='builder-cell '+(c.type==='empty'?'':c.type);b.setAttribute('role','gridcell');b.setAttribute('aria-label',`${Math.floor(i/N)+1}, ${i%N+1}: ${c.type}`);b.textContent=glyph(c);b.addEventListener('click',()=>{
       const r=Math.floor(i/N), col=i%N;
-      if(tool==='road'){
-        // One click paints a complete 3 × 3 road section, clipped at board edges.
-        for(let rr=Math.max(0,r-1);rr<=Math.min(N-1,r+1);rr++)for(let cc=Math.max(0,col-1);cc<=Math.min(N-1,col+1);cc++)cells[key(rr,cc)]={type:'road',owner:null};
-      } else if(tool==='erase') cells[i]={type:'empty',owner:null};
+      if(tool==='road') placeRoadPiece(r,col,roadShape==='bend'?bend:straight);
+      else if(tool==='erase') cells[i]={type:'empty',owner:null};
       else if(tool==='habitat') cells[i]={type:'habitat',owner:Number(document.getElementById('builder-owner').value)};
       else if(tool==='rest') cells[i]={type:'rest',owner:null};
+      else if(tool==='green') cells[i]={type:'green',owner:null};
       else cells[i]={type:'food',owner:null};
       paint();
     });grid.append(b);});
     const count=t=>cells.filter(c=>c.type===t).length;
-    stats.innerHTML=`Road blocks: ${count('road')}<br>Habitats: ${count('habitat')}<br>Food patches: ${count('food')}<br>Tree resting places: ${count('rest')}<br><small>Each road click paints up to 9 blocks.</small>`;
+    stats.innerHTML=`Road blocks: ${count('road')}<br>Habitats: ${count('habitat')}<br>Food patches: ${count('food')}<br>Greener grass: ${count('green')}<br>Tree resting places: ${count('rest')}<br><small>Each road piece covers a 3 × 3 footprint; its centreline is a connected path.</small>`;
   }
-  function setTool(t){tool=t;document.querySelectorAll('[data-builder-tool]').forEach(b=>b.classList.toggle('selected',b.dataset.builderTool===t));msg.textContent=t==='road'?'Road tool: each click places a 3 × 3 section.':`${t[0].toUpperCase()+t.slice(1)} tool selected.`;}
+  function setTool(t){tool=t;document.querySelectorAll('[data-builder-tool]').forEach(b=>b.classList.toggle('selected',b.dataset.builderTool===t));msg.textContent=t==='road'?'Road tool: click to stamp a 3 × 3 road piece.':`${t[0].toUpperCase()+t.slice(1)} tool selected.`;}
+  function placeRoadPiece(r,c,base){
+    const pattern=rotatePattern(base);
+    // Road surface fills the full 3 × 3 footprint (nine blocks).
+    for(let rr=0;rr<3;rr++)for(let cc=0;cc<3;cc++){
+      const y=r+rr-1,x=c+cc-1;if(y>=0&&y<N&&x>=0&&x<N)cells[key(y,x)]={type:'road',owner:null,path:false,pathDirs:[]};
+    }
+    // Yellow centreline follows a straight or bent path through the section.
+    for(const [rr,cc,ds] of pattern){
+      const y=r+rr-1,x=c+cc-1;if(y>=0&&y<N&&x>=0&&x<N)cells[key(y,x)]={type:'road',owner:null,path:true,pathDirs:ds};
+    }
+    msg.textContent=base===straight?'Placed a straight 3 × 3 road section.':'Placed a bent 3 × 3 road section.';
+  }
   function roadConnectsOppositeEdges(){
-    const roads=new Set(cells.map((c,i)=>c.type==='road'?i:-1).filter(i=>i>=0));
-    const connected=(starts,target)=>{const seen=new Set(starts),todo=[...starts];while(todo.length){const i=todo.pop(),r=Math.floor(i/N),c=i%N;if(target(i,r,c))return true;for(const j of [r>0?i-N:-1,r<N-1?i+N:-1,c>0?i-1:-1,c<N-1?i+1:-1])if(j>=0&&roads.has(j)&&!seen.has(j)){seen.add(j);todo.push(j);}}return false;};
+    const roads=new Set(cells.map((c,i)=>c.type==='road'&&c.path?i:-1).filter(i=>i>=0));
+    const connected=(starts,target)=>{const seen=new Set(starts),todo=[...starts];while(todo.length){const i=todo.pop(),r=Math.floor(i/N),c=i%N;if(target(i,r,c))return true;for(const [d,[dr,dc]] of Object.entries(dirs)){const j=(r+dr)*N+c+dc,next=j>=0&&j<N*N?cells[j]:null;if(next?.type==='road'&&next.path&&cells[i].pathDirs.includes(d)&&next.pathDirs.includes(({N:'S',S:'N',E:'W',W:'E'})[d])&&!seen.has(j)){seen.add(j);todo.push(j);}}}return false;};
     const top=[],left=[];for(let i=0;i<N;i++){if(roads.has(i))top.push(i);const j=i*N;if(roads.has(j))left.push(j);}
     return connected(top,(i,r,c)=>r===N-1)||connected(left,(i,r,c)=>c===N-1);
   }
-  function layout(){return {version:2,gridSize:N,cells:cells.map((c,i)=>({row:Math.floor(i/N),col:i%N,type:c.type,owner:c.owner})).filter(c=>c.type!=='empty'),roadConnectsOppositeEdges:roadConnectsOppositeEdges(),createdAt:new Date().toISOString()};}
+  function layout(){return {version:3,gridSize:N,cells:cells.map((c,i)=>({row:Math.floor(i/N),col:i%N,type:c.type,owner:c.owner,path:!!c.path,pathDirs:c.pathDirs||[]})).filter(c=>c.type!=='empty'),roadConnectsOppositeEdges:roadConnectsOppositeEdges(),createdAt:new Date().toISOString()};}
   document.getElementById('prototype-build-trigger').addEventListener('click',()=>dialog.showModal());
   document.getElementById('builder-close').addEventListener('click',()=>dialog.close());
   document.querySelectorAll('[data-builder-tool]').forEach(b=>b.addEventListener('click',()=>setTool(b.dataset.builderTool)));
   document.getElementById('builder-clear').addEventListener('click',()=>{cells=Array.from({length:N*N},()=>({type:'empty',owner:null}));paint();msg.textContent='Board cleared.';});
-  document.getElementById('builder-road-template').addEventListener('click',()=>{for(let r=8;r<=10;r++)for(let c=8;c<=10;c++)cells[key(r,c)]={type:'road',owner:null};paint();msg.textContent='Placed one 3 × 3 road section (nine blocks). Add more sections to connect opposite board edges.';});
+  document.getElementById('builder-road-straight').addEventListener('click',()=>{tool='road';setTool('road');roadShape='straight';rotation=0;msg.textContent='Straight road selected. Click the grid to stamp a 3 × 3 section.';});
+  document.getElementById('builder-road-bend').addEventListener('click',()=>{tool='road';setTool('road');roadShape='bend';msg.textContent='Bent road selected. Click the grid to stamp a 3 × 3 bend.';});
+  document.getElementById('builder-road-rotate').addEventListener('click',()=>{rotation=(rotation+1)%4;msg.textContent=`${roadShape==='bend'?'Bent':'Straight'} road piece rotated ${rotation*90}°. Click the grid to place it.`;});
   document.getElementById('builder-deploy').addEventListener('click',()=>{
     const data=layout();
     if(!data.cells.length){msg.textContent='Add at least one board feature before deploying.';return;}
-    if(!data.roadConnectsOppositeEdges){msg.textContent='Cannot deploy yet: connect the road sections into one continuous route from one board edge to the opposite edge.';return;}
-    try{
-      localStorage.setItem('fragmentedHabitatPrototypeBoard',JSON.stringify(data));
-      globalThis.fragmentedHabitatPrototypeBoard=data;
-      if(typeof globalThis.qaRender==='function') globalThis.qaRender();
-      dialog.close();
-      msg.textContent='';
-      const notice=document.getElementById('prototype-deploy-notice'); if(notice) notice.hidden=false;
-    }catch(e){msg.textContent='Could not deploy this layout in the game. Export the JSON instead.';}
+    if(!data.roadConnectsOppositeEdges){msg.textContent='Cannot deploy yet: connect the road centreline into one continuous route from one board edge to the opposite edge.';return;}
+    globalThis.fragmentedHabitatPrototypeBoard=data;
+    if(typeof globalThis.qaRender==='function') globalThis.qaRender();
+    dialog.close();
+    const notice=document.getElementById('prototype-deploy-notice'); if(notice) notice.hidden=false;
   });
   document.getElementById('builder-export').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(layout(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='fragmented-habitat-prototype-board.json';a.click();URL.revokeObjectURL(url);msg.textContent='Layout JSON exported.';});
-  // Restore the last deployed prototype board when the page is reopened.
-  try{const saved=localStorage.getItem('fragmentedHabitatPrototypeBoard');if(saved){globalThis.fragmentedHabitatPrototypeBoard=JSON.parse(saved);const notice=document.getElementById('prototype-deploy-notice');if(notice)notice.hidden=false; if(typeof globalThis.qaRender==='function')globalThis.qaRender();}}catch(e){}
-  document.getElementById('prototype-standard-board').addEventListener('click',()=>{globalThis.fragmentedHabitatPrototypeBoard=null;try{localStorage.removeItem('fragmentedHabitatPrototypeBoard')}catch(e){};const notice=document.getElementById('prototype-deploy-notice');if(notice)notice.hidden=true;if(typeof globalThis.qaRender==='function')globalThis.qaRender();});
+  document.getElementById('prototype-standard-board').addEventListener('click',()=>{globalThis.fragmentedHabitatPrototypeBoard=null;const notice=document.getElementById('prototype-deploy-notice');if(notice)notice.hidden=true;if(typeof globalThis.qaRender==='function')globalThis.qaRender();});
   paint();
 })();
 </script>

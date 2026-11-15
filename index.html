@@ -3107,7 +3107,7 @@
         <div class="prototype-action-grid"><button id="prototype-clear">New blank board</button><button id="prototype-undo">Undo</button><button id="prototype-redo">Redo</button><button id="prototype-save">Save layout</button><button id="prototype-load">Load layout</button><button id="prototype-preview">Preview</button></div>
         <input type="file" id="prototype-file" accept="application/json,.json" hidden>
         <button class="primary" id="prototype-deploy">Deploy custom board</button><button id="prototype-default">Restore default board</button>
-        <small id="prototype-message" role="status">Place a complete 3×3 road block. Extend from ANY road block: 3 squares UP, DOWN, LEFT or RIGHT. Branches and loops are allowed.</small>
+        <small id="prototype-message" role="status">Click to place a 3×3 road section. Drag to lay a full straight road in one gesture. Extend from either end or any branch; edge sections may be 3×2 or 3×1 only when YOU click or drag there.</small>
         <small>Uses the original square-ring cell IDs and existing movement. Default game stays unchanged until Deploy. Blank light-green cells are editable, including the center.</small>
       </div></div>
     </dialog>
@@ -7079,19 +7079,41 @@
         const isRoad=(x,z)=>typeAt(x,z)==='road';
         const isAxis=(x,z)=>isRoad(x,z)&&!!entryAt(x,z).axis;
         const ROAD_STEP=3;
-        const roadCenters=()=>Object.entries(proto.tiles).filter(([,v])=>v.type==='road'&&v.axis).map(([id])=>id);
-        const axisAt=(x,z)=>isAxis(x,z);
-        // A road is a graph of 3x3 stamps. Any open cardinal neighbor of ANY
-        // stamp may receive another stamp; no last-click endpoint restriction.
-        const CARDINAL=[[3,0],[-3,0],[0,3],[0,-3]];
+        const CARDINAL=[[1,0],[-1,0],[0,1],[0,-1]];
         const roadNodeCoords=()=>Object.entries(proto.tiles).filter(([,v])=>v.type==='road'&&v.axis).map(([id])=>{
-          const q=id.startsWith('c:')?id.split(':').slice(1).map(Number):id.split(':').map(Number);
-          if(id.startsWith('c:'))return q;
-          const pos=squareCoordinate(q[0],q[1]);return [pos.x,pos.z];
+          if(id.startsWith('c:'))return id.split(':').slice(1).map(Number);
+          const [r,sector]=id.split(':').map(Number);
+          const pos=squareCoordinate(r,sector);return [pos.x,pos.z];
         });
-        const roadNodeAt=(x,z)=>axisAt(x,z);
-        const validRoadNext=(x,z)=>Math.abs(x)<=maxN-1&&Math.abs(z)<=maxN-1&&
-          !roadNodeAt(x,z)&&(!roadNodeCoords().length||CARDINAL.some(([dx,dz])=>roadNodeAt(x+dx,z+dz)));
+        const roadNodeAt=(x,z)=>isRoad(x,z)&&!!entryAt(x,z).axis;
+        // Each stamp is nominally 3x3. A final stamp may be clipped at the
+        // boundary, but ONLY when the user explicitly places or drags there.
+        function roadNeighbors(x,z){
+          return roadNodeCoords().filter(([nx,nz])=>{
+            const dx=Math.abs(nx-x),dz=Math.abs(nz-z);
+            if((dx===0)===(dz===0))return false;
+            const distance=dx+dz;
+            return distance===3 || (distance>=1&&distance<3&&
+              (Math.abs(x)===maxN||Math.abs(z)===maxN||Math.abs(nx)===maxN||Math.abs(nz)===maxN));
+          });
+        }
+        function validRoadNext(x,z){
+          if(!inBounds(x,z)||roadNodeAt(x,z))return false;
+          const nodes=roadNodeCoords();
+          if(!nodes.length)return true;
+          return roadNeighbors(x,z).length>0;
+        }
+        // When dragging, snap the path to the four rook directions. The
+        // cursor can pass over existing nodes to branch or extend from either end.
+        function roadCandidates(x,z){
+          const result=[];
+          for(const [dx,dz] of CARDINAL){
+            const tx=Math.max(-maxN,Math.min(maxN,x+dx*ROAD_STEP));
+            const tz=Math.max(-maxN,Math.min(maxN,z+dz*ROAD_STEP));
+            if((tx!==x||tz!==z)&&!roadNodeAt(tx,tz))result.push([tx,tz]);
+          }
+          return result;
+        }
 
         function blankPrototype(){
           const tiles=Object.create(null);
@@ -7109,16 +7131,21 @@
           }
         }
         function markPath(group,x,z){
-          // Each connected pair is drawn exactly once, preserving the yellow
-          // dashed line at the center of the 3x3 asphalt footprint.
-          const directions=CARDINAL.filter(([dx,dz])=>axisAt(x+dx,z+dz));
-          for(const [dx,dz] of directions){
-            if(dx<0||dz<0)continue;
-            group.append(svg('path',{d:`M${x} ${z} L${x+dx} ${z+dz}`,class:'road-mark'}));
+          const neighbors=roadNeighbors(x,z);
+          for(const [nx,nz] of neighbors){
+            if(nx<x||(nx===x&&nz<z))continue;
+            group.append(svg('path',{d:`M${x} ${z} L${nx} ${nz}`,class:'road-mark'}));
           }
-          // Draw short center stubs toward free ends; don't decorate every tile.
-          if(directions.length===0)group.append(svg('path',{d:`M${x-1} ${z} L${x+1} ${z}`,class:'road-mark'}));
-          else if(directions.length===1){const [dx,dz]=directions[0];group.append(svg('path',{d:`M${x} ${z} L${x-dx/3} ${z-dz/3}`,class:'road-mark'}));}
+          if(neighbors.length===0){
+            const horizontal=Math.abs(x)>=maxN-1;
+            group.append(svg('path',{d:horizontal?`M${x} ${z-.9} L${x} ${z+.9}`:`M${x-.9} ${z} L${x+.9} ${z}`,class:'road-mark'}));
+          }else if(neighbors.length===1){
+            const [nx,nz]=neighbors[0];
+            const dx=Math.sign(x-nx),dz=Math.sign(z-nz);
+            const endX=Math.max(-maxN-.48,Math.min(maxN+.48,x+dx*1.45));
+            const endZ=Math.max(-maxN-.48,Math.min(maxN+.48,z+dz*1.45));
+            group.append(svg('path',{d:`M${x} ${z} L${endX} ${endZ}`,class:'road-mark'}));
+          }
         }
 
         function drawPrototypeGrid(){
@@ -7136,46 +7163,103 @@
         }
         function snapshot(){protoHistory.push({tiles:structuredClone(proto.tiles),end:proto.roadEnd?[...proto.roadEnd]:null,done:proto.roadDone});protoFuture.length=0;if(protoHistory.length>30)protoHistory.shift();}
         function setTile(x,z,type,axis=false){if(inBounds(x,z))proto.tiles[cellId(x,z)]={type,...(axis?{axis:true}:{})};}
-        function paintAt(x,z){
-          if(!inBounds(x,z))return;
+        function placeRoad(x,z,record=true){
+          if(!validRoadNext(x,z))return false;
+          for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){
+            const t=entryAt(x+dx,z+dz);
+            if(t&&!['ground','habitat','road'].includes(t.type))return false;
+          }
+          if(record)snapshot();
+          let count=0;
+          for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){
+            const xx=x+dx,zz=z+dz;
+            if(inBounds(xx,zz)){count++;if(!roadNodeAt(xx,zz))setTile(xx,zz,'road');}
+          }
+          setTile(x,z,'road',true);
+          proto.roadEnd=[x,z];proto.roadDone=false;
+          protoStatus(`Placed ${count} road squares (${count===9?'3×3':'edge-clipped section'}). Drag for a longer road; any existing road can be extended.`);
+          return true;
+        }
+        function paintAt(x,z,record=true){
+          if(!inBounds(x,z))return false;
           const brush=proto.brush;
           if(brush==='road'||brush==='road-single'){
-            if(!validRoadNext(x,z)){
-              protoStatus('Place a full 3×3 road block next to ANY existing road block (UP, DOWN, LEFT, RIGHT), or start on a blank board.');return;
+            if(!placeRoad(x,z,record)){
+              protoStatus('Road must join any existing section horizontally or vertically. At the edge, click the remaining squares to add a partial section.');return false;
             }
-            // The whole 3x3 footprint must fit and cannot overwrite special terrain.
-            for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){
-              const t=entryAt(x+dx,z+dz);
-              if(t && !['ground','habitat','road'].includes(t.type)){
-                protoStatus('The 3×3 road overlaps a habitat, tree, resource or rest space. Erase that terrain first.');return;
-              }
-            }
-            snapshot();
-            for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){
-              const xx=x+dx,zz=z+dz;
-              if(!axisAt(xx,zz))setTile(xx,zz,'road');
-            }
-            setTile(x,z,'road',true);
-            proto.roadEnd=[x,z];proto.roadDone=false;
-            const count=CARDINAL.filter(([dx,dz])=>axisAt(x+dx,z+dz)).length;
-            protoStatus(`3×3 road connected (${count} neighboring sections). Extend from ANY road section, in any cardinal direction; loops and branches are allowed.`);
           }else if(brush==='roundabout'){
-            if(Math.abs(x)>maxN-1||Math.abs(z)>maxN-1){protoStatus('Roundabout needs a 3×3 footprint inside the board.');return;}
-            snapshot();
-            // Actual 3×3 existing squares: eight road cells + one green rest.
-            for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++)setTile(x+dx,z+dz,dx||dz?'road':'rest',!!(dx||dz));
-            proto.roadEnd=null;proto.roadDone=false;
+            if(Math.abs(x)>maxN-1||Math.abs(z)>maxN-1){protoStatus('Roundabout needs a 3×3 footprint inside the board.');return false;}
+            if(record)snapshot();
+            for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++)setTile(x+dx,z+dz,dx||dz?'road':'rest',false);
             protoStatus('Roundabout replaced the nine existing squares, including its green resting center.');
           }else{
-            snapshot();setTile(x,z,brush==='erase'?'ground':brush);
+            if(record)snapshot();setTile(x,z,brush==='erase'?'ground':brush);
             protoStatus(`Placed one ${brush==='erase'?'blank ground':brush} square at (${x}, ${z}).`);
           }
-          drawPrototypeGrid();
+          drawPrototypeGrid();return true;
         }
-        let painting=false;
-        protoGrid.addEventListener('pointerdown',e=>{const el=e.target.closest('rect.cell');if(!el)return;painting=true;paintAt(+el.dataset.x,+el.dataset.z);e.preventDefault();});
-        window.addEventListener('pointerup',()=>painting=false);
-        protoGrid.addEventListener('pointermove',e=>{if(!painting||e.buttons!==1||proto.brush==='road'||proto.brush==='road-single')return;const el=e.target.closest('rect.cell');if(!el)return;const pos=`${el.dataset.x}:${el.dataset.z}`;if(pos===protoGrid.dataset.last)return;protoGrid.dataset.last=pos;paintAt(+el.dataset.x,+el.dataset.z);});
+        // One pointer gesture = one undo step. Road strokes use 3-cell
+        // increments, but permit a user-requested shorter final segment.
+        let stroke=null;
+        const pointerCell=e=>{
+          const pt=protoGrid.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;
+          const matrix=protoGrid.getScreenCTM();if(!matrix)return null;
+          const q=pt.matrixTransform(matrix.inverse());
+          const x=Math.round(q.x),z=Math.round(q.y);
+          return inBounds(x,z)?[x,z]:null;
+        };
+        function extendStroke(x,z){
+          if(!stroke||!stroke.last)return;
+          const [sx,sz]=stroke.last;
+          const dx=x-sx,dz=z-sz;
+          if(!dx&&!dz)return;
+          const horizontal=Math.abs(dx)>=Math.abs(dz);
+          const direction=horizontal?Math.sign(dx):Math.sign(dz);
+          if(!direction)return;
+          const dist=horizontal?Math.abs(dx):Math.abs(dz);
+          const count=Math.ceil(dist/ROAD_STEP);
+          let current=[sx,sz];let changed=false;
+          for(let i=0;i<count;i++){
+            const remaining=dist-i*ROAD_STEP;
+            const step=Math.min(ROAD_STEP,remaining);
+            const nx=horizontal?Math.max(-maxN,Math.min(maxN,current[0]+direction*step)):current[0];
+            const nz=horizontal?current[1]:Math.max(-maxN,Math.min(maxN,current[1]+direction*step));
+            // Intermediate partial segments are not permitted: only a final
+            // section at the actual board edge can be smaller than 3.
+            if(step<3&&Math.abs(nx)!==maxN&&Math.abs(nz)!==maxN)break;
+            if(roadNodeAt(nx,nz)){current=[nx,nz];continue;}
+            if(!placeRoad(nx,nz,false))break;
+            current=[nx,nz];changed=true;
+          }
+          if(changed){stroke.last=current;drawPrototypeGrid();}
+        }
+        protoGrid.addEventListener('pointerdown',e=>{
+          if(e.button!==0&&e.pointerType==='mouse')return;
+          const cell=pointerCell(e);if(!cell)return;
+          const [x,z]=cell;
+          snapshot();
+          const road=proto.brush==='road'||proto.brush==='road-single';
+          if(road&&roadNodeAt(x,z)){
+            stroke={road:true,last:[x,z]};protoStatus('Drag from this road section in any cardinal direction to extend or branch.');
+          }else{
+            const placed=paintAt(x,z,false);
+            stroke={road,last:placed?[x,z]:null};
+          }
+          protoGrid.setPointerCapture(e.pointerId);
+          e.preventDefault();
+        });
+        protoGrid.addEventListener('pointermove',e=>{
+          if(!stroke)return;
+          const cell=pointerCell(e);if(!cell)return;
+          const [x,z]=cell;
+          if(stroke.road)extendStroke(x,z);
+          else if(stroke.last&&(x!==stroke.last[0]||z!==stroke.last[1])){
+            if(paintAt(x,z,false))stroke.last=[x,z];
+          }
+        });
+        const finishStroke=()=>{stroke=null;};
+        protoGrid.addEventListener('pointerup',finishStroke);
+        protoGrid.addEventListener('pointercancel',finishStroke);
         $('prototype-launch').onclick=()=>{try{if(!Object.keys(proto.tiles).length)proto.tiles=blankPrototype();drawPrototypeGrid();if(typeof protoDialog.showModal==='function')protoDialog.showModal();else protoDialog.setAttribute('open','');}catch(error){console.error('Prototype builder:',error);alert('Prototype editor error: '+error.message);}};
         $('prototype-close').onclick=()=>protoDialog.close();
         document.querySelectorAll('.prototype-tool').forEach(button=>button.addEventListener('click',()=>{proto.brush=button.dataset.brush;if(proto.brush==='road-single'){proto.roadEnd=null;proto.roadDone=false;}document.querySelectorAll('.prototype-tool').forEach(b=>b.classList.toggle('selected',b===button));protoStatus('Selected '+button.textContent.trim());}));

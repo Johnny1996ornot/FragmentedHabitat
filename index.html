@@ -2124,7 +2124,7 @@
           <div id="roster"></div>
         </section>
         <section class="panel habitat-panel">
-          <p class="section-label">Central habitat · 36 plots</p>
+          <p class="section-label" id="habitat-plots-label">Central habitat · 36 plots</p>
           <p class="muted">Exchange one food for one plot. Select any empty plot. Starting plots are shown in each player's color.</p>
           <div id="habitat-grid" class="habitat-grid" aria-label="36 claimable habitat plots"></div>
           <p id="habitat-help" class="muted" aria-live="polite">Select an empty plot while it is your turn and you have food.</p>
@@ -3085,6 +3085,10 @@
       .prototype-tool span{font-size:25px;line-height:1.2}
       .prototype-controls .prototype-tool.selected{background:#b7e6b9;color:#13392b;outline:2px solid #f9d777}
       .prototype-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+      .proto-player-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      .proto-player-controls label{font-size:11px;color:#e7f2e5}
+      .proto-player-controls select{font-size:11px;margin-top:4px;padding:7px 3px}
+      #prototype-grid .roundabout-mark{pointer-events:none;fill:none;stroke:#f3d176;stroke-width:.18;stroke-dasharray:.28 .18}
       #prototype-grid .road-mark{stroke-linecap:round;stroke-linejoin:round}
       @media(max-width:750px){.prototype-layout{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}.prototype-controls{max-height:210px;display:grid;grid-template-columns:1fr 1fr}.prototype-controls small{grid-column:1/-1}}
     </style>
@@ -3093,6 +3097,22 @@
       <div class="prototype-header"><div><strong>⚒ PROTOTYPE — Blank square board builder</strong><p>Paint on the light-green board, then deploy to replace the default layout.</p></div><button class="btn" id="prototype-close">Close ✕</button></div>
       <div class="prototype-layout"><div id="prototype-grid-wrap"><svg id="prototype-grid" viewBox="-21.5 -21.5 43 43" role="img" aria-label="Editable square game board"></svg></div>
       <div class="prototype-controls">
+        <div class="proto-player-controls">
+          <label>Players <select id="prototype-player-count" aria-label="Number of players">
+            <option value="auto">Automatic — count assigned habitats</option>
+            <option value="2">2 players</option><option value="3">3 players</option>
+            <option value="4">4 players</option><option value="5">5 players</option>
+            <option value="6">6 players</option><option value="7">7 players</option>
+            <option value="8">8 players</option>
+          </select></label>
+          <label>Habitat owner <select id="prototype-owner" aria-label="Starting habitat owner">
+            <option value="auto">Next unassigned player</option>
+            <option value="0">P1 · Rat</option><option value="1">P2 · Squirrel</option>
+            <option value="2">P3</option><option value="3">P4</option>
+            <option value="4">P5</option><option value="5">P6</option>
+            <option value="6">P7</option><option value="7">P8</option>
+          </select></label>
+        </div>
         <div class="prototype-tool-grid" role="group" aria-label="Paint tools">
           <button class="prototype-tool selected" data-brush="road" title="Place connected 3×3 road blocks: extend from any road block up, down, left or right"><span>🛣️</span>Connected road</button>
           <button class="prototype-tool" data-brush="road-single"><span>➕</span>Road branch</button>
@@ -3113,7 +3133,15 @@
     </dialog>
     <script>
       globalThis.FHPrototype={active:false,editing:false,tiles:Object.create(null),brush:'road',roadEnd:null,roadDone:false};
-      globalThis.FHTile=(r,s)=>globalThis.FHPrototype.active?globalThis.FHPrototype.tiles[`${r}:${s}`]||null:null;
+      globalThis.FHTile=(r,s)=>{
+        const proto=globalThis.FHPrototype;
+        if(!proto.active)return null;
+        if(r===0){
+          const cx=(s%11)-5,cz=Math.floor(s/11)-5;
+          return proto.tiles[`c:${cx}:${cz}`]||{type:'ground'};
+        }
+        return proto.tiles[`${r}:${s}`]||{type:'ground'};
+      };
     </script>
     <script id="game-engine">
       /* Fragmented Habitat v34 — rules engine, independent of the display. */
@@ -3213,12 +3241,15 @@
           },
         };
         const wrap = (n) => ((n % SECTORS) + SECTORS) % SECTORS;
-        const key = (r, s) => (r === 0 ? "0:0" : `${r}:${s}`);
+        const key = (r, s) => (r === 0 && !globalThis.FHPrototype.active ? "0:0" : `${r}:${s}`);
         const SQUARE_HOME = 5;
         const SQUARE_UNIT = 6.55 / Math.SQRT2 / (RESOURCE + SQUARE_HOME + 0.5);
         // A square ring is the perimeter of an integer grid. Each index advances
         // one square clockwise, including a separate square at every corner.
         function squareCoordinate(r, s) {
+          if(r===0 && globalThis.FHPrototype.active){
+            return {x:(s%11)-SQUARE_HOME,z:Math.floor(s/11)-SQUARE_HOME};
+          }
           const n = r + SQUARE_HOME;
           const q = (((s + n) % (8 * n)) + 8 * n) % (8 * n);
           if (q < 2 * n) return { x: -n + q, z: -n };
@@ -3228,7 +3259,9 @@
         }
         function squarePosition(x, z) {
           const n = Math.max(Math.abs(x), Math.abs(z));
-          if (n <= SQUARE_HOME) return { r: 0, s: 0 };
+          if (n <= SQUARE_HOME) return globalThis.FHPrototype.active
+            ? {r:0,s:(z+SQUARE_HOME)*11+(x+SQUARE_HOME)}
+            : {r:0,s:0};
           const q =
             z === -n
               ? x + n
@@ -3413,7 +3446,7 @@
             return this.officers[0];
           }
           isRefuge(r, s) {
-            return ["rest","tree"].includes(globalThis.FHTile(r,s)?.type) || (!globalThis.FHTile(r,s) && r === ISLAND && this.refugeSpaces.has(s));
+            return ["rest","tree","roundabout"].includes(globalThis.FHTile(r,s)?.type) || (!globalThis.FHTile(r,s) && r === ISLAND && this.refugeSpaces.has(s));
           }
           officerRoute() {
             return Array.from(
@@ -3532,13 +3565,17 @@
           }
           neighbours(r, s, owner = this.active) {
             if (this.boardShape === "square") {
-              if (r === 0)
+              if (r === 0){
+                if(globalThis.FHPrototype.active){
+                  const p=squareCoordinate(r,s);
+                  return [[1,0],[-1,0],[0,1],[0,-1]]
+                    .map(([dx,dz])=>squarePosition(p.x+dx,p.z+dz))
+                    .filter(q=>q.r<=RESOURCE);
+                }
                 return Array.from({ length: this.laneSize(1) }, (_, s) => ({
-                  r: 1,
-                  s,
-                })).filter((p) =>
-                  this.neighbours(p.r, p.s).some((n) => n.r === 0),
-                );
+                  r: 1, s,
+                })).filter((p) => this.neighbours(p.r, p.s).some((n) => n.r === 0));
+              }
               const p = squareCoordinate(r, s);
               return [
                 [1, 0],
@@ -3753,8 +3790,18 @@
           dice() {
             return 1 + Math.min(5, Math.floor(this.rng() * 6));
           }
+          homeFor(owner){
+            if(!globalThis.FHPrototype.active)return {r:0,s:0};
+            const homes=globalThis.FHPrototype.startHomes||[];
+            return homes[owner]||homes[0]||{r:0,s:60};
+          }
+          isHome(r,s,owner=null){
+            if(!globalThis.FHPrototype.active)return r===0;
+            const tile=globalThis.FHTile(r,s);
+            return tile?.type==='home' && (owner===null || tile.owner===owner);
+          }
           occupied(r, s, except = []) {
-            return r === 0 || (this.mode === "reverse" && r === RESOURCE)
+            return this.isHome(r,s) || (this.mode === "reverse" && r === RESOURCE)
               ? null
               : this.tokens.find(
                   (t) =>
@@ -3788,8 +3835,8 @@
                     .filter((t) => t.owner === this.active)
                     .map((t) => t.number),
                 ),
-              r: 0,
-              s: 0,
+              r: this.homeFor(this.active).r,
+              s: this.homeFor(this.active).s,
               cargo: 0,
               sourcePatch: null,
               loaded: false,
@@ -3929,7 +3976,7 @@
               if (this.mode === "reverse") this.resourceVisits++;
               else this.harvested.add(globalThis.FHPrototype.active?key(t.r,t.s):t.s);
               t.loaded = true;
-              t.sourcePatch = t.s;
+              t.sourcePatch = globalThis.FHPrototype.active?key(t.r,t.s):t.s;
               t.cargo =
                 this.mode === "reverse"
                   ? 1
@@ -3945,7 +3992,7 @@
                   token: t.id,
                   done: () => {
                     this.phase = "move";
-                    if (t.id === this.selected && (t.out || t.r === 0)) {
+                    if (t.id === this.selected && (t.out || this.isHome(t.r,t.s))) {
                       this.remaining = 0;
                       if (!this.contest) this.endTurn();
                     }
@@ -3956,7 +4003,7 @@
                   "Golden harvest: roll day/night for the hunter. Moon keeps your fruit; sun means a hit.",
                 );
               } else this.checkEnd();
-            } else if (t.r === 0 || (globalThis.FHPrototype.active && globalThis.FHTile(t.r,t.s)?.type==='home')) {
+            } else if (this.isHome(t.r,t.s,t.owner)) {
               if (t.cargo) {
                 this.players[t.owner].food += t.cargo;
                 this.record(`${this.name(t)} banked ${t.cargo} food.`);
@@ -4102,8 +4149,9 @@
               let cost = "free";
               if (!free && owner.food >= 1) { owner.food -= 1; cost = "1 food"; }
               else if (!free && ownedPlot >= 0) { this.habitatPlots[ownedPlot] = null; cost = "1 habitat plot"; }
-              t.r = 0;
-              t.s = 0;
+              const home=this.homeFor(t.owner);
+              t.r=home.r;
+              t.s=home.s;
               this.record(`${this.name(t)} revived at home by spending ${cost}.`);
             } else {
               t.out = true;
@@ -4290,7 +4338,7 @@
                 !this.token ||
                 this.token.out ||
                 this.token.settled ||
-                (this.token.r === 0 && this.remaining === 0)
+                (this.isHome(this.token.r,this.token.s) && this.remaining === 0)
               )
                 this.endTurn();
               else this.phase = "move";
@@ -4330,7 +4378,7 @@
                 : this.active;
           }
           enemyMoves(t = this.tokens.find((t) => t.id === this.cardEnemy)) {
-            if (!t || t.out || t.r === 0) return [];
+            if (!t || t.out || this.isHome(t.r,t.s)) return [];
             return this.neighbours(t.r, t.s, t.owner).filter(
               (p) => !this.occupied(p.r, p.s, [t.id]),
             );
@@ -5237,8 +5285,9 @@
         }
         function cell(r, s) {
           if (game.boardShape === "square") {
-            const p = r ? squareCoordinate(r, s) : { x: 0, z: 0 };
-            const half = r ? 0.5 : SQUARE_HOME + 0.5;
+            const isCenterTile=r===0 && globalThis.FHPrototype.active;
+            const p = (r || isCenterTile) ? squareCoordinate(r, s) : { x: 0, z: 0 };
+            const half = (r || isCenterTile) ? 0.5 : SQUARE_HOME + 0.5;
             return [
               [-half, -half],
               [half, -half],
@@ -5277,7 +5326,8 @@
         }
         function centre(r, s) {
           if (game.boardShape === "square") {
-            const p = r ? squareCoordinate(r, s) : { x: 0, z: 0 };
+            const p = (r || globalThis.FHPrototype.active)
+              ? squareCoordinate(r, s) : { x: 0, z: 0 };
             return { x: p.x * SQUARE_UNIT, z: p.z * SQUARE_UNIT };
           }
           if (r === RESOURCE && game.mode === "reverse") return { x: 0, z: 0 };
@@ -5286,13 +5336,14 @@
             : { x: 0, z: 0 };
         }
         function shape(r, s) {
-          const custom=globalThis.FHPrototype.active && r===0 ? {type:'ground'} : globalThis.FHTile(r,s);
+          const custom=globalThis.FHTile(r,s);
           if(custom){
             if(custom.type==='ground'||custom.type==='habitat')return {fill:'#a6d59d',side:'#6b9770',name:'Open grassy ground'};
             if(custom.type==='home')return {fill:'#397b55',side:'#24563c',name:'Habitat home'};
             if(custom.type==='road')return {fill:'#78878b',side:'#48585b',name:'Custom road · traffic check'};
             if(custom.type==='green')return {fill:'#8bbf82',side:'#537b52',name:'Custom green · Stealth check'};
             if(custom.type==='rest'||custom.type==='tree')return {fill:'#367d55',side:'#28573c',name:'Custom resting refuge · safe stop'};
+            if(custom.type==='roundabout')return {fill:'#367d55',side:'#28573c',name:'Roundabout · green resting island'};
             if(custom.type==='food')return {fill:'#4e8260',side:'#2c553b',name:'Custom food patch'};
             if(custom.type==='rich')return {fill:'#4c9aa5',side:'#2c6b72',name:'Custom rich habitat'};
           }
@@ -5740,9 +5791,11 @@
               possible.filter((p) => p.r <= RESOURCE).map((p) => key(p.r, p.s)),
             );
           const entries = [
-            ...(game.mode === "reverse"
-              ? Array.from({ length: SECTORS }, (_, s) => ({ r: 0, s }))
-              : [{ r: 0, s: 0 }]),
+            ...(globalThis.FHPrototype.active
+              ? Array.from({length:121},(_,s)=>({r:0,s}))
+              : game.mode === "reverse"
+                ? Array.from({ length: SECTORS }, (_, s) => ({ r: 0, s }))
+                : [{ r: 0, s: 0 }]),
             ...Array.from({ length: RESOURCE - 1 }, (_, i) => i + 1).flatMap(
               (r) =>
                 Array.from({ length: game.laneSize(r) }, (_, s) => ({ r, s })),
@@ -5836,52 +5889,53 @@
             const override=globalThis.FHTile(r,s);
             if (globalThis.FHPrototype.active) {
               const kind=override?.type||'ground';
-              if(r===0){
-                // The default game collapses its central 11×11 area to one
-                // movement location. In prototype mode, render the actual
-                // individually edited terrain cells, without a default forest.
-                for(let cz=-SQUARE_HOME;cz<=SQUARE_HOME;cz++)for(let cx=-SQUARE_HOME;cx<=SQUARE_HOME;cx++){
-                  const terrain=globalThis.FHPrototype.tiles[`c:${cx}:${cz}`]||{type:'ground'};
-                  const palette={ground:'#a6d59d',habitat:'#a6d59d',home:'#397b55',road:'#78878b',tree:'#367d55',rest:'#367d55',food:'#4e8260',rich:'#4c9aa5'};
-                  const corners=[[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]].map(([ox,oz])=>({x:(cx+ox)*SQUARE_UNIT,z:(cz+oz)*SQUARE_UNIT}));
-                  g.append(svg('polygon',{points:polygon(corners,.035),fill:palette[terrain.type]||palette.ground,stroke:'#638f70','stroke-opacity':.5,'stroke-width':.4*zoom,'pointer-events':'none'}));
-                  const loc={x:cx*SQUARE_UNIT,z:cz*SQUARE_UNIT};
-                  if(terrain.type==='tree')tree(g,loc,.24);
-                  if(terrain.type==='home'||terrain.type==='rest'){
-                    const label=project(loc,.06);
-                    g.append(svg('text',{x:label.x,y:label.y+3*zoom,'text-anchor':'middle','font-size':9*zoom,'pointer-events':'none'},terrain.type==='home'?'⌂':'✦'));
-                  }
-                }
-                for(let cz=-SQUARE_HOME;cz<=SQUARE_HOME;cz++)for(let cx=-SQUARE_HOME;cx<=SQUARE_HOME;cx++){
-                  const tile=globalThis.FHPrototype.tiles[`c:${cx}:${cz}`];
-                  if(tile?.type!=='road'||!tile.axis)continue;
-                  const start=project({x:cx*SQUARE_UNIT,z:cz*SQUARE_UNIT},.08);
-                  for(const [dx,dz] of [[3,0],[-3,0],[0,3],[0,-3]]){
-                    const neighbor=globalThis.FHPrototype.tiles[`c:${cx+dx}:${cz+dz}`];
-                    if(neighbor?.type!=='road'||!neighbor.axis)continue;
-                    const end=project({x:(cx+dx/2)*SQUARE_UNIT,z:(cz+dz/2)*SQUARE_UNIT},.08);
-                    g.append(svg('path',{d:`M${start.x} ${start.y}L${end.x} ${end.y}`,fill:'none',stroke:'#f7df7b','stroke-width':1.6*zoom,'stroke-dasharray':`${3*zoom} ${2.5*zoom}`,'pointer-events':'none'}));
-                  }
-                }
-                for(let n=-SQUARE_HOME;n<=SQUARE_HOME;n++)for(const axis of ['x','z']){
-                  const a=axis==='x'?{x:n*SQUARE_UNIT,z:-SQUARE_HOME*SQUARE_UNIT}:{x:-SQUARE_HOME*SQUARE_UNIT,z:n*SQUARE_UNIT};
-                  const b=axis==='x'?{x:n*SQUARE_UNIT,z:SQUARE_HOME*SQUARE_UNIT}:{x:SQUARE_HOME*SQUARE_UNIT,z:n*SQUARE_UNIT};
-                  const aa=project(a,.05),bb=project(b,.05);
-                  g.append(svg('path',{d:`M${aa.x} ${aa.y}L${bb.x} ${bb.y}`,stroke:'#638f70','stroke-width':.55*zoom,opacity:.6,'pointer-events':'none'}));
-                }
-              }
+              // Prototype center uses 121 ordinary interactive one-square cells.
+              // No visual overlay or inherited giant default habitat.
               if(kind==='tree')tree(g,p,.42);
-              if(kind==='rest')g.append(svg('text',{x:q.x,y:q.y+4*zoom,'text-anchor':'middle','font-size':13*zoom,'pointer-events':'none'},'✦'));
+              if(kind==='roundabout'){
+                const circle=svg('circle',{cx:q.x,cy:q.y,r:10*zoom,fill:'#397c55',stroke:'#f5dc88','stroke-width':2*zoom,'pointer-events':'none'});
+                g.append(circle,svg('text',{x:q.x,y:q.y+4*zoom,'text-anchor':'middle','font-size':15*zoom,fill:'#ffe4a0','pointer-events':'none'},'⟳'));
+              }
               if(kind==='home')g.append(svg('text',{x:q.x,y:q.y+5*zoom,'text-anchor':'middle','font-size':15*zoom,'pointer-events':'none'},'⌂'));
               if((kind==='food'||kind==='rich')&&!game.harvested.has(key(r,s)))fruit(g,p,kind==='rich');
               if(kind==='road'&&override?.axis){
                 const xy0=squareCoordinate(r,s);
+                const maxEdge=RESOURCE+SQUARE_HOME;
+                let linked=0;
                 for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
-                  const other=squarePosition(xy0.x+dx,xy0.z+dz);
-                  if(!globalThis.FHTile(other.r,other.s)?.axis)continue;
-                  const half=project({x:p.x+dx*SQUARE_UNIT*.5,z:p.z+dz*SQUARE_UNIT*.5},.07);
-                  g.append(svg('path',{d:`M${q.x} ${q.y}L${half.x} ${half.y}`,fill:'none',stroke:'#f7df7b','stroke-width':1.65*zoom,'stroke-dasharray':`${3*zoom} ${2.5*zoom}`,'stroke-linecap':'round','pointer-events':'none'}));
+                  let otherPoint=null;
+                  for(let distance=1;distance<=3;distance++){
+                    const xx=xy0.x+dx*distance,zz=xy0.z+dz*distance;
+                    if(Math.max(Math.abs(xx),Math.abs(zz))>maxEdge)break;
+                    const other=squarePosition(xx,zz);
+                    const tile=globalThis.FHTile(other.r,other.s);
+                    if(tile?.type==='road'&&tile.axis){otherPoint={x:xx,z:zz};break;}
+                  }
+                  if(!otherPoint)continue;
+                  // Do not connect diagonally or across ground gaps.
+                  let continuous=true;
+                  for(let a=1;a<Math.abs(otherPoint.x-xy0.x)+Math.abs(otherPoint.z-xy0.z);a++){
+                    const step=squarePosition(xy0.x+dx*a,xy0.z+dz*a);
+                    if(globalThis.FHTile(step.r,step.s)?.type!=='road'){continuous=false;break;}
+                  }
+                  if(!continuous)continue;
+                  linked++;
+                  const half=project({x:(xy0.x+otherPoint.x)*SQUARE_UNIT/2,z:(xy0.z+otherPoint.z)*SQUARE_UNIT/2},.09);
+                  g.append(svg('path',{d:`M${q.x} ${q.y}L${half.x} ${half.y}`,fill:'none',stroke:'#f7df7b','stroke-width':1.65*zoom,'stroke-dasharray':`${3*zoom} ${2.5*zoom}`,'pointer-events':'none'}));
                 }
+                if(!linked){
+                  const left=project({x:(xy0.x-.65)*SQUARE_UNIT,z:xy0.z*SQUARE_UNIT},.09);
+                  const right=project({x:(xy0.x+.65)*SQUARE_UNIT,z:xy0.z*SQUARE_UNIT},.09);
+                  g.append(svg('path',{d:`M${left.x} ${left.y}L${right.x} ${right.y}`,stroke:'#f7df7b','stroke-width':1.5*zoom,'stroke-dasharray':`${3*zoom} ${2.5*zoom}`,fill:'none','pointer-events':'none'}));
+                }
+              }
+              if(kind==='roundabout'){
+                const cp=squareCoordinate(r,s), loop=[];
+                for(let i=0;i<=32;i++){
+                  const angle=i*Math.PI*2/32;
+                  loop.push(project({x:(cp.x+Math.cos(angle))*SQUARE_UNIT,z:(cp.z+Math.sin(angle))*SQUARE_UNIT},.10));
+                }
+                g.append(svg('path',{d:loop.map((v,i)=>`${i?'L':'M'}${v.x} ${v.y}`).join(' ')+' Z',fill:'none',stroke:'#f5d473','stroke-width':1.6*zoom,'stroke-dasharray':`${3*zoom} ${2.5*zoom}`,'pointer-events':'none'}));
               }
             } else {
             if (r === 0 && game.mode !== "reverse") {
@@ -6162,7 +6216,7 @@
                   s === game.homeSector(t.owner)),
             );
             const visibleTokens =
-              r && !(r === RESOURCE && game.mode === "reverse")
+              globalThis.FHPrototype.active || (r && !(r === RESOURCE && game.mode === "reverse"))
                 ? tokens
                 : tokens.filter(
                     (t, i) =>
@@ -6175,7 +6229,7 @@
                       x: -0.8 + (i % 4) * 0.55,
                       z: -0.4 + Math.floor(i / 4) * 0.6,
                     }
-                  : r || game.mode === "reverse"
+                  : r || game.mode === "reverse" || globalThis.FHPrototype.active
                     ? { x: p.x, z: p.z }
                     : {
                         x: -0.85 + (i % 4) * 0.55,
@@ -6185,7 +6239,7 @@
                 g,
                 game.players[t.owner].animal.toLowerCase(),
                 off,
-                r ? (game.boardShape === "square" ? 18 : 25) : 30,
+                r || globalThis.FHPrototype.active ? (game.boardShape === "square" ? 18 : 25) : 30,
               );
               const anchor = project(off, 0.12);
               const flag = svg("g", {
@@ -6659,7 +6713,7 @@
           game.animals().forEach((t) => {
             const b = document.createElement("button");
             b.className = "btn animal-pick";
-            b.textContent = `${p.animal} ${t.number} · ${t.r === 0 ? "home" : t.cargo ? `${t.cargo} fruit` : "away"}`;
+            b.textContent = `${p.animal} ${t.number} · ${game.isHome(t.r,t.s) ? "home" : t.cargo ? `${t.cargo} fruit` : "away"}`;
             b.setAttribute("aria-pressed", t.id === game.selected);
             b.disabled =
               !["roll", "move"].includes(game.phase) || game.steps > 0;
@@ -6698,6 +6752,9 @@
             row.append(food);
             $("roster").append(row);
           });
+          $("habitat-plots-label").textContent=globalThis.FHPrototype.active
+            ? "Habitat territory · 36 scoring plots"
+            : "Central habitat · 36 plots";
           const habitatGrid = $("habitat-grid");
           if (habitatGrid) {
             habitatGrid.replaceChildren();
@@ -6907,6 +6964,7 @@
             opener: $("colonization-opener").checked,
           });
           defaultResources=game.resourceSpaces.slice();defaultRich=new Set(game.goldenSpaces);applyPrototypeResources();
+          applyPrototypeHomes();
           $("settings-dialog").close();
           render();
         };
@@ -6929,6 +6987,7 @@
             capacity: game.capacity,
           });
           defaultResources=game.resourceSpaces.slice();defaultRich=new Set(game.goldenSpaces);applyPrototypeResources();
+          applyPrototypeHomes();
           $("reset-dialog").close();
           requestedMode = null;
           render();
@@ -7176,17 +7235,25 @@
         let editorCells=new Map();
         function drawPrototypeGrid(){
           protoGrid.replaceChildren();editorCells=new Map();
-          const fill={ground:'#a6d59d',habitat:'#a6d59d',home:'#356b4a',green:'#a6d59d',road:'#738287',rest:'#428a59',tree:'#286c45',food:'#d6b966',rich:'#71b6c2'};
+          const fill={ground:'#a6d59d',habitat:'#a6d59d',home:'#356b4a',green:'#a6d59d',road:'#738287',rest:'#428a59',tree:'#286c45',food:'#d6b966',rich:'#71b6c2',roundabout:'#357754'};
           for(let z=-maxN;z<=maxN;z++)for(let x=-maxN;x<=maxN;x++){
             const type=typeAt(x,z),rect=svg('rect',{x:x-.49,y:z-.49,width:.98,height:.98,fill:fill[type]||fill.ground,class:'cell','data-x':x,'data-z':z});
             if(proto.brush==='road'&&validRoadNext(x,z)&&!isRoad(x,z))rect.setAttribute('stroke','#e9d471');
             protoGrid.append(rect);editorCells.set(`${x},${z}`,rect);
-            if(type==='home'||type==='food'||type==='rich'||type==='tree'||type==='rest'){
-              protoGrid.append(svg('text',{x,y:z+.25,'text-anchor':'middle','font-size':'.7','pointer-events':'none'},type==='home'?'⌂':type==='food'?'🍎':type==='rich'?'🍇':type==='tree'?'🌳':'✦'));
+            if(type==='roundabout'){
+              protoGrid.append(svg('circle',{cx:x,cy:z,r:.4,fill:'#3c805a',stroke:'#f8da80','stroke-width':'.1','pointer-events':'none'}));
+              protoGrid.append(svg('text',{x,y:z+.27,'text-anchor':'middle','font-size':'.7',fill:'#ffe9a7','pointer-events':'none'},'⟳'));
+            } else if(['home','food','rich','tree'].includes(type)){
+              const v=entryAt(x,z);
+              const glyph=type==='home'?`P${(v.owner??0)+1}`:type==='food'?'🍎':type==='rich'?'🍇':'🌳';
+              protoGrid.append(svg('text',{x,y:z+.24,'text-anchor':'middle','font-size':type==='home'?'.47':'.7','font-weight':'bold','pointer-events':'none'},glyph));
             }
           }
           const lines=svg('g',{'id':'prototype-road-lines','pointer-events':'none'});protoGrid.append(lines);
           for(let z=-maxN;z<=maxN;z++)for(let x=-maxN;x<=maxN;x++)if(isAxis(x,z))markPath(lines,x,z);
+          for(let z=-maxN;z<=maxN;z++)for(let x=-maxN;x<=maxN;x++)if(typeAt(x,z)==='roundabout'){
+            lines.append(svg('circle',{cx:x,cy:z,r:1,class:'roundabout-mark'}));
+          }
         }
         function livePaintRoad(){ /* setTile already updates only changed SVG cells */ }
         function snapshot(){protoHistory.push({tiles:structuredClone(proto.tiles),end:proto.roadEnd?[...proto.roadEnd]:null,done:proto.roadDone});protoFuture.length=0;if(protoHistory.length>30)protoHistory.shift();}
@@ -7194,7 +7261,7 @@
           if(!inBounds(x,z))return;
           proto.tiles[cellId(x,z)]={type,...(axis?{axis:true}:{})};
           const rect=editorCells.get(`${x},${z}`);
-          if(rect){const colors={ground:'#a6d59d',habitat:'#a6d59d',home:'#356b4a',green:'#a6d59d',road:'#738287',rest:'#428a59',tree:'#286c45',food:'#d6b966',rich:'#71b6c2'};rect.setAttribute('fill',colors[type]||colors.ground);}
+          if(rect){const colors={ground:'#a6d59d',habitat:'#a6d59d',home:'#356b4a',green:'#a6d59d',road:'#738287',rest:'#428a59',tree:'#286c45',food:'#d6b966',rich:'#71b6c2',roundabout:'#357754'};rect.setAttribute('fill',colors[type]||colors.ground);}
         }
         function placeRoad(x,z,record=true){
           if(!validRoadNext(x,z))return false;
@@ -7219,11 +7286,21 @@
           }else if(brush==='roundabout'){
             if(Math.abs(x)>maxN-1||Math.abs(z)>maxN-1){protoStatus('Roundabout needs a 3×3 footprint inside the board.');return false;}
             if(record)snapshot();
-            for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++)setTile(x+dx,z+dz,dx||dz?'road':'rest',false);
+            for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++)setTile(x+dx,z+dz,dx||dz?'road':'roundabout',false);
             protoStatus('Roundabout replaced the nine existing squares, including its green resting center.');
           }else{
-            if(record)snapshot();setTile(x,z,brush==='erase'?'ground':brush);
-            protoStatus(`Placed one ${brush==='erase'?'blank ground':brush} square at (${x}, ${z}).`);
+            if(record)snapshot();
+            if(brush==='home'){
+              const ownerChoice=$('prototype-owner').value;
+              const used=new Set(Object.values(proto.tiles).filter(v=>v.type==='home'&&Number.isInteger(v.owner)).map(v=>v.owner));
+              const next=Array.from({length:8},(_,i)=>i).find(i=>!used.has(i));
+              const owner=ownerChoice==='auto'?(next??0):Number(ownerChoice);
+              setTile(x,z,'home');proto.tiles[cellId(x,z)].owner=owner;
+              protoStatus(`Placed Player ${owner+1} habitat at (${x}, ${z}). Select another owner or use Next unassigned.`);
+            }else{
+              setTile(x,z,brush==='erase'?'ground':brush);
+              protoStatus(`Placed one ${brush==='erase'?'blank ground':brush} square at (${x}, ${z}).`);
+            }
           }
           if(!stroke)drawPrototypeGrid();else if(brush==='road'||brush==='road-single')livePaintRoad();else drawPrototypeGrid();return true;
         }
@@ -7295,12 +7372,67 @@
         $('prototype-clear').onclick=()=>{snapshot();proto.tiles=blankPrototype();proto.roadEnd=null;proto.roadDone=false;drawPrototypeGrid();protoStatus('Blank light-green board ready.');};
         $('prototype-undo').onclick=()=>{if(!protoHistory.length)return;protoFuture.push({tiles:structuredClone(proto.tiles),end:proto.roadEnd,done:proto.roadDone});const prev=protoHistory.pop();proto.tiles=prev.tiles;proto.roadEnd=prev.end;proto.roadDone=prev.done;drawPrototypeGrid();protoStatus('Last edit undone.');};
         $('prototype-redo').onclick=()=>{if(!protoFuture.length)return;protoHistory.push({tiles:structuredClone(proto.tiles),end:proto.roadEnd,done:proto.roadDone});const next=protoFuture.pop();proto.tiles=next.tiles;proto.roadEnd=next.end;proto.roadDone=next.done;drawPrototypeGrid();protoStatus('Edit restored.');};
-        $('prototype-deploy').onclick=()=>{if(!Object.values(proto.tiles).some(t=>t.type==='home')){protoStatus('Place at least one 🏡 Habitat before deployment.');return;}proto.active=true;applyPrototypeResources();const homes=Object.entries(proto.tiles).filter(([,v])=>v.type==='home').map(([id])=>id.startsWith('c:')?[0,0]:id.split(':').map(Number));game.tokens.forEach((t,i)=>{if(homes.length){const [r,s]=homes[i%homes.length];t.r=r;t.s=s;}});protoDialog.close();render();};
+        let preservedDefaultGame=null;
+        function resolveHomes(){
+          const out=Array(8).fill(null);
+          for(const [id,tile] of Object.entries(proto.tiles)){
+            if(tile.type!=='home'||!Number.isInteger(tile.owner))continue;
+            const owner=tile.owner;if(owner<0||owner>7)continue;
+            if(out[owner])continue;
+            if(id.startsWith('c:')){
+              const [,x,z]=id.split(':').map(Number);
+              out[owner]={r:0,s:(z+SQUARE_HOME)*11+x+SQUARE_HOME};
+            }else{
+              const [r,s]=id.split(':').map(Number);out[owner]={r,s};
+            }
+          }
+          return out;
+        }
+        function applyPrototypeHomes(){
+          if(!proto.active)return;
+          const homes=proto.startHomes||[];
+          game.tokens.forEach(token=>{
+            const home=homes[token.owner];
+            if(home && (token.r===0 && token.s===0 || !token.customHomeInitialized)){
+              token.r=home.r;token.s=home.s;token.customHomeInitialized=true;
+            }
+          });
+        }
+        $('prototype-deploy').onclick=()=>{
+          const homes=resolveHomes();
+          const requested=$('prototype-player-count').value;
+          const ownerCount=Math.max(0,...homes.map((h,i)=>h?i+1:0));
+          const players=requested==='auto'?Math.max(2,ownerCount):Number(requested);
+          const missing=Array.from({length:players},(_,i)=>i).filter(i=>!homes[i]);
+          if(missing.length){
+            protoStatus(`Cannot deploy: assign starting habitat(s) to ${missing.map(i=>'P'+(i+1)).join(', ')}. Use Habitat owner choices.`);
+            return;
+          }
+          if(!preservedDefaultGame && !proto.active)preservedDefaultGame=game;
+          proto.startHomes=homes;
+          proto.active=true;
+          game=new Game({players,target:game.target,mode:game.mode,shape:'square',predatorCount:game.predatorCount,predatorRollMode:game.predatorRollMode,capacity:game.capacity});
+          game.tokens.forEach(token=>{const home=homes[token.owner];token.r=home.r;token.s=home.s;token.customHomeInitialized=true;});
+          defaultResources=game.resourceSpaces.slice();defaultRich=new Set(game.goldenSpaces);
+          applyPrototypeResources();
+          protoDialog.close();render();
+        };
         $('prototype-preview').onclick=()=>{drawPrototypeGrid();protoStatus('Preview shows the exact terrain that will replace the default board.');};
-        $('prototype-save').onclick=()=>{const blob=new Blob([JSON.stringify({version:2,tiles:proto.tiles},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Fragmented_Habitat_Custom_Board.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);};
+        $('prototype-save').onclick=()=>{const blob=new Blob([JSON.stringify({version:3,tiles:proto.tiles,playerCount:$('prototype-player-count').value},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Fragmented_Habitat_Custom_Board.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);};
         $('prototype-load').onclick=()=>$('prototype-file').click();
-        $('prototype-file').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!data.tiles||typeof data.tiles!=='object')throw Error('Invalid layout');snapshot();proto.tiles=data.tiles;proto.roadEnd=null;proto.roadDone=false;drawPrototypeGrid();protoStatus('Custom layout loaded. Not deployed.');}catch(err){protoStatus('Could not load layout: '+err.message);}e.target.value='';};
-        $('prototype-default').onclick=()=>{proto.active=false;applyPrototypeResources();game.tokens.forEach(t=>{t.r=0;t.s=0;});protoDialog.close();render();};
+        $('prototype-file').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!data.tiles||typeof data.tiles!=='object')throw Error('Invalid layout');snapshot();proto.tiles=data.tiles;
+          let nextMigratedOwner=0;
+          for(const tile of Object.values(proto.tiles)){
+            if(tile.type==='home'&&!Number.isInteger(tile.owner))tile.owner=nextMigratedOwner++%8;
+          }
+          if(data.playerCount && ['auto','2','3','4','5','6','7','8'].includes(String(data.playerCount)))$('prototype-player-count').value=String(data.playerCount);
+          proto.roadEnd=null;proto.roadDone=false;drawPrototypeGrid();protoStatus('Custom layout loaded. Not deployed.');}catch(err){protoStatus('Could not load layout: '+err.message);}e.target.value='';};
+        $('prototype-default').onclick=()=>{
+          proto.active=false;
+          if(preservedDefaultGame){game=preservedDefaultGame;preservedDefaultGame=null;}
+          defaultResources=game.resourceSpaces.slice();defaultRich=new Set(game.goldenSpaces);
+          applyPrototypeResources();protoDialog.close();render();
+        };
         globalThis.qaRender = render;
         globalThis.qaCamera = () => ({
           angle,

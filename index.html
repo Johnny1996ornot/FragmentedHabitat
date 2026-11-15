@@ -5697,18 +5697,25 @@
               root.append(svg("text",{x:x+size/2,y:y+size*.91,"text-anchor":"middle","font-size":size*.14,fill:"#e7f5d5","font-weight":800},"REST"));
             }
           }
-          // Draw only the road centreline path. Segments join at tile edges so
-          // the yellow marking reads as one continuous network, including bends.
+          // Draw the road centreline from actual neighbouring path tiles.
+          // Adjacency is authoritative: this keeps vertical pieces and older
+          // saved layouts connected even if their stored pathDirs disagree.
           const dirs={N:[-1,0],E:[0,1],S:[1,0],W:[0,-1]};
           const opposite={N:"S",S:"N",E:"W",W:"E"};
-          const cx=pad+size/2, cy=pad+size/2;
           for(let r=0;r<n;r++) for(let c=0;c<n;c++) {
             const item=cellAt(r,c);
             if(item?.type!=="road" || !item.path) continue;
             const connections=[];
             for(const [d,[dr,dc]] of Object.entries(dirs)) {
               const next=cellAt(r+dr,c+dc);
-              if(next?.type==="road" && next.path && (next.pathDirs||[]).includes(opposite[d]) && (item.pathDirs||[]).includes(d)) connections.push(d);
+              // Connect any two adjacent centreline tiles. Do not require
+              // reciprocal metadata; rotated pieces can carry stale metadata.
+              if(next?.type==="road" && next.path) connections.push(d);
+            }
+            // Preserve a visible stub for an isolated endpoint using its own
+            // direction metadata, while connected tiles always use adjacency.
+            if(!connections.length) {
+              for(const d of (item.pathDirs||[])) if(d in dirs) connections.push(d);
             }
             if(!connections.length) continue;
             const x=pad+(c+.5)*size, y=pad+(r+.5)*size, reach=size*.5;
@@ -7144,10 +7151,34 @@
     msg.textContent=base===straight?'Placed a straight 3 × 3 road section.':'Placed a bent 3 × 3 road section.';
   }
   function roadConnectsOppositeEdges(){
+    // Validate one continuous centreline component touching opposite edges.
+    // Adjacent path tiles connect geometrically, regardless of saved direction metadata.
     const roads=new Set(cells.map((c,i)=>c.type==='road'&&c.path?i:-1).filter(i=>i>=0));
-    const connected=(starts,target)=>{const seen=new Set(starts),todo=[...starts];while(todo.length){const i=todo.pop(),r=Math.floor(i/N),c=i%N;if(target(i,r,c))return true;for(const [d,[dr,dc]] of Object.entries(dirs)){const j=(r+dr)*N+c+dc,next=j>=0&&j<N*N?cells[j]:null;if(next?.type==='road'&&next.path&&cells[i].pathDirs.includes(d)&&next.pathDirs.includes(({N:'S',S:'N',E:'W',W:'E'})[d])&&!seen.has(j)){seen.add(j);todo.push(j);}}}return false;};
-    const top=[],left=[];for(let i=0;i<N;i++){if(roads.has(i))top.push(i);const j=i*N;if(roads.has(j))left.push(j);}
-    return connected(top,(i,r,c)=>r===N-1)||connected(left,(i,r,c)=>c===N-1);
+    const visited=new Set();
+    for(const start of roads){
+      if(visited.has(start)) continue;
+      const component=new Set([start]), queue=[start];
+      visited.add(start);
+      while(queue.length){
+        const i=queue.pop(), r=Math.floor(i/N), c=i%N;
+        for(const [dr,dc] of Object.values(dirs)){
+          const nr=r+dr, nc=c+dc, j=nr*N+nc;
+          if(nr>=0&&nr<N&&nc>=0&&nc<N&&roads.has(j)&&!visited.has(j)){
+            visited.add(j); component.add(j); queue.push(j);
+          }
+        }
+      }
+      let top=false,bottom=false,left=false,right=false;
+      for(const i of component){
+        const r=Math.floor(i/N), c=i%N;
+        if(r===0) top=true;
+        if(r===N-1) bottom=true;
+        if(c===0) left=true;
+        if(c===N-1) right=true;
+      }
+      if((top&&bottom)||(left&&right)) return true;
+    }
+    return false;
   }
   function layout(){return {version:3,gridSize:N,cells:cells.map((c,i)=>({row:Math.floor(i/N),col:i%N,type:c.type,owner:c.owner,path:!!c.path,pathDirs:c.pathDirs||[]})).filter(c=>c.type!=='empty'),roadConnectsOppositeEdges:roadConnectsOppositeEdges(),createdAt:new Date().toISOString()};}
   document.getElementById('prototype-build-trigger').addEventListener('click',()=>dialog.showModal());

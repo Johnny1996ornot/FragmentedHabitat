@@ -1983,9 +1983,35 @@
       .habitat-plot.empty { background:#9fc88a !important; border:2px solid #315b3d; border-style:solid; color:#24452f; font-weight:800; }
       .habitat-plot .owner { font-size:9px; font-weight:800; }
       .muted { color:var(--muted); font-size:12px; line-height:1.45; }
+
+
+      /* Board-builder prototype */
+      #prototype-build-trigger{position:fixed;left:18px;bottom:18px;z-index:80;background:#d8efc9;color:#173b2b;border:2px solid #8fbd83;border-radius:12px;padding:11px 16px;font-weight:900;letter-spacing:.04em;box-shadow:0 8px 24px #0008}
+      #prototype-build-trigger:hover{filter:brightness(1.08);transform:translateY(-1px)}
+      #board-builder-dialog{width:min(1100px,96vw);max-width:1100px;max-height:92dvh;border:1px solid #63876c;border-radius:18px;background:#0b1e2d;color:#edf7ef;padding:20px;box-shadow:0 24px 90px #000b}
+      #board-builder-dialog::backdrop{background:#020a12d9;backdrop-filter:blur(5px)}
+      .builder-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+      .builder-head p{color:#a9c0b2;margin-top:5px;max-width:720px}
+      .builder-layout{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:16px;align-items:start}
+      .builder-grid{display:grid;grid-template-columns:repeat(20,minmax(0,1fr));gap:2px;background:#355d43;border:3px solid #537c59;padding:3px;border-radius:9px;aspect-ratio:1;max-height:68vh}
+      .builder-cell{min-width:0;aspect-ratio:1;border:1px solid #7fa77a;background:#b5d5a3;color:#173b2b;padding:0;display:grid;place-items:center;font-size:clamp(7px,1.2vw,15px);line-height:1;border-radius:1px}
+      .builder-cell.road{background:#69777a;border-color:#e0d5ad;color:#fff}
+      .builder-cell.habitat{background:#347e59;border:2px solid #c5f2b5;color:white}
+      .builder-cell.food{background:#e8bd68;border-color:#9c7139;color:#402b12}
+      .builder-cell.island{background:#4f9c73;border-color:#c2e9ad;color:white}
+      .builder-cell:focus-visible{outline:2px solid white;z-index:1}
+      .builder-tools{display:grid;gap:9px}
+      .builder-tools button,.builder-tools select{width:100%}
+      .builder-tools .selected{outline:2px solid #ffe18a;background:#284c43}
+      .builder-stat{padding:10px;border:1px solid #38556a;border-radius:9px;background:#102b3d;font-size:12px;color:#c6d8d2}
+      .builder-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;justify-content:flex-end}
+      #builder-message{font-size:12px;color:#b9d7c4;min-height:18px}
+      @media(max-width:760px){.builder-layout{grid-template-columns:1fr}.builder-grid{max-height:48vh}.builder-tools{grid-template-columns:1fr 1fr}#board-builder-dialog{padding:12px}.builder-head{flex-direction:column}}
+
     </style>
   </head>
   <body>
+    <button id="prototype-build-trigger" type="button">⚒ PROTOTYPE · BUILD A BOARD</button>
     <main class="app">
       <aside class="sidebar">
         <div class="eyebrow">A little world. A risky journey.</div>
@@ -6984,5 +7010,68 @@
         render();
       })();
     </script>
+
+    <dialog id="board-builder-dialog">
+      <div class="builder-head">
+        <div><div class="eyebrow">FRAGMENTED HABITAT · EXPERIMENTAL TOOL</div><h2>Prototype: Build a Board</h2><p>Design a custom landscape on a 20 × 20 light-green grid. Add a continuous road route, player habitats, food patches and an optional centre island. This prototype saves and previews your layout without changing the live match.</p></div>
+        <button class="btn" id="builder-close" type="button">✕ Close</button>
+      </div>
+      <div class="builder-layout">
+        <div id="builder-grid" class="builder-grid" role="grid" aria-label="Custom board grid"></div>
+        <aside class="builder-tools">
+          <strong>Choose a placement tool</strong>
+          <button class="btn selected" data-builder-tool="road" type="button">▰ Road block</button>
+          <button class="btn" data-builder-tool="habitat" type="button">⌂ Habitat block</button>
+          <button class="btn" data-builder-tool="food" type="button">✿ Food patch</button>
+          <button class="btn" data-builder-tool="island" type="button">🌿 Centre island</button>
+          <button class="btn" data-builder-tool="erase" type="button">⌫ Erase block</button>
+          <label>Habitat owner<select id="builder-owner"><option value="0">Player 1 · Blue</option><option value="1">Player 2 · Red</option><option value="2">Player 3 · Yellow</option><option value="3">Player 4 · Purple</option><option value="4">Player 5</option><option value="5">Player 6</option></select></label>
+          <button class="btn" id="builder-road-template" type="button">Place 9 × 9 road loop</button>
+          <div class="builder-stat" id="builder-stats">Road blocks: 0<br>Habitats: 0<br>Food patches: 0</div>
+          <div class="builder-stat">Road rule: the road must form one continuous route connecting opposite board edges. The 9 × 9 template is a starting layout; extend it to the edges.</div>
+          <div id="builder-message" aria-live="polite">Select a tool, then click grid squares.</div>
+        </aside>
+      </div>
+      <div class="builder-actions">
+        <button class="btn" id="builder-clear" type="button">Clear board</button>
+        <button class="btn" id="builder-export" type="button">Export layout JSON</button>
+        <button class="btn primary" id="builder-deploy" type="button">Deploy prototype board</button>
+      </div>
+    </dialog>
+
+
+<script>
+(()=>{
+  const dialog=document.getElementById('board-builder-dialog');
+  if(!dialog) return;
+  const N=20, grid=document.getElementById('builder-grid'), msg=document.getElementById('builder-message'), stats=document.getElementById('builder-stats');
+  let cells=Array.from({length:N*N},()=>({type:'empty',owner:null})), tool='road';
+  const key=(r,c)=>r*N+c;
+  const glyph=c=>c.type==='road'?'':c.type==='habitat'?['🏠','🏡','🏘️','🏠','🏡','🏘️'][c.owner||0]:c.type==='food'?'🍎':c.type==='island'?'🌿':'';
+  function paint(){
+    grid.replaceChildren();
+    cells.forEach((c,i)=>{const b=document.createElement('button');b.type='button';b.className='builder-cell '+(c.type==='empty'?'':c.type);b.setAttribute('role','gridcell');b.setAttribute('aria-label',`${Math.floor(i/N)+1}, ${i%N+1}: ${c.type}`);b.textContent=glyph(c);b.addEventListener('click',()=>{cells[i]=tool==='erase'?{type:'empty',owner:null}:tool==='habitat'?{type:'habitat',owner:Number(document.getElementById('builder-owner').value)}:tool==='island'?{type:'island',owner:null}:{type:tool,owner:null};paint();});grid.append(b);});
+    const count=t=>cells.filter(c=>c.type===t).length;
+    stats.innerHTML=`Road blocks: ${count('road')}<br>Habitats: ${count('habitat')}<br>Food patches: ${count('food')}<br>Island blocks: ${count('island')}`;
+  }
+  function setTool(t){tool=t;document.querySelectorAll('[data-builder-tool]').forEach(b=>b.classList.toggle('selected',b.dataset.builderTool===t));msg.textContent=`${t[0].toUpperCase()+t.slice(1)} tool selected.`;}
+  function roadConnectsOppositeEdges(){
+    const roads=new Set(cells.map((c,i)=>c.type==='road'?i:-1).filter(i=>i>=0));
+    const connected=(starts,target)=>{const seen=new Set(starts),todo=[...starts];while(todo.length){const i=todo.pop(),r=Math.floor(i/N),c=i%N;if(target(i,r,c))return true;for(const j of [r>0?i-N:-1,r<N-1?i+N:-1,c>0?i-1:-1,c<N-1?i+1:-1])if(j>=0&&roads.has(j)&&!seen.has(j)){seen.add(j);todo.push(j);}}return false;};
+    const top=[],left=[];for(let i=0;i<N;i++){if(roads.has(i))top.push(i);const j=i*N;if(roads.has(j))left.push(j);}
+    return connected(top,(i,r,c)=>r===N-1)||connected(left,(i,r,c)=>c===N-1);
+  }
+  function layout(){return {version:1,gridSize:N,cells:cells.map((c,i)=>({row:Math.floor(i/N),col:i%N,type:c.type,owner:c.owner})).filter(c=>c.type!=='empty'),roadConnectsOppositeEdges:roadConnectsOppositeEdges(),createdAt:new Date().toISOString()};}
+  document.getElementById('prototype-build-trigger').addEventListener('click',()=>dialog.showModal());
+  document.getElementById('builder-close').addEventListener('click',()=>dialog.close());
+  document.querySelectorAll('[data-builder-tool]').forEach(b=>b.addEventListener('click',()=>setTool(b.dataset.builderTool)));
+  document.getElementById('builder-clear').addEventListener('click',()=>{cells=Array.from({length:N*N},()=>({type:'empty',owner:null}));paint();msg.textContent='Board cleared.';});
+  document.getElementById('builder-road-template').addEventListener('click',()=>{const start=5,end=14;for(let r=start;r<=end;r++)for(let c=start;c<=end;c++)if(r===start||r===end||c===start||c===end)cells[key(r,c)]={type:'road',owner:null};paint();msg.textContent='A 9 × 9 square road loop has been placed. Extend it to opposite board edges to satisfy the road rule.';});
+  document.getElementById('builder-deploy').addEventListener('click',()=>{const data=layout();if(!data.cells.length){msg.textContent='Add at least one board feature before deploying.';return;}if(!data.roadConnectsOppositeEdges){msg.textContent='Cannot deploy yet: connect the road network continuously from one board edge to the opposite edge.';return;}try{localStorage.setItem('fragmentedHabitatPrototypeBoard',JSON.stringify(data));msg.textContent='Prototype board deployed and saved in this browser. Export the JSON to use it in your project.';}catch(e){msg.textContent='Could not save in this browser. Use Export layout JSON instead.';}});
+  document.getElementById('builder-export').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(layout(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='fragmented-habitat-prototype-board.json';a.click();URL.revokeObjectURL(url);msg.textContent='Layout JSON exported.';});
+  paint();
+})();
+</script>
+
   </body>
 </html>

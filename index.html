@@ -3094,8 +3094,8 @@
       <div class="prototype-layout"><div id="prototype-grid-wrap"><svg id="prototype-grid" viewBox="-21.5 -21.5 43 43" role="img" aria-label="Editable square game board"></svg></div>
       <div class="prototype-controls">
         <div class="prototype-tool-grid" role="group" aria-label="Paint tools">
-          <button class="prototype-tool selected" data-brush="road" title="Paint 3 by 3 road surface"><span>🛣️</span>Road 3×3</button>
-          <button class="prototype-tool" data-brush="road-single"><span>➕</span>Road tile</button>
+          <button class="prototype-tool selected" data-brush="road" title="Build a continuous road: click adjacent squares up, down, left or right"><span>🛣️</span>Connected road</button>
+          <button class="prototype-tool" data-brush="road-single"><span>➕</span>Road branch</button>
           <button class="prototype-tool" data-brush="home"><span>🏡</span>Habitat</button>
           <button class="prototype-tool" data-brush="food"><span>🍎</span>Food</button>
           <button class="prototype-tool" data-brush="rich"><span>🌽</span>Rich food</button>
@@ -3107,12 +3107,12 @@
         <div class="prototype-action-grid"><button id="prototype-clear">New blank board</button><button id="prototype-undo">Undo</button><button id="prototype-redo">Redo</button><button id="prototype-save">Save layout</button><button id="prototype-load">Load layout</button><button id="prototype-preview">Preview</button></div>
         <input type="file" id="prototype-file" accept="application/json,.json" hidden>
         <button class="primary" id="prototype-deploy">Deploy custom board</button><button id="prototype-default">Restore default board</button>
-        <small id="prototype-message" role="status">Light-green cells are blank. Road centerlines connect automatically in both directions and around corners.</small>
+        <small id="prototype-message" role="status">Start a road anywhere, then extend one square at a time: up, down, left or right. Yellow markings follow the road center.</small>
         <small>Uses the original square-ring cell IDs and existing movement. Default game stays unchanged until Deploy. Blank light-green cells are editable, including the center.</small>
       </div></div>
     </dialog>
     <script>
-      globalThis.FHPrototype={active:false,editing:false,tiles:Object.create(null),brush:'road'};
+      globalThis.FHPrototype={active:false,editing:false,tiles:Object.create(null),brush:'road',roadEnd:null,roadDone:false};
       globalThis.FHTile=(r,s)=>globalThis.FHPrototype.active?globalThis.FHPrototype.tiles[`${r}:${s}`]||null:null;
     </script>
     <script id="game-engine">
@@ -5848,11 +5848,11 @@
               if(kind==='rest')g.append(svg('text',{x:q.x,y:q.y+4*zoom,'text-anchor':'middle','font-size':13*zoom,'pointer-events':'none'},'✦'));
               if(kind==='home')g.append(svg('text',{x:q.x,y:q.y+5*zoom,'text-anchor':'middle','font-size':15*zoom,'pointer-events':'none'},'⌂'));
               if((kind==='food'||kind==='rich')&&!game.harvested.has(key(r,s)))fruit(g,p,kind==='rich');
-              if(kind==='road'){
+              if(kind==='road'&&override?.axis){
                 const xy0=squareCoordinate(r,s);
                 for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
                   const other=squarePosition(xy0.x+dx,xy0.z+dz);
-                  if(globalThis.FHTile(other.r,other.s)?.type!=='road')continue;
+                  if(!globalThis.FHTile(other.r,other.s)?.axis)continue;
                   const half=project({x:p.x+dx*SQUARE_UNIT*.5,z:p.z+dz*SQUARE_UNIT*.5},.07);
                   g.append(svg('path',{d:`M${q.x} ${q.y}L${half.x} ${half.y}`,fill:'none',stroke:'#f7df7b','stroke-width':1.65*zoom,'stroke-dasharray':`${3*zoom} ${2.5*zoom}`,'stroke-linecap':'round','pointer-events':'none'}));
                 }
@@ -7067,15 +7067,21 @@
         let defaultResources=game.resourceSpaces.slice(), defaultRich=new Set(game.goldenSpaces);
         const protoHistory=[],protoFuture=[];
         const maxN=RESOURCE+SQUARE_HOME;
+        // Editor uses original ring coordinates; the center has individual visual
+        // coordinates because the original engine intentionally collapses its
+        // central habitat into a single logical location (0,0).
         const tileId=(r,s)=>`${r}:${s}`;
         const fromXZ=(x,z)=>squarePosition(x,z);
         const inBounds=(x,z)=>Math.max(Math.abs(x),Math.abs(z))<=maxN;
+        const cellId=(x,z)=>Math.max(Math.abs(x),Math.abs(z))<=SQUARE_HOME?`c:${x}:${z}`:(()=>{const q=fromXZ(x,z);return tileId(q.r,q.s)})();
+        const entryAt=(x,z)=>inBounds(x,z)?proto.tiles[cellId(x,z)]||{type:'ground'}:null;
+        const typeAt=(x,z)=>entryAt(x,z)?.type||null;
+        const isRoad=(x,z)=>typeAt(x,z)==='road';
+        const isAxis=(x,z)=>isRoad(x,z)&&!!entryAt(x,z).axis;
+        const validRoadNext=(x,z)=>!proto.roadDone && (!proto.roadEnd || Math.abs(x-proto.roadEnd[0])+Math.abs(z-proto.roadEnd[1])===1);
         function blankPrototype(){
           const tiles=Object.create(null);
-          for(let x=-maxN;x<=maxN;x++)for(let z=-maxN;z<=maxN;z++){
-            if(!inBounds(x,z))continue;
-            const q=fromXZ(x,z);tiles[tileId(q.r,q.s)]={type:'ground'};
-          }
+          for(let x=-maxN;x<=maxN;x++)for(let z=-maxN;z<=maxN;z++)tiles[cellId(x,z)]={type:'ground'};
           return tiles;
         }
         function applyPrototypeResources(){
@@ -7083,62 +7089,89 @@
           if(!proto.active)return;
           game.resourceSpaces=[];game.goldenSpaces=new Set();
           for(const [id,entry] of Object.entries(proto.tiles)){
+            if(!['food','rich'].includes(entry.type)||id.startsWith('c:'))continue;
             const [r,s]=id.split(':').map(Number);
-            if(entry.type==='food'||entry.type==='rich'){
-              if(r===RESOURCE)game.resourceSpaces.push(s);if(r===RESOURCE&&entry.type==='rich')game.goldenSpaces.add(s);
-            }
+            if(r===RESOURCE){game.resourceSpaces.push(s);if(entry.type==='rich')game.goldenSpaces.add(s);}
           }
         }
-        function tileAtXZ(x,z){
-          if(!inBounds(x,z))return null;
-          const q=fromXZ(x,z);return proto.tiles[tileId(q.r,q.s)]?.type||'ground';
+        function markPath(group,x,z,scale=1){
+          const dirs=[[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dz])=>isAxis(x+dx,z+dz));
+          // Only center-path cells draw yellow lines, not every road surface tile.
+          for(const [dx,dz] of dirs){
+            if(dx<0||dz<0)continue;
+            group.append(svg('path',{d:`M${x} ${z}L${x+dx} ${z+dz}`,class:'road-mark'}));
+          }
+          if(!dirs.length)group.append(svg('circle',{cx:x,cy:z,r:.08,fill:'#ffdf6c','pointer-events':'none'}));
         }
         function drawPrototypeGrid(){
           protoGrid.replaceChildren();
-          const fill={ground:'#a6d59d',habitat:'#a6d59d',home:'#356b4a',green:'#a6d59d',road:'#79888b',rest:'#428a59',tree:'#286c45',food:'#d6b966',rich:'#71b6c2'};
-          const road=(x,z)=>tileAtXZ(x,z)==='road';
+          const fill={ground:'#a6d59d',habitat:'#a6d59d',home:'#356b4a',green:'#a6d59d',road:'#738287',rest:'#428a59',tree:'#286c45',food:'#d6b966',rich:'#71b6c2'};
           for(let z=-maxN;z<=maxN;z++)for(let x=-maxN;x<=maxN;x++){
-            const q=fromXZ(x,z),valid=inBounds(x,z),type=valid?tileAtXZ(x,z):'center';
-            const rect=svg('rect',{x:x-.49,y:z-.49,width:.98,height:.98,fill:valid?(fill[type]||fill.habitat):(Math.max(Math.abs(x),Math.abs(z))<=SQUARE_HOME?'#42785b':'#102a37'),class:valid?'cell':'', 'data-x':x,'data-z':z});
-            if(valid){rect.setAttribute('data-r',q.r);rect.setAttribute('data-s',q.s);}
+            const type=typeAt(x,z),rect=svg('rect',{x:x-.49,y:z-.49,width:.98,height:.98,fill:fill[type]||fill.ground,class:'cell','data-x':x,'data-z':z});
+            if(proto.brush==='road'&&validRoadNext(x,z)&&!isRoad(x,z))rect.setAttribute('stroke','#e9d471');
             protoGrid.append(rect);
-            if(!valid)continue;
-            if(type==='road'){
-              const dirs=[[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dz])=>road(x+dx,z+dz));
-              for(const [dx,dz] of dirs)protoGrid.append(svg('path',{d:`M${x} ${z}L${x+dx*.5} ${z+dz*.5}`,class:'road-mark'}));
-            }else if(type==='home'){
-              protoGrid.append(svg('text',{x,y:z+.22,'text-anchor':'middle','font-size':'.7','pointer-events':'none'},'⌂'));
-            }else if(type==='food'||type==='rich'||type==='tree'||type==='rest'){
-              protoGrid.append(svg('text',{x,y:z+.25,'text-anchor':'middle','font-size':'.7','pointer-events':'none'},type==='food'?'🍎':type==='rich'?'🍇':type==='tree'?'🌳':'✦'));
+            if(type==='home'||type==='food'||type==='rich'||type==='tree'||type==='rest'){
+              protoGrid.append(svg('text',{x,y:z+.25,'text-anchor':'middle','font-size':'.7','pointer-events':'none'},type==='home'?'⌂':type==='food'?'🍎':type==='rich'?'🍇':type==='tree'?'🌳':'✦'));
             }
           }
+          for(let z=-maxN;z<=maxN;z++)for(let x=-maxN;x<=maxN;x++)if(isAxis(x,z))markPath(protoGrid,x,z);
         }
+        function snapshot(){protoHistory.push({tiles:structuredClone(proto.tiles),end:proto.roadEnd?[...proto.roadEnd]:null,done:proto.roadDone});protoFuture.length=0;if(protoHistory.length>30)protoHistory.shift();}
+        function setTile(x,z,type,axis=false){if(inBounds(x,z))proto.tiles[cellId(x,z)]={type,...(axis?{axis:true}:{})};}
         function paintAt(x,z){
           if(!inBounds(x,z))return;
-          protoHistory.push(structuredClone(proto.tiles));protoFuture.length=0;if(protoHistory.length>30)protoHistory.shift();
           const brush=proto.brush;
-          const set=(xx,zz,type)=>{if(!inBounds(xx,zz))return;const q=fromXZ(xx,zz);proto.tiles[tileId(q.r,q.s)]={type};};
-          if(brush==='road')for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)set(x+dx,z+dz,'road');
-          else if(brush==='roundabout'){
-            set(x,z,'rest');for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)if(dx||dz)set(x+dx,z+dz,'road');
-          }else set(x,z,brush==='road-single'?'road':brush==='erase'?'ground':brush);
-          drawPrototypeGrid();protoStatus(`Painted ${brush} at original square coordinate (${x}, ${z}).`);
+          if(brush==='road'||brush==='road-single'){
+            // Directional road: road-axis tiles are the only legal next positions.
+            // The road surface is widened separately, without creating yellow
+            // markings on every surrounding tile.
+            if(!validRoadNext(x,z)){
+              protoStatus('Roads extend only one square UP, DOWN, LEFT or RIGHT from the yellow endpoint. Select Road branch to start another connected branch.');return;
+            }
+            if(isAxis(x,z)){
+              if(proto.roadEnd&&Math.abs(x-proto.roadEnd[0])+Math.abs(z-proto.roadEnd[1])===1){
+                snapshot();proto.roadEnd=[x,z];proto.roadDone=true;drawPrototypeGrid();protoStatus('Road closed into a loop. Choose Road branch to continue another connected section.');
+              }return;
+            }
+            snapshot();
+            // Surface width: 3 squares across the path, with centered axis.
+            // Never overwrite existing non-road objects automatically.
+            const prev=proto.roadEnd;
+            let dx=prev?x-prev[0]:0,dz=prev?z-prev[1]:0;
+            const footprint=dx!==0?[[0,-1],[0,0],[0,1]]:dz!==0?[[-1,0],[0,0],[1,0]]:[[-1,0],[0,0],[1,0],[0,-1],[0,1]];
+            for(const [ox,oz] of footprint){const current=entryAt(x+ox,z+oz);if(current&&['ground','road','habitat'].includes(current.type)&&!current.axis)setTile(x+ox,z+oz,'road');}
+            setTile(x,z,'road',true);
+            proto.roadEnd=[x,z];
+            if(Math.abs(x)===maxN||Math.abs(z)===maxN){proto.roadDone=true;protoStatus('Road reached the board edge and is capped. Select Road branch for another road.');}
+            else protoStatus(`Road endpoint (${x}, ${z}). Continue up, down, left or right.`);
+          }else if(brush==='roundabout'){
+            if(Math.abs(x)>maxN-1||Math.abs(z)>maxN-1){protoStatus('Roundabout needs a 3×3 footprint inside the board.');return;}
+            snapshot();
+            // Actual 3×3 existing squares: eight road cells + one green rest.
+            for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++)setTile(x+dx,z+dz,dx||dz?'road':'rest',!!(dx||dz));
+            proto.roadEnd=null;proto.roadDone=false;
+            protoStatus('Roundabout replaced the nine existing squares, including its green resting center.');
+          }else{
+            snapshot();setTile(x,z,brush==='erase'?'ground':brush);
+            protoStatus(`Placed one ${brush==='erase'?'blank ground':brush} square at (${x}, ${z}).`);
+          }
+          drawPrototypeGrid();
         }
         let painting=false;
         protoGrid.addEventListener('pointerdown',e=>{const el=e.target.closest('rect.cell');if(!el)return;painting=true;paintAt(+el.dataset.x,+el.dataset.z);e.preventDefault();});
         window.addEventListener('pointerup',()=>painting=false);
-        protoGrid.addEventListener('pointermove',e=>{if(!painting||e.buttons!==1)return;const el=e.target.closest('rect.cell');if(!el)return;const pos=`${el.dataset.x}:${el.dataset.z}`;if(pos===protoGrid.dataset.last)return;protoGrid.dataset.last=pos;paintAt(+el.dataset.x,+el.dataset.z);});
+        protoGrid.addEventListener('pointermove',e=>{if(!painting||e.buttons!==1||proto.brush==='road'||proto.brush==='road-single')return;const el=e.target.closest('rect.cell');if(!el)return;const pos=`${el.dataset.x}:${el.dataset.z}`;if(pos===protoGrid.dataset.last)return;protoGrid.dataset.last=pos;paintAt(+el.dataset.x,+el.dataset.z);});
         $('prototype-launch').onclick=()=>{try{if(!Object.keys(proto.tiles).length)proto.tiles=blankPrototype();drawPrototypeGrid();if(typeof protoDialog.showModal==='function')protoDialog.showModal();else protoDialog.setAttribute('open','');}catch(error){console.error('Prototype builder:',error);alert('Prototype editor error: '+error.message);}};
         $('prototype-close').onclick=()=>protoDialog.close();
-        document.querySelectorAll('.prototype-tool').forEach(button=>button.addEventListener('click',()=>{proto.brush=button.dataset.brush;document.querySelectorAll('.prototype-tool').forEach(b=>b.classList.toggle('selected',b===button));protoStatus('Selected '+button.textContent.trim());}));
-        $('prototype-clear').onclick=()=>{protoHistory.push(structuredClone(proto.tiles));protoFuture.length=0;proto.tiles=blankPrototype();drawPrototypeGrid();protoStatus('Blank light-green board ready.');};
-        $('prototype-undo').onclick=()=>{if(!protoHistory.length)return;protoFuture.push(structuredClone(proto.tiles));proto.tiles=protoHistory.pop();drawPrototypeGrid();protoStatus('Last edit undone.');};
-        $('prototype-redo').onclick=()=>{if(!protoFuture.length)return;protoHistory.push(structuredClone(proto.tiles));proto.tiles=protoFuture.pop();drawPrototypeGrid();protoStatus('Edit restored.');};
+        document.querySelectorAll('.prototype-tool').forEach(button=>button.addEventListener('click',()=>{proto.brush=button.dataset.brush;if(proto.brush==='road-single'){proto.roadEnd=null;proto.roadDone=false;}document.querySelectorAll('.prototype-tool').forEach(b=>b.classList.toggle('selected',b===button));protoStatus('Selected '+button.textContent.trim());}));
+        $('prototype-clear').onclick=()=>{snapshot();proto.tiles=blankPrototype();proto.roadEnd=null;proto.roadDone=false;drawPrototypeGrid();protoStatus('Blank light-green board ready.');};
+        $('prototype-undo').onclick=()=>{if(!protoHistory.length)return;protoFuture.push({tiles:structuredClone(proto.tiles),end:proto.roadEnd,done:proto.roadDone});const prev=protoHistory.pop();proto.tiles=prev.tiles;proto.roadEnd=prev.end;proto.roadDone=prev.done;drawPrototypeGrid();protoStatus('Last edit undone.');};
+        $('prototype-redo').onclick=()=>{if(!protoFuture.length)return;protoHistory.push({tiles:structuredClone(proto.tiles),end:proto.roadEnd,done:proto.roadDone});const next=protoFuture.pop();proto.tiles=next.tiles;proto.roadEnd=next.end;proto.roadDone=next.done;drawPrototypeGrid();protoStatus('Edit restored.');};
         $('prototype-deploy').onclick=()=>{if(!Object.values(proto.tiles).some(t=>t.type==='home')){protoStatus('Place at least one 🏡 Habitat before deployment.');return;}proto.active=true;applyPrototypeResources();const homes=Object.entries(proto.tiles).filter(([,v])=>v.type==='home').map(([id])=>id.split(':').map(Number));game.tokens.forEach((t,i)=>{if(homes.length){const [r,s]=homes[i%homes.length];t.r=r;t.s=s;}});protoDialog.close();render();};
         $('prototype-preview').onclick=()=>{drawPrototypeGrid();protoStatus('Preview shows the exact terrain that will replace the default board.');};
         $('prototype-save').onclick=()=>{const blob=new Blob([JSON.stringify({version:2,tiles:proto.tiles},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Fragmented_Habitat_Custom_Board.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);};
         $('prototype-load').onclick=()=>$('prototype-file').click();
-        $('prototype-file').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!data.tiles||typeof data.tiles!=='object')throw Error('Invalid layout');protoHistory.push(structuredClone(proto.tiles));proto.tiles=data.tiles;drawPrototypeGrid();protoStatus('Custom layout loaded. Not deployed.');}catch(err){protoStatus('Could not load layout: '+err.message);}e.target.value='';};
+        $('prototype-file').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!data.tiles||typeof data.tiles!=='object')throw Error('Invalid layout');snapshot();proto.tiles=data.tiles;proto.roadEnd=null;proto.roadDone=false;drawPrototypeGrid();protoStatus('Custom layout loaded. Not deployed.');}catch(err){protoStatus('Could not load layout: '+err.message);}e.target.value='';};
         $('prototype-default').onclick=()=>{proto.active=false;applyPrototypeResources();game.tokens.forEach(t=>{t.r=0;t.s=0;});protoDialog.close();render();};
         globalThis.qaRender = render;
         globalThis.qaCamera = () => ({

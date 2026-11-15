@@ -3067,24 +3067,34 @@
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
     <style>
-      #prototype-tools{position:fixed;left:12px;bottom:12px;z-index:30;background:#0c2137;border:1px solid #537b75;border-radius:12px;padding:12px;max-width:min(410px,95vw);box-shadow:0 10px 40px #0009;color:#e5f4e8}
-      #prototype-tools[hidden]{display:none!important}
-      #prototype-tools button,#prototype-tools select{width:auto;display:inline-block;margin:3px;padding:7px;border-radius:6px}
       #prototype-launch{position:fixed;left:12px;bottom:12px;z-index:29;background:#b6e2b7;color:#102c25;padding:10px 16px;border:0;border-radius:9px;font-weight:800}
-      body.prototype-editing .board .tile{cursor:crosshair!important}
-      body.prototype-editing .board .tile .tile-top{stroke:#b6f5da;stroke-opacity:.45}
-      #prototype-tools small{display:block;color:#bad3d0;line-height:1.5;margin:6px 0}
+      #prototype-dialog{width:min(1220px,98vw);max-width:98vw;height:min(94dvh,940px);max-height:94dvh;padding:15px;background:#102a37;color:#e6f4e9}
+      .prototype-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+      .prototype-layout{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:12px;height:calc(100% - 75px);min-height:0}
+      #prototype-grid-wrap{min-height:0;overflow:auto;background:#193d36;border:1px solid #628a75;border-radius:9px;display:grid;place-items:center;padding:8px}
+      #prototype-grid{width:min(100%,72vh);height:auto;aspect-ratio:1;touch-action:none;user-select:none}
+      .prototype-controls{overflow:auto;display:flex;flex-direction:column;gap:8px}
+      .prototype-controls select,.prototype-controls button{width:100%;margin:0;padding:9px;border:1px solid #55766d;background:#234c48;color:#eff9ed;border-radius:7px}
+      .prototype-controls button.primary{background:#a4e4b6;color:#143c2c;font-weight:bold}
+      .prototype-controls small{color:#c5ded4;line-height:1.45}
+      #prototype-grid rect.cell{stroke:#638f70;stroke-width:.07;cursor:crosshair}
+      #prototype-grid rect.cell:hover{stroke:#fff0a4;stroke-width:.24}
+      #prototype-grid .road-mark{pointer-events:none;stroke:#ffdf6c;stroke-width:.16;stroke-dasharray:.28 .16;fill:none}
+      @media(max-width:750px){.prototype-layout{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}.prototype-controls{max-height:210px;display:grid;grid-template-columns:1fr 1fr}.prototype-controls small{grid-column:1/-1}}
     </style>
     <button id="prototype-launch" type="button">⚒ PROTOTYPE</button>
-    <section id="prototype-tools" hidden aria-label="Prototype board editor">
-      <strong>PROTOTYPE · Original square board</strong>
-      <small>Paint the actual numbered board cells. Original movement and adjacency are preserved. Changes affect landing checks when deployed.</small>
-      <label>Paint <select id="prototype-brush"><option value="road">Road · 3×3 stamp</option><option value="green">Green / stealth</option><option value="rest">Resting refuge</option><option value="tree">Tree refuge</option><option value="food">Food patch (outer ring)</option><option value="rich">Rich habitat (outer ring)</option><option value="clear">Restore default cell</option></select></label>
-      <div><button id="prototype-deploy" type="button">Deploy board</button><button id="prototype-preview" type="button">Preview edits</button><button id="prototype-default" type="button">Default board</button><button id="prototype-close" type="button">Close</button></div>
-      <small id="prototype-message" role="status">Edit mode is active. Click board cells to paint.</small>
-    </section>
+    <dialog id="prototype-dialog" aria-label="Prototype board builder">
+      <div class="prototype-header"><div><strong>⚒ PROTOTYPE — Blank square board builder</strong><p>Paint on the light-green board, then deploy to replace the default layout.</p></div><button class="btn" id="prototype-close">Close ✕</button></div>
+      <div class="prototype-layout"><div id="prototype-grid-wrap"><svg id="prototype-grid" viewBox="-21.5 -21.5 43 43" role="img" aria-label="Editable square game board"></svg></div>
+      <div class="prototype-controls">
+        <label>Brush<select id="prototype-brush"><option value="road">Road · 3×3 stamp</option><option value="road-single">Road · single tile</option><option value="habitat">Habitat / green ground</option><option value="rest">Grass resting place</option><option value="tree">Tree resting place</option><option value="roundabout">Roundabout · 4 roads + green center</option><option value="food">Food patch · 1 food</option><option value="rich">Rich Habitat · 3 food + hunter</option><option value="erase">Erase to light green</option></select></label>
+        <button id="prototype-clear">Clear to blank green</button><button id="prototype-undo">Undo last paint</button>
+        <button class="primary" id="prototype-deploy">Deploy custom board</button><button id="prototype-default">Restore default board</button>
+        <small id="prototype-message" role="status">Light-green cells are blank. Road centerlines connect automatically in both directions and around corners.</small>
+        <small>Uses the original square-ring cell IDs and existing movement. The central habitat is protected. Custom food collection away from the outer resource ring is not yet supported by the game engine.</small>
+      </div></div>
+    </dialog>
     <script>
-      // Single shared layout: no separate prototype grid, movement model, or tile IDs.
       globalThis.FHPrototype={active:false,editing:false,tiles:Object.create(null),brush:'road'};
       globalThis.FHTile=(r,s)=>globalThis.FHPrototype.active?globalThis.FHPrototype.tiles[`${r}:${s}`]||null:null;
     </script>
@@ -5808,11 +5818,12 @@
             const override=globalThis.FHTile(r,s);
             if(override?.type==='road'){
               const a=squareCoordinate(r,s);
-              for(const [dx,dz] of [[1,0],[0,1]]){
+              for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
                 const adjacent=squarePosition(a.x+dx,a.z+dz);
+                if(adjacent.r===0||adjacent.r>RESOURCE)continue;
                 const adjacentType=globalThis.FHTile(adjacent.r,adjacent.s)?.type;
-                if(adjacentType==='road'||(!globalThis.FHTile(adjacent.r,adjacent.s)&&ROAD.has(adjacent.r))){
-                  const b=centre(adjacent.r,adjacent.s), end=project({x:(p.x+b.x)/2,z:(p.z+b.z)/2},.055);
+                if(adjacentType==='road'){
+                  const b=centre(adjacent.r,adjacent.s),end=project({x:(p.x+b.x)/2,z:(p.z+b.z)/2},.055);
                   g.append(svg('path',{d:`M${q.x} ${q.y}L${end.x} ${end.y}`,stroke:'#f6dc74','stroke-width':2*zoom,'stroke-dasharray':`${4*zoom} ${3*zoom}`,'pointer-events':'none'}));
                 }
               }
@@ -7018,61 +7029,81 @@
           }),
         );
         addEventListener("resize", board);
-        // Prototype controls are inside the original renderer closure, so the
-        // original board() and game state are the only source of truth.
+        // Full-size editor shares squareCoordinate/squarePosition with the original engine.
         const proto=globalThis.FHPrototype;
-        const protoTools=$('prototype-tools');
+        const protoDialog=$('prototype-dialog');
+        const protoGrid=$('prototype-grid');
         const protoMessage=$('prototype-message');
-        const protoStatus=(m)=>protoMessage.textContent=m;
-        let defaultResources=game.resourceSpaces.slice(),defaultRich=new Set(game.goldenSpaces);
+        const protoStatus=(message)=>protoMessage.textContent=message;
+        const defaultResources=game.resourceSpaces.slice(), defaultRich=new Set(game.goldenSpaces);
+        const protoHistory=[];
+        const maxN=RESOURCE+SQUARE_HOME;
+        const tileId=(r,s)=>`${r}:${s}`;
+        const fromXZ=(x,z)=>squarePosition(x,z);
+        const inBounds=(x,z)=>Math.max(Math.abs(x),Math.abs(z))<=maxN && Math.max(Math.abs(x),Math.abs(z))>SQUARE_HOME;
+        function blankPrototype(){
+          const tiles=Object.create(null);
+          for(let x=-maxN;x<=maxN;x++)for(let z=-maxN;z<=maxN;z++){
+            if(!inBounds(x,z))continue;
+            const q=fromXZ(x,z);tiles[tileId(q.r,q.s)]={type:'habitat'};
+          }
+          return tiles;
+        }
         function applyPrototypeResources(){
-          game.resourceSpaces=defaultResources.slice();
-          game.goldenSpaces=new Set(defaultRich);
+          game.resourceSpaces=defaultResources.slice();game.goldenSpaces=new Set(defaultRich);
           if(!proto.active)return;
+          game.resourceSpaces=[];game.goldenSpaces=new Set();
           for(const [id,entry] of Object.entries(proto.tiles)){
             const [r,s]=id.split(':').map(Number);
-            if(r!==RESOURCE)continue;
-            if(entry.type==='food'||entry.type==='rich'){
-              if(!game.resourceSpaces.includes(s))game.resourceSpaces.push(s);
-              if(entry.type==='rich')game.goldenSpaces.add(s);
-              else game.goldenSpaces.delete(s);
+            if(r===RESOURCE&&(entry.type==='food'||entry.type==='rich')){
+              game.resourceSpaces.push(s);if(entry.type==='rich')game.goldenSpaces.add(s);
             }
           }
         }
-        function protoMode(on){proto.editing=on;document.body.classList.toggle('prototype-editing',on);protoTools.hidden=!on;$('prototype-launch').hidden=on;board();}
-        $('prototype-launch').onclick=()=>protoMode(true);
-        $('prototype-close').onclick=()=>protoMode(false);
-        $('prototype-brush').onchange=(e)=>proto.brush=e.target.value;
-        $('prototype-preview').onclick=()=>{proto.active=true;applyPrototypeResources();protoStatus('Previewing edited cells on the original game board.');board();};
-        $('prototype-deploy').onclick=()=>{proto.active=true;applyPrototypeResources();protoMode(false);render();};
-        $('prototype-default').onclick=()=>{proto.active=false;proto.tiles=Object.create(null);applyPrototypeResources();protoStatus('Original default board restored.');render();};
-        $('board').addEventListener('click',(e)=>{
-          if(!proto.editing)return;
-          const tile=e.target.closest('.tile[data-r][data-s]');
-          if(!tile)return;
-          e.preventDefault();e.stopImmediatePropagation();
-          const r=Number(tile.dataset.r),s=Number(tile.dataset.s),brush=proto.brush;
-          if(r===0){protoStatus('The central habitat is protected; choose an outer cell.');return;}
-          if((brush==='food'||brush==='rich')&&r!==RESOURCE){protoStatus('Food patches must be placed on the outer resource ring.');return;}
-          const selected=squareCoordinate(r,s);
-          let changed=0;
-          const apply=(rr,ss)=>{
-            if(rr<1||rr>RESOURCE)return;
-            const id=`${rr}:${ss}`;
-            if(brush==='clear')delete proto.tiles[id];
-            else proto.tiles[id]={type:brush};
-            changed++;
-          };
-          if(brush==='road'){
-            for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
-              const pos=squarePosition(selected.x+dx,selected.z+dz);
-              if(pos.r>=1&&pos.r<RESOURCE)apply(pos.r,pos.s);
+        function tileAtXZ(x,z){
+          if(!inBounds(x,z))return null;
+          const q=fromXZ(x,z);return proto.tiles[tileId(q.r,q.s)]?.type||'habitat';
+        }
+        function drawPrototypeGrid(){
+          protoGrid.replaceChildren();
+          const fill={habitat:'#a6d59d',green:'#a6d59d',road:'#79888b',rest:'#428a59',tree:'#286c45',food:'#d6b966',rich:'#71b6c2'};
+          const road=(x,z)=>tileAtXZ(x,z)==='road';
+          for(let z=-maxN;z<=maxN;z++)for(let x=-maxN;x<=maxN;x++){
+            const q=fromXZ(x,z),valid=inBounds(x,z),type=valid?tileAtXZ(x,z):'center';
+            const rect=svg('rect',{x:x-.49,y:z-.49,width:.98,height:.98,fill:valid?(fill[type]||fill.habitat):(Math.max(Math.abs(x),Math.abs(z))<=SQUARE_HOME?'#42785b':'#102a37'),class:valid?'cell':'', 'data-x':x,'data-z':z});
+            if(valid){rect.setAttribute('data-r',q.r);rect.setAttribute('data-s',q.s);}
+            protoGrid.append(rect);
+            if(!valid)continue;
+            if(type==='road'){
+              for(const [dx,dz] of [[1,0],[0,1]])if(road(x+dx,z+dz))
+                protoGrid.append(svg('path',{d:`M${x} ${z}L${x+dx} ${z+dz}`,class:'road-mark'}));
+            }else if(type==='food'||type==='rich'||type==='tree'||type==='rest'){
+              protoGrid.append(svg('text',{x,y:z+.25,'text-anchor':'middle','font-size':'.7','pointer-events':'none'},type==='food'?'🍎':type==='rich'?'🍇':type==='tree'?'🌳':'✦'));
             }
-          }else apply(r,s);
-          proto.active=true;applyPrototypeResources();
-          protoStatus(`${changed} original board cell(s) updated. ${brush==='road'?'Road connections are inferred from adjacent cells.':''}`);
-          board();
-        },true);
+          }
+        }
+        function paintAt(x,z){
+          if(!inBounds(x,z))return;
+          protoHistory.push(structuredClone(proto.tiles));if(protoHistory.length>30)protoHistory.shift();
+          const brush=proto.brush;
+          const set=(xx,zz,type)=>{if(!inBounds(xx,zz))return;const q=fromXZ(xx,zz);proto.tiles[tileId(q.r,q.s)]={type};};
+          if(brush==='road')for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)set(x+dx,z+dz,'road');
+          else if(brush==='roundabout'){
+            set(x,z,'rest');for(const [dx,dz] of [[-1,0],[1,0],[0,-1],[0,1]])set(x+dx,z+dz,'road');
+          }else set(x,z,brush==='road-single'?'road':brush==='erase'?'habitat':brush);
+          drawPrototypeGrid();protoStatus(`Painted ${brush} at original square coordinate (${x}, ${z}).`);
+        }
+        let painting=false;
+        protoGrid.addEventListener('pointerdown',e=>{const el=e.target.closest('rect.cell');if(!el)return;painting=true;paintAt(+el.dataset.x,+el.dataset.z);e.preventDefault();});
+        window.addEventListener('pointerup',()=>painting=false);
+        protoGrid.addEventListener('pointermove',e=>{if(!painting||e.buttons!==1)return;const el=e.target.closest('rect.cell');if(!el)return;const pos=`${el.dataset.x}:${el.dataset.z}`;if(pos===protoGrid.dataset.last)return;protoGrid.dataset.last=pos;paintAt(+el.dataset.x,+el.dataset.z);});
+        $('prototype-launch').onclick=()=>{if(!Object.keys(proto.tiles).length)proto.tiles=blankPrototype();drawPrototypeGrid();protoDialog.showModal();};
+        $('prototype-close').onclick=()=>protoDialog.close();
+        $('prototype-brush').onchange=e=>proto.brush=e.target.value;
+        $('prototype-clear').onclick=()=>{protoHistory.push(structuredClone(proto.tiles));proto.tiles=blankPrototype();drawPrototypeGrid();protoStatus('Blank light-green board ready.');};
+        $('prototype-undo').onclick=()=>{if(!protoHistory.length)return;proto.tiles=protoHistory.pop();drawPrototypeGrid();protoStatus('Last edit undone.');};
+        $('prototype-deploy').onclick=()=>{proto.active=true;applyPrototypeResources();protoDialog.close();render();};
+        $('prototype-default').onclick=()=>{proto.active=false;applyPrototypeResources();protoDialog.close();render();};
         globalThis.qaRender = render;
         globalThis.qaCamera = () => ({
           angle,

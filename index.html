@@ -1983,39 +1983,9 @@
       .habitat-plot.empty { background:#9fc88a !important; border:2px solid #315b3d; border-style:solid; color:#24452f; font-weight:800; }
       .habitat-plot .owner { font-size:9px; font-weight:800; }
       .muted { color:var(--muted); font-size:12px; line-height:1.45; }
-
-
-      /* Board-builder prototype */
-      #prototype-build-trigger{position:fixed;left:18px;bottom:18px;z-index:80;background:#d8efc9;color:#173b2b;border:2px solid #8fbd83;border-radius:12px;padding:11px 16px;font-weight:900;letter-spacing:.04em;box-shadow:0 8px 24px #0008}
-      #prototype-build-trigger:hover{filter:brightness(1.08);transform:translateY(-1px)}
-      #board-builder-dialog{width:min(1100px,96vw);max-width:1100px;max-height:92dvh;border:1px solid #63876c;border-radius:18px;background:#0b1e2d;color:#edf7ef;padding:20px;box-shadow:0 24px 90px #000b}
-      #board-builder-dialog::backdrop{background:#020a12d9;backdrop-filter:blur(5px)}
-      .builder-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
-      .builder-head p{color:#a9c0b2;margin-top:5px;max-width:720px}
-      .builder-layout{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:16px;align-items:start}
-      .builder-grid{display:grid;grid-template-columns:repeat(20,minmax(0,1fr));gap:2px;background:#355d43;border:3px solid #537c59;padding:3px;border-radius:9px;aspect-ratio:1;max-height:68vh}
-      .builder-cell{min-width:0;aspect-ratio:1;border:1px solid #7fa77a;background:#b5d5a3;color:#173b2b;padding:0;display:grid;place-items:center;font-size:clamp(7px,1.2vw,15px);line-height:1;border-radius:1px}
-      .builder-cell.road{background:#69777a;border-color:#e0d5ad;color:#fff}
-      .builder-cell.habitat{background:#347e59;border:2px solid #c5f2b5;color:white}
-      .builder-cell.food{background:#e8bd68;border-color:#9c7139;color:#402b12}
-      .builder-cell.rest{background:#4b8e59;border:2px solid #c2e9ad;color:white;font-size:clamp(9px,1.6vw,19px)}
-      .builder-cell.green{background:#78ad68;border:1px solid #477d4c;color:#efffe9}
-      .builder-cell.road{background:#707e7e;border-color:#526467;color:#f4e4a5}
-      .builder-cell.road{background:#69777a;border-color:#e0d5ad;color:#fff}
-      .builder-cell:focus-visible{outline:2px solid white;z-index:1}
-      .builder-tools{display:grid;gap:9px}
-      .builder-tools button,.builder-tools select{width:100%}
-      .builder-tools .selected{outline:2px solid #ffe18a;background:#284c43}
-      .builder-stat{padding:10px;border:1px solid #38556a;border-radius:9px;background:#102b3d;font-size:12px;color:#c6d8d2}
-      .builder-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;justify-content:flex-end}
-      #builder-message{font-size:12px;color:#b9d7c4;min-height:18px}
-      @media(max-width:760px){.builder-layout{grid-template-columns:1fr}.builder-grid{max-height:48vh}.builder-tools{grid-template-columns:1fr 1fr}#board-builder-dialog{padding:12px}.builder-head{flex-direction:column}}
-
     </style>
   </head>
   <body>
-    <button id="prototype-build-trigger" type="button">⚒ PROTOTYPE · BUILD A BOARD</button>
-    <div id="prototype-deploy-notice" hidden style="position:fixed;left:18px;bottom:66px;z-index:79;background:#163b2d;color:#d9f4df;border:1px solid #78b58b;border-radius:9px;padding:8px 12px;font-size:12px">Custom prototype layout displayed in the game board. <button id="prototype-standard-board" type="button" style="margin-left:8px">Return to standard board</button></div>
     <main class="app">
       <aside class="sidebar">
         <div class="eyebrow">A little world. A risky journey.</div>
@@ -3096,6 +3066,28 @@
       <pre id="event-log"></pre>
       <button class="btn" data-close="history-dialog">Close</button>
     </dialog>
+    <style>
+      #prototype-tools{position:fixed;left:12px;bottom:12px;z-index:30;background:#0c2137;border:1px solid #537b75;border-radius:12px;padding:12px;max-width:min(410px,95vw);box-shadow:0 10px 40px #0009;color:#e5f4e8}
+      #prototype-tools[hidden]{display:none!important}
+      #prototype-tools button,#prototype-tools select{width:auto;display:inline-block;margin:3px;padding:7px;border-radius:6px}
+      #prototype-launch{position:fixed;left:12px;bottom:12px;z-index:29;background:#b6e2b7;color:#102c25;padding:10px 16px;border:0;border-radius:9px;font-weight:800}
+      body.prototype-editing .board .tile{cursor:crosshair!important}
+      body.prototype-editing .board .tile .tile-top{stroke:#b6f5da;stroke-opacity:.45}
+      #prototype-tools small{display:block;color:#bad3d0;line-height:1.5;margin:6px 0}
+    </style>
+    <button id="prototype-launch" type="button">⚒ PROTOTYPE</button>
+    <section id="prototype-tools" hidden aria-label="Prototype board editor">
+      <strong>PROTOTYPE · Original square board</strong>
+      <small>Paint the actual numbered board cells. Original movement and adjacency are preserved. Changes affect landing checks when deployed.</small>
+      <label>Paint <select id="prototype-brush"><option value="road">Road · 3×3 stamp</option><option value="green">Green / stealth</option><option value="rest">Resting refuge</option><option value="tree">Tree refuge</option><option value="food">Food patch (outer ring)</option><option value="rich">Rich habitat (outer ring)</option><option value="clear">Restore default cell</option></select></label>
+      <div><button id="prototype-deploy" type="button">Deploy board</button><button id="prototype-preview" type="button">Preview edits</button><button id="prototype-default" type="button">Default board</button><button id="prototype-close" type="button">Close</button></div>
+      <small id="prototype-message" role="status">Edit mode is active. Click board cells to paint.</small>
+    </section>
+    <script>
+      // Single shared layout: no separate prototype grid, movement model, or tile IDs.
+      globalThis.FHPrototype={active:false,editing:false,tiles:Object.create(null),brush:'road'};
+      globalThis.FHTile=(r,s)=>globalThis.FHPrototype.active?globalThis.FHPrototype.tiles[`${r}:${s}`]||null:null;
+    </script>
     <script id="game-engine">
       /* Fragmented Habitat v34 — rules engine, independent of the display. */
       (() => {
@@ -3394,7 +3386,7 @@
             return this.officers[0];
           }
           isRefuge(r, s) {
-            return r === ISLAND && this.refugeSpaces.has(s);
+            return ["rest","tree"].includes(globalThis.FHTile(r,s)?.type) || (!globalThis.FHTile(r,s) && r === ISLAND && this.refugeSpaces.has(s));
           }
           officerRoute() {
             return Array.from(
@@ -3974,7 +3966,7 @@
               this.hit(t, "predator", done, pred.id);
               return;
             }
-            if (ROAD.has(t.r)) {
+            if ((globalThis.FHTile(t.r,t.s)?.type === "road") || (!globalThis.FHTile(t.r,t.s) && ROAD.has(t.r))) {
               this.phase = "traffic";
               this.pending = { token: t.id, done };
               this.record(
@@ -3982,7 +3974,7 @@
               );
               return;
             }
-            if (PREDATOR_LANES.includes(t.r) && !skipStealth) {
+            if (((globalThis.FHTile(t.r,t.s)?.type === "green") || (!globalThis.FHTile(t.r,t.s) && PREDATOR_LANES.includes(t.r))) && !skipStealth) {
               const nearPredator = this.predators.some((pred) => {
                 if (this.boardShape === "square") {
                   const a = squareCoordinate(t.r, t.s), b = squareCoordinate(pred.r, pred.s);
@@ -4520,7 +4512,7 @@
             }
             return this.neighbours(t.r, t.s, t.owner).filter(
               (p) =>
-                PREDATOR_LANES.includes(p.r) &&
+                ((globalThis.FHTile(p.r,p.s)?.type === "green") || (!globalThis.FHTile(p.r,p.s) && PREDATOR_LANES.includes(p.r))) &&
                 !this.occupied(p.r, p.s) &&
                 !this.predatorAt(p.r, p.s),
             );
@@ -5268,6 +5260,14 @@
             : { x: 0, z: 0 };
         }
         function shape(r, s) {
+          const custom=globalThis.FHTile(r,s);
+          if(custom){
+            if(custom.type==='road')return {fill:'#78878b',side:'#48585b',name:'Custom road · traffic check'};
+            if(custom.type==='green')return {fill:'#8bbf82',side:'#537b52',name:'Custom green · Stealth check'};
+            if(custom.type==='rest'||custom.type==='tree')return {fill:'#367d55',side:'#28573c',name:'Custom resting refuge · safe stop'};
+            if(custom.type==='food')return {fill:'#4e8260',side:'#2c553b',name:'Custom food patch'};
+            if(custom.type==='rich')return {fill:'#4c9aa5',side:'#2c6b72',name:'Custom rich habitat'};
+          }
           if (!r)
             return {
               fill: "#41735a",
@@ -5282,7 +5282,7 @@
                 ? "Protected refuge · officers skip this block · contests allowed"
                 : "Median strip · four traffic officers",
             };
-          if (ROAD.has(r))
+          if (!globalThis.FHTile(r,s) && ROAD.has(r))
             return {
               fill: "#839092",
               side: "#53696c",
@@ -5669,74 +5669,12 @@
             }, habitatMarker(owner)));
           });
         }
-        function drawPrototypeBoard(root, data) {
-          root.setAttribute("viewBox", "0 0 1000 1000");
-          root.append(svg("rect", {x:24,y:24,width:952,height:952,rx:14,fill:"#315c42",stroke:"#8fb58a","stroke-width":8}));
-          const n=data.gridSize||20, pad=32, size=936/n, map=new Map(data.cells.map(c=>[`${c.row},${c.col}`,c]));
-          const cellAt=(r,c)=>map.get(`${r},${c}`);
-          for(let r=0;r<n;r++) for(let c=0;c<n;c++) {
-            const x=pad+c*size,y=pad+r*size, item=cellAt(r,c), type=item?.type||"empty";
-            const grass=((r+c)%2===0)?"#b9dba7":"#add397";
-            const fill=type==="road"?"#707e7e":type==="habitat"?(COLORS[item.owner]||"#347e59"):type==="food"?"#e8bd68":type==="rest"?"#4b8e59":type==="green"?"#78ad68":grass;
-            root.append(svg("rect",{x,y,width:size,height:size,fill,stroke:type==="road"?"#526467":"#638c60","stroke-width":type==="road"?1.1:1.0}));
-            if(type==="habitat") {
-              // Habitat symbol follows the animal assigned to that player, not a generic house.
-              const animal=game.players[item.owner??0]?.animal||"";
-              const marks={Rat:"🍃",Squirrel:"🌰",Raccoon:"🌿",Rabbit:"🌼",Capybara:"🌱",Tarsier:"🍀",Beetle:"🍂",Koala:"🌿"};
-              root.append(svg("text",{x:x+size/2,y:y+size*.37,"text-anchor":"middle","font-size":size*.42,fill:"#fff","font-weight":900},`P${(item.owner??0)+1}`));
-              // Raised, shaded 3D-style animal token sitting on its habitat block.
-              root.append(svg("ellipse",{cx:x+size/2,cy:y+size*.78,rx:size*.31,ry:size*.12,fill:"#18392b",opacity:.42}));
-              root.append(svg("circle",{cx:x+size/2,cy:y+size*.68,r:size*.29,fill:"#294b3b",stroke:"#a7d7a4","stroke-width":1.5}));
-              root.append(svg("circle",{cx:x+size/2,cy:y+size*.64,r:size*.25,fill:"#e7d6a8",stroke:"#fff0c7","stroke-width":1}));
-              root.append(svg("text",{x:x+size/2,y:y+size*.75,"text-anchor":"middle","font-size":size*.38},marks[animal]||"🍃"));
-            }
-            if(type==="food") root.append(svg("text",{x:x+size/2,y:y+size*.69,"text-anchor":"middle","font-size":size*.58},"🍎"));
-            if(type==="rest") {
-              root.append(svg("ellipse",{cx:x+size/2,cy:y+size*.78,rx:size*.34,ry:size*.13,fill:"#24472e",opacity:.35}));
-              root.append(svg("text",{x:x+size/2,y:y+size*.70,"text-anchor":"middle","font-size":size*.72},"🌳"));
-              root.append(svg("text",{x:x+size/2,y:y+size*.91,"text-anchor":"middle","font-size":size*.14,fill:"#e7f5d5","font-weight":800},"REST"));
-            }
-          }
-          // Draw the road centreline from actual neighbouring path tiles.
-          // Adjacency is authoritative: this keeps vertical pieces and older
-          // saved layouts connected even if their stored pathDirs disagree.
-          const dirs={N:[-1,0],E:[0,1],S:[1,0],W:[0,-1]};
-          const opposite={N:"S",S:"N",E:"W",W:"E"};
-          for(let r=0;r<n;r++) for(let c=0;c<n;c++) {
-            const item=cellAt(r,c);
-            if(item?.type!=="road" || !item.path) continue;
-            const connections=[];
-            for(const [d,[dr,dc]] of Object.entries(dirs)) {
-              const next=cellAt(r+dr,c+dc);
-              // Connect any two adjacent centreline tiles. Do not require
-              // reciprocal metadata; rotated pieces can carry stale metadata.
-              if(next?.type==="road" && next.path) connections.push(d);
-            }
-            // Preserve a visible stub for an isolated endpoint using its own
-            // direction metadata, while connected tiles always use adjacency.
-            if(!connections.length) {
-              for(const d of (item.pathDirs||[])) if(d in dirs) connections.push(d);
-            }
-            if(!connections.length) continue;
-            const x=pad+(c+.5)*size, y=pad+(r+.5)*size, reach=size*.5;
-            const pts=connections.map(d=>d==="N"?[x,y-reach]:d==="S"?[x,y+reach]:d==="E"?[x+reach,y]:[x-reach,y]);
-            const pathD=pts.map(([px,py],i)=>`${i===0?"M":"L"}${px},${py}`).join(" ")+(pts.length===1?` L${x},${y}`:"");
-            root.append(svg("path",{d:pathD,fill:"none",stroke:"#f4e4a5","stroke-width":Math.max(2.4,size*.075),"stroke-dasharray":`${size*.18} ${size*.12}`,"stroke-linecap":"round","stroke-linejoin":"round","pointer-events":"none"}));
-          }
-          root.append(svg("text",{x:500,y:16,"text-anchor":"middle",fill:"#e5f4df","font-size":13,"font-weight":800},"PROTOTYPE BOARD · ACTIVE BY PLAYER CHOICE"));
-          root.append(svg("text",{x:500,y:995,"text-anchor":"middle",fill:"#e5f4df","font-size":11},"Prototype layout preview"));
-        }
         function board() {
           const root = $("board");
           root
             .querySelectorAll(":scope > :not(defs)")
             .forEach((n) => n.remove());
           root.classList.toggle("panning", moveMode);
-          const deployedPrototype = globalThis.fragmentedHabitatPrototypeBoard;
-          if (deployedPrototype && Array.isArray(deployedPrototype.cells)) {
-            drawPrototypeBoard(root, deployedPrototype);
-            return;
-          }
           root.append(
             svg("polygon", {
               points: polygon(outline(6.95), -0.8),
@@ -5867,6 +5805,20 @@
               }),
             );
             const q = project(p);
+            const override=globalThis.FHTile(r,s);
+            if(override?.type==='road'){
+              const a=squareCoordinate(r,s);
+              for(const [dx,dz] of [[1,0],[0,1]]){
+                const adjacent=squarePosition(a.x+dx,a.z+dz);
+                const adjacentType=globalThis.FHTile(adjacent.r,adjacent.s)?.type;
+                if(adjacentType==='road'||(!globalThis.FHTile(adjacent.r,adjacent.s)&&ROAD.has(adjacent.r))){
+                  const b=centre(adjacent.r,adjacent.s), end=project({x:(p.x+b.x)/2,z:(p.z+b.z)/2},.055);
+                  g.append(svg('path',{d:`M${q.x} ${q.y}L${end.x} ${end.y}`,stroke:'#f6dc74','stroke-width':2*zoom,'stroke-dasharray':`${4*zoom} ${3*zoom}`,'pointer-events':'none'}));
+                }
+              }
+            }
+            if(override?.type==='tree')tree(g,p,.45);
+            if(override?.type==='rest')g.append(svg('text',{x:q.x,y:q.y+4*zoom,'text-anchor':'middle','font-size':13*zoom,'pointer-events':'none'},'✦'));
             if (r === 0 && game.mode !== "reverse") {
               // The plot boundaries are part of the ground, beneath the scenery.
               drawHabitatPlots(g);
@@ -6019,7 +5971,7 @@
               )
                 tree(g, xy(6.24, s * ANGLE + 6), 0.65);
             }
-            if (ROAD.has(r)) {
+            if (!globalThis.FHTile(r,s) && ROAD.has(r)) {
               if (r === 5 || r === 9) {
                 const rr = (bounds(r)[0] + bounds(r)[1]) / 2;
                 const next = centre(r, game.wrapLane(r, s + 1));
@@ -6888,6 +6840,7 @@
             capacity: Number($("capacity").value),
             opener: $("colonization-opener").checked,
           });
+          defaultResources=game.resourceSpaces.slice();defaultRich=new Set(game.goldenSpaces);applyPrototypeResources();
           $("settings-dialog").close();
           render();
         };
@@ -6909,6 +6862,7 @@
             predatorRollMode: game.predatorRollMode,
             capacity: game.capacity,
           });
+          defaultResources=game.resourceSpaces.slice();defaultRich=new Set(game.goldenSpaces);applyPrototypeResources();
           $("reset-dialog").close();
           requestedMode = null;
           render();
@@ -7064,6 +7018,61 @@
           }),
         );
         addEventListener("resize", board);
+        // Prototype controls are inside the original renderer closure, so the
+        // original board() and game state are the only source of truth.
+        const proto=globalThis.FHPrototype;
+        const protoTools=$('prototype-tools');
+        const protoMessage=$('prototype-message');
+        const protoStatus=(m)=>protoMessage.textContent=m;
+        let defaultResources=game.resourceSpaces.slice(),defaultRich=new Set(game.goldenSpaces);
+        function applyPrototypeResources(){
+          game.resourceSpaces=defaultResources.slice();
+          game.goldenSpaces=new Set(defaultRich);
+          if(!proto.active)return;
+          for(const [id,entry] of Object.entries(proto.tiles)){
+            const [r,s]=id.split(':').map(Number);
+            if(r!==RESOURCE)continue;
+            if(entry.type==='food'||entry.type==='rich'){
+              if(!game.resourceSpaces.includes(s))game.resourceSpaces.push(s);
+              if(entry.type==='rich')game.goldenSpaces.add(s);
+              else game.goldenSpaces.delete(s);
+            }
+          }
+        }
+        function protoMode(on){proto.editing=on;document.body.classList.toggle('prototype-editing',on);protoTools.hidden=!on;$('prototype-launch').hidden=on;board();}
+        $('prototype-launch').onclick=()=>protoMode(true);
+        $('prototype-close').onclick=()=>protoMode(false);
+        $('prototype-brush').onchange=(e)=>proto.brush=e.target.value;
+        $('prototype-preview').onclick=()=>{proto.active=true;applyPrototypeResources();protoStatus('Previewing edited cells on the original game board.');board();};
+        $('prototype-deploy').onclick=()=>{proto.active=true;applyPrototypeResources();protoMode(false);render();};
+        $('prototype-default').onclick=()=>{proto.active=false;proto.tiles=Object.create(null);applyPrototypeResources();protoStatus('Original default board restored.');render();};
+        $('board').addEventListener('click',(e)=>{
+          if(!proto.editing)return;
+          const tile=e.target.closest('.tile[data-r][data-s]');
+          if(!tile)return;
+          e.preventDefault();e.stopImmediatePropagation();
+          const r=Number(tile.dataset.r),s=Number(tile.dataset.s),brush=proto.brush;
+          if(r===0){protoStatus('The central habitat is protected; choose an outer cell.');return;}
+          if((brush==='food'||brush==='rich')&&r!==RESOURCE){protoStatus('Food patches must be placed on the outer resource ring.');return;}
+          const selected=squareCoordinate(r,s);
+          let changed=0;
+          const apply=(rr,ss)=>{
+            if(rr<1||rr>RESOURCE)return;
+            const id=`${rr}:${ss}`;
+            if(brush==='clear')delete proto.tiles[id];
+            else proto.tiles[id]={type:brush};
+            changed++;
+          };
+          if(brush==='road'){
+            for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
+              const pos=squarePosition(selected.x+dx,selected.z+dz);
+              if(pos.r>=1&&pos.r<RESOURCE)apply(pos.r,pos.s);
+            }
+          }else apply(r,s);
+          proto.active=true;applyPrototypeResources();
+          protoStatus(`${changed} original board cell(s) updated. ${brush==='road'?'Road connections are inferred from adjacent cells.':''}`);
+          board();
+        },true);
         globalThis.qaRender = render;
         globalThis.qaCamera = () => ({
           angle,
@@ -7076,132 +7085,5 @@
         render();
       })();
     </script>
-
-    <dialog id="board-builder-dialog">
-      <div class="builder-head">
-        <div><div class="eyebrow">FRAGMENTED HABITAT · EXPERIMENTAL TOOL</div><h2>Prototype: Build a Board</h2><p>Build an optional experimental board on a 20 × 20 green grid. Place connected 3 × 3 straight or bent road pieces, player habitats, food patches, and optional darker-green resting grass. The original board remains the default unless players explicitly deploy this prototype.</p></div>
-        <button class="btn" id="builder-close" type="button">✕ Close</button>
-      </div>
-      <div class="builder-layout">
-        <div id="builder-grid" class="builder-grid" role="grid" aria-label="Custom board grid"></div>
-        <aside class="builder-tools">
-          <strong>Choose a placement tool</strong>
-          <button class="btn selected" data-builder-tool="road" type="button">▰ Road block</button>
-          <button class="btn" data-builder-tool="habitat" type="button">⌂ Habitat block</button>
-          <button class="btn" data-builder-tool="food" type="button">✿ Food patch</button>
-          <button class="btn" data-builder-tool="green" type="button">🌿 Greener grass · optional rest</button>
-          <button class="btn" data-builder-tool="rest" type="button">🌳 Tree resting place</button>
-          <button class="btn" data-builder-tool="erase" type="button">⌫ Erase block</button>
-          <label>Habitat owner<select id="builder-owner"><option value="0">Player 1 · Blue</option><option value="1">Player 2 · Red</option><option value="2">Player 3 · Yellow</option><option value="3">Player 4 · Purple</option><option value="4">Player 5</option><option value="5">Player 6</option></select></label>
-          <button class="btn" id="builder-road-straight" type="button">Straight road · 3 × 3 stamp</button>
-          <button class="btn" id="builder-road-bend" type="button">Bent road · 3 × 3 stamp</button>
-          <button class="btn" id="builder-road-rotate" type="button">Rotate road piece</button>
-          <div class="builder-stat" id="builder-stats">Road blocks: 0<br>Habitats: 0<br>Food patches: 0</div>
-          <div class="builder-stat">Road pieces cover a 3 × 3 area (nine blocks). Choose straight or bent pieces. Yellow centre markings connect automatically where road paths meet. The complete road network must connect opposite board edges.</div>
-          <div id="builder-message" aria-live="polite">Select a tool, then click grid squares.</div>
-        </aside>
-      </div>
-      <div class="builder-actions">
-        <button class="btn" id="builder-clear" type="button">Clear board</button>
-        <button class="btn" id="builder-export" type="button">Export layout JSON</button>
-        <button class="btn primary" id="builder-deploy" type="button">Deploy board in game</button>
-      </div>
-    </dialog>
-
-
-<script>
-(()=>{
-  const dialog=document.getElementById('board-builder-dialog');
-  if(!dialog) return;
-  const N=20, grid=document.getElementById('builder-grid'), msg=document.getElementById('builder-message'), stats=document.getElementById('builder-stats');
-  let cells=Array.from({length:N*N},()=>({type:'empty',owner:null})), tool='road', rotation=0, roadShape='straight';
-  const key=(r,c)=>r*N+c;
-  const glyph=c=>c.type==='habitat'?(Number(c.owner)===0?'🍃':Number(c.owner)===1?'🌰':'🌿'):c.type==='food'?'🍎':c.type==='rest'?'🌳':c.type==='green'?'🌿':'';
-  const dirs={N:[-1,0],E:[0,1],S:[1,0],W:[0,-1]};
-  function rotateDir(d){return ({N:'E',E:'S',S:'W',W:'N'})[d];}
-  function rotatePattern(pattern){let out=pattern.map(([r,c,ds])=>[r,c,ds.slice()]);for(let k=0;k<rotation;k++)out=out.map(([r,c,ds])=>[c,2-r,ds.map(rotateDir)]);return out;}
-  const straight=[[1,0,['W','E']],[1,1,['W','E']],[1,2,['W','E']]];
-  const bend=[[1,0,['W','E']],[1,1,['W','S']],[2,1,['N','S']]];
-  function paint(){
-    grid.replaceChildren();
-    cells.forEach((c,i)=>{const b=document.createElement('button');b.type='button';b.className='builder-cell '+(c.type==='empty'?'':c.type);b.setAttribute('role','gridcell');b.setAttribute('aria-label',`${Math.floor(i/N)+1}, ${i%N+1}: ${c.type}`);b.textContent=glyph(c);b.addEventListener('click',()=>{
-      const r=Math.floor(i/N), col=i%N;
-      if(tool==='road') placeRoadPiece(r,col,roadShape==='bend'?bend:straight);
-      else if(tool==='erase') cells[i]={type:'empty',owner:null};
-      else if(tool==='habitat') cells[i]={type:'habitat',owner:Number(document.getElementById('builder-owner').value)};
-      else if(tool==='rest') cells[i]={type:'rest',owner:null};
-      else if(tool==='green') cells[i]={type:'green',owner:null};
-      else cells[i]={type:'food',owner:null};
-      paint();
-    });grid.append(b);});
-    const count=t=>cells.filter(c=>c.type===t).length;
-    stats.innerHTML=`Road blocks: ${count('road')}<br>Habitats: ${count('habitat')}<br>Food patches: ${count('food')}<br>Greener grass: ${count('green')}<br>Tree resting places: ${count('rest')}<br><small>Each road piece covers a 3 × 3 footprint; its centreline is a connected path.</small>`;
-  }
-  function setTool(t){tool=t;document.querySelectorAll('[data-builder-tool]').forEach(b=>b.classList.toggle('selected',b.dataset.builderTool===t));msg.textContent=t==='road'?'Road tool: click to stamp a 3 × 3 road piece.':`${t[0].toUpperCase()+t.slice(1)} tool selected.`;}
-  function placeRoadPiece(r,c,base){
-    const pattern=rotatePattern(base);
-    // Road surface fills the full 3 × 3 footprint (nine blocks).
-    for(let rr=0;rr<3;rr++)for(let cc=0;cc<3;cc++){
-      const y=r+rr-1,x=c+cc-1;if(y>=0&&y<N&&x>=0&&x<N)cells[key(y,x)]={type:'road',owner:null,path:false,pathDirs:[]};
-    }
-    // Yellow centreline follows a straight or bent path through the section.
-    for(const [rr,cc,ds] of pattern){
-      const y=r+rr-1,x=c+cc-1;if(y>=0&&y<N&&x>=0&&x<N)cells[key(y,x)]={type:'road',owner:null,path:true,pathDirs:ds};
-    }
-    msg.textContent=base===straight?'Placed a straight 3 × 3 road section.':'Placed a bent 3 × 3 road section.';
-  }
-  function roadConnectsOppositeEdges(){
-    // Validate one continuous centreline component touching opposite edges.
-    // Adjacent path tiles connect geometrically, regardless of saved direction metadata.
-    const roads=new Set(cells.map((c,i)=>c.type==='road'&&c.path?i:-1).filter(i=>i>=0));
-    const visited=new Set();
-    for(const start of roads){
-      if(visited.has(start)) continue;
-      const component=new Set([start]), queue=[start];
-      visited.add(start);
-      while(queue.length){
-        const i=queue.pop(), r=Math.floor(i/N), c=i%N;
-        for(const [dr,dc] of Object.values(dirs)){
-          const nr=r+dr, nc=c+dc, j=nr*N+nc;
-          if(nr>=0&&nr<N&&nc>=0&&nc<N&&roads.has(j)&&!visited.has(j)){
-            visited.add(j); component.add(j); queue.push(j);
-          }
-        }
-      }
-      let top=false,bottom=false,left=false,right=false;
-      for(const i of component){
-        const r=Math.floor(i/N), c=i%N;
-        if(r===0) top=true;
-        if(r===N-1) bottom=true;
-        if(c===0) left=true;
-        if(c===N-1) right=true;
-      }
-      if((top&&bottom)||(left&&right)) return true;
-    }
-    return false;
-  }
-  function layout(){return {version:3,gridSize:N,cells:cells.map((c,i)=>({row:Math.floor(i/N),col:i%N,type:c.type,owner:c.owner,path:!!c.path,pathDirs:c.pathDirs||[]})).filter(c=>c.type!=='empty'),roadConnectsOppositeEdges:roadConnectsOppositeEdges(),createdAt:new Date().toISOString()};}
-  document.getElementById('prototype-build-trigger').addEventListener('click',()=>dialog.showModal());
-  document.getElementById('builder-close').addEventListener('click',()=>dialog.close());
-  document.querySelectorAll('[data-builder-tool]').forEach(b=>b.addEventListener('click',()=>setTool(b.dataset.builderTool)));
-  document.getElementById('builder-clear').addEventListener('click',()=>{cells=Array.from({length:N*N},()=>({type:'empty',owner:null}));paint();msg.textContent='Board cleared.';});
-  document.getElementById('builder-road-straight').addEventListener('click',()=>{tool='road';setTool('road');roadShape='straight';rotation=0;msg.textContent='Straight road selected. Click the grid to stamp a 3 × 3 section.';});
-  document.getElementById('builder-road-bend').addEventListener('click',()=>{tool='road';setTool('road');roadShape='bend';msg.textContent='Bent road selected. Click the grid to stamp a 3 × 3 bend.';});
-  document.getElementById('builder-road-rotate').addEventListener('click',()=>{rotation=(rotation+1)%4;msg.textContent=`${roadShape==='bend'?'Bent':'Straight'} road piece rotated ${rotation*90}°. Click the grid to place it.`;});
-  document.getElementById('builder-deploy').addEventListener('click',()=>{
-    const data=layout();
-    if(!data.cells.length){msg.textContent='Add at least one board feature before deploying.';return;}
-    if(!data.roadConnectsOppositeEdges){msg.textContent='Cannot deploy yet: connect the road centreline into one continuous route from one board edge to the opposite edge.';return;}
-    globalThis.fragmentedHabitatPrototypeBoard=data;
-    if(typeof globalThis.qaRender==='function') globalThis.qaRender();
-    dialog.close();
-    const notice=document.getElementById('prototype-deploy-notice'); if(notice) notice.hidden=false;
-  });
-  document.getElementById('builder-export').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(layout(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='fragmented-habitat-prototype-board.json';a.click();URL.revokeObjectURL(url);msg.textContent='Layout JSON exported.';});
-  document.getElementById('prototype-standard-board').addEventListener('click',()=>{globalThis.fragmentedHabitatPrototypeBoard=null;const notice=document.getElementById('prototype-deploy-notice');if(notice)notice.hidden=true;if(typeof globalThis.qaRender==='function')globalThis.qaRender();});
-  paint();
-})();
-</script>
-
   </body>
 </html>

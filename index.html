@@ -3107,7 +3107,7 @@
         <div class="prototype-action-grid"><button id="prototype-clear">New blank board</button><button id="prototype-undo">Undo</button><button id="prototype-redo">Redo</button><button id="prototype-save">Save layout</button><button id="prototype-load">Load layout</button><button id="prototype-preview">Preview</button></div>
         <input type="file" id="prototype-file" accept="application/json,.json" hidden>
         <button class="primary" id="prototype-deploy">Deploy custom board</button><button id="prototype-default">Restore default board</button>
-        <small id="prototype-message" role="status">Click to place a 3×3 road section. Drag to lay a full straight road in one gesture. Extend from either end or any branch; edge sections may be 3×2 or 3×1 only when YOU click or drag there.</small>
+        <small id="prototype-message" role="status">Click anywhere for an independent 3×3 road. Drag to extend a road in real time. Branch, intersect or connect roads. Only selected edge squares are filled.</small>
         <small>Uses the original square-ring cell IDs and existing movement. Default game stays unchanged until Deploy. Blank light-green cells are editable, including the center.</small>
       </div></div>
     </dialog>
@@ -5286,7 +5286,7 @@
             : { x: 0, z: 0 };
         }
         function shape(r, s) {
-          const custom=globalThis.FHTile(r,s);
+          const custom=globalThis.FHPrototype.active && r===0 ? {type:'ground'} : globalThis.FHTile(r,s);
           if(custom){
             if(custom.type==='ground'||custom.type==='habitat')return {fill:'#a6d59d',side:'#6b9770',name:'Open grassy ground'};
             if(custom.type==='home')return {fill:'#397b55',side:'#24563c',name:'Habitat home'};
@@ -5837,6 +5837,32 @@
             if (globalThis.FHPrototype.active) {
               const kind=override?.type||'ground';
               if(r===0){
+                // The default game collapses its central 11×11 area to one
+                // movement location. In prototype mode, render the actual
+                // individually edited terrain cells, without a default forest.
+                for(let cz=-SQUARE_HOME;cz<=SQUARE_HOME;cz++)for(let cx=-SQUARE_HOME;cx<=SQUARE_HOME;cx++){
+                  const terrain=globalThis.FHPrototype.tiles[`c:${cx}:${cz}`]||{type:'ground'};
+                  const palette={ground:'#a6d59d',habitat:'#a6d59d',home:'#397b55',road:'#78878b',tree:'#367d55',rest:'#367d55',food:'#4e8260',rich:'#4c9aa5'};
+                  const corners=[[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]].map(([ox,oz])=>({x:(cx+ox)*SQUARE_UNIT,z:(cz+oz)*SQUARE_UNIT}));
+                  g.append(svg('polygon',{points:polygon(corners,.035),fill:palette[terrain.type]||palette.ground,stroke:'#638f70','stroke-opacity':.5,'stroke-width':.4*zoom,'pointer-events':'none'}));
+                  const loc={x:cx*SQUARE_UNIT,z:cz*SQUARE_UNIT};
+                  if(terrain.type==='tree')tree(g,loc,.24);
+                  if(terrain.type==='home'||terrain.type==='rest'){
+                    const label=project(loc,.06);
+                    g.append(svg('text',{x:label.x,y:label.y+3*zoom,'text-anchor':'middle','font-size':9*zoom,'pointer-events':'none'},terrain.type==='home'?'⌂':'✦'));
+                  }
+                }
+                for(let cz=-SQUARE_HOME;cz<=SQUARE_HOME;cz++)for(let cx=-SQUARE_HOME;cx<=SQUARE_HOME;cx++){
+                  const tile=globalThis.FHPrototype.tiles[`c:${cx}:${cz}`];
+                  if(tile?.type!=='road'||!tile.axis)continue;
+                  const start=project({x:cx*SQUARE_UNIT,z:cz*SQUARE_UNIT},.08);
+                  for(const [dx,dz] of [[3,0],[-3,0],[0,3],[0,-3]]){
+                    const neighbor=globalThis.FHPrototype.tiles[`c:${cx+dx}:${cz+dz}`];
+                    if(neighbor?.type!=='road'||!neighbor.axis)continue;
+                    const end=project({x:(cx+dx/2)*SQUARE_UNIT,z:(cz+dz/2)*SQUARE_UNIT},.08);
+                    g.append(svg('path',{d:`M${start.x} ${start.y}L${end.x} ${end.y}`,fill:'none',stroke:'#f7df7b','stroke-width':1.6*zoom,'stroke-dasharray':`${3*zoom} ${2.5*zoom}`,'pointer-events':'none'}));
+                  }
+                }
                 for(let n=-SQUARE_HOME;n<=SQUARE_HOME;n++)for(const axis of ['x','z']){
                   const a=axis==='x'?{x:n*SQUARE_UNIT,z:-SQUARE_HOME*SQUARE_UNIT}:{x:-SQUARE_HOME*SQUARE_UNIT,z:n*SQUARE_UNIT};
                   const b=axis==='x'?{x:n*SQUARE_UNIT,z:SQUARE_HOME*SQUARE_UNIT}:{x:SQUARE_HOME*SQUARE_UNIT,z:n*SQUARE_UNIT};
@@ -7098,10 +7124,9 @@
           });
         }
         function validRoadNext(x,z){
-          if(!inBounds(x,z)||roadNodeAt(x,z))return false;
-          const nodes=roadNodeCoords();
-          if(!nodes.length)return true;
-          return roadNeighbors(x,z).length>0;
+          // Any empty square can start a new independent road. Connections are
+          // inferred from the network, never from the most recent click.
+          return inBounds(x,z)&&!roadNodeAt(x,z);
         }
         // When dragging, snap the path to the four rook directions. The
         // cursor can pass over existing nodes to branch or extend from either end.
@@ -7148,27 +7173,31 @@
           }
         }
 
+        let editorCells=new Map();
         function drawPrototypeGrid(){
-          protoGrid.replaceChildren();
+          protoGrid.replaceChildren();editorCells=new Map();
           const fill={ground:'#a6d59d',habitat:'#a6d59d',home:'#356b4a',green:'#a6d59d',road:'#738287',rest:'#428a59',tree:'#286c45',food:'#d6b966',rich:'#71b6c2'};
           for(let z=-maxN;z<=maxN;z++)for(let x=-maxN;x<=maxN;x++){
             const type=typeAt(x,z),rect=svg('rect',{x:x-.49,y:z-.49,width:.98,height:.98,fill:fill[type]||fill.ground,class:'cell','data-x':x,'data-z':z});
             if(proto.brush==='road'&&validRoadNext(x,z)&&!isRoad(x,z))rect.setAttribute('stroke','#e9d471');
-            protoGrid.append(rect);
+            protoGrid.append(rect);editorCells.set(`${x},${z}`,rect);
             if(type==='home'||type==='food'||type==='rich'||type==='tree'||type==='rest'){
               protoGrid.append(svg('text',{x,y:z+.25,'text-anchor':'middle','font-size':'.7','pointer-events':'none'},type==='home'?'⌂':type==='food'?'🍎':type==='rich'?'🍇':type==='tree'?'🌳':'✦'));
             }
           }
-          for(let z=-maxN;z<=maxN;z++)for(let x=-maxN;x<=maxN;x++)if(isAxis(x,z))markPath(protoGrid,x,z);
+          const lines=svg('g',{'id':'prototype-road-lines','pointer-events':'none'});protoGrid.append(lines);
+          for(let z=-maxN;z<=maxN;z++)for(let x=-maxN;x<=maxN;x++)if(isAxis(x,z))markPath(lines,x,z);
         }
+        function livePaintRoad(){ /* setTile already updates only changed SVG cells */ }
         function snapshot(){protoHistory.push({tiles:structuredClone(proto.tiles),end:proto.roadEnd?[...proto.roadEnd]:null,done:proto.roadDone});protoFuture.length=0;if(protoHistory.length>30)protoHistory.shift();}
-        function setTile(x,z,type,axis=false){if(inBounds(x,z))proto.tiles[cellId(x,z)]={type,...(axis?{axis:true}:{})};}
+        function setTile(x,z,type,axis=false){
+          if(!inBounds(x,z))return;
+          proto.tiles[cellId(x,z)]={type,...(axis?{axis:true}:{})};
+          const rect=editorCells.get(`${x},${z}`);
+          if(rect){const colors={ground:'#a6d59d',habitat:'#a6d59d',home:'#356b4a',green:'#a6d59d',road:'#738287',rest:'#428a59',tree:'#286c45',food:'#d6b966',rich:'#71b6c2'};rect.setAttribute('fill',colors[type]||colors.ground);}
+        }
         function placeRoad(x,z,record=true){
           if(!validRoadNext(x,z))return false;
-          for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){
-            const t=entryAt(x+dx,z+dz);
-            if(t&&!['ground','habitat','road'].includes(t.type))return false;
-          }
           if(record)snapshot();
           let count=0;
           for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){
@@ -7185,7 +7214,7 @@
           const brush=proto.brush;
           if(brush==='road'||brush==='road-single'){
             if(!placeRoad(x,z,record)){
-              protoStatus('Road must join any existing section horizontally or vertically. At the edge, click the remaining squares to add a partial section.');return false;
+              protoStatus('Click anywhere to start a separate road, or drag from an existing road to extend it. Edge sections are placed only when selected.');return false;
             }
           }else if(brush==='roundabout'){
             if(Math.abs(x)>maxN-1||Math.abs(z)>maxN-1){protoStatus('Roundabout needs a 3×3 footprint inside the board.');return false;}
@@ -7196,7 +7225,7 @@
             if(record)snapshot();setTile(x,z,brush==='erase'?'ground':brush);
             protoStatus(`Placed one ${brush==='erase'?'blank ground':brush} square at (${x}, ${z}).`);
           }
-          drawPrototypeGrid();return true;
+          if(!stroke)drawPrototypeGrid();else if(brush==='road'||brush==='road-single')livePaintRoad();else drawPrototypeGrid();return true;
         }
         // One pointer gesture = one undo step. Road strokes use 3-cell
         // increments, but permit a user-requested shorter final segment.
@@ -7231,7 +7260,7 @@
             if(!placeRoad(nx,nz,false))break;
             current=[nx,nz];changed=true;
           }
-          if(changed){stroke.last=current;drawPrototypeGrid();}
+          if(changed){stroke.last=current;livePaintRoad();}
         }
         protoGrid.addEventListener('pointerdown',e=>{
           if(e.button!==0&&e.pointerType==='mouse')return;
@@ -7257,7 +7286,7 @@
             if(paintAt(x,z,false))stroke.last=[x,z];
           }
         });
-        const finishStroke=()=>{stroke=null;};
+        const finishStroke=()=>{if(stroke){stroke=null;drawPrototypeGrid();}};
         protoGrid.addEventListener('pointerup',finishStroke);
         protoGrid.addEventListener('pointercancel',finishStroke);
         $('prototype-launch').onclick=()=>{try{if(!Object.keys(proto.tiles).length)proto.tiles=blankPrototype();drawPrototypeGrid();if(typeof protoDialog.showModal==='function')protoDialog.showModal();else protoDialog.setAttribute('open','');}catch(error){console.error('Prototype builder:',error);alert('Prototype editor error: '+error.message);}};
@@ -7266,7 +7295,7 @@
         $('prototype-clear').onclick=()=>{snapshot();proto.tiles=blankPrototype();proto.roadEnd=null;proto.roadDone=false;drawPrototypeGrid();protoStatus('Blank light-green board ready.');};
         $('prototype-undo').onclick=()=>{if(!protoHistory.length)return;protoFuture.push({tiles:structuredClone(proto.tiles),end:proto.roadEnd,done:proto.roadDone});const prev=protoHistory.pop();proto.tiles=prev.tiles;proto.roadEnd=prev.end;proto.roadDone=prev.done;drawPrototypeGrid();protoStatus('Last edit undone.');};
         $('prototype-redo').onclick=()=>{if(!protoFuture.length)return;protoHistory.push({tiles:structuredClone(proto.tiles),end:proto.roadEnd,done:proto.roadDone});const next=protoFuture.pop();proto.tiles=next.tiles;proto.roadEnd=next.end;proto.roadDone=next.done;drawPrototypeGrid();protoStatus('Edit restored.');};
-        $('prototype-deploy').onclick=()=>{if(!Object.values(proto.tiles).some(t=>t.type==='home')){protoStatus('Place at least one 🏡 Habitat before deployment.');return;}proto.active=true;applyPrototypeResources();const homes=Object.entries(proto.tiles).filter(([,v])=>v.type==='home').map(([id])=>id.split(':').map(Number));game.tokens.forEach((t,i)=>{if(homes.length){const [r,s]=homes[i%homes.length];t.r=r;t.s=s;}});protoDialog.close();render();};
+        $('prototype-deploy').onclick=()=>{if(!Object.values(proto.tiles).some(t=>t.type==='home')){protoStatus('Place at least one 🏡 Habitat before deployment.');return;}proto.active=true;applyPrototypeResources();const homes=Object.entries(proto.tiles).filter(([,v])=>v.type==='home').map(([id])=>id.startsWith('c:')?[0,0]:id.split(':').map(Number));game.tokens.forEach((t,i)=>{if(homes.length){const [r,s]=homes[i%homes.length];t.r=r;t.s=s;}});protoDialog.close();render();};
         $('prototype-preview').onclick=()=>{drawPrototypeGrid();protoStatus('Preview shows the exact terrain that will replace the default board.');};
         $('prototype-save').onclick=()=>{const blob=new Blob([JSON.stringify({version:2,tiles:proto.tiles},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Fragmented_Habitat_Custom_Board.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);};
         $('prototype-load').onclick=()=>$('prototype-file').click();

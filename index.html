@@ -4964,7 +4964,7 @@
           "#c4b1ef",
         ];
         const ANGLE = 360 / SECTORS;
-        const { squareCoordinate, SQUARE_HOME, SQUARE_UNIT } =
+        const { squareCoordinate, squarePosition, SQUARE_HOME, SQUARE_UNIT } =
           FragmentedHabitat;
         function beyondEdge(s, distance = 0.28) {
           if (game.boardShape !== "square") return xy(6.8, s * ANGLE);
@@ -7035,7 +7035,7 @@
         const protoGrid=$('prototype-grid');
         const protoMessage=$('prototype-message');
         const protoStatus=(message)=>protoMessage.textContent=message;
-        const defaultResources=game.resourceSpaces.slice(), defaultRich=new Set(game.goldenSpaces);
+        let defaultResources=game.resourceSpaces.slice(), defaultRich=new Set(game.goldenSpaces);
         const protoHistory=[];
         const maxN=RESOURCE+SQUARE_HOME;
         const tileId=(r,s)=>`${r}:${s}`;
@@ -7097,7 +7097,7 @@
         protoGrid.addEventListener('pointerdown',e=>{const el=e.target.closest('rect.cell');if(!el)return;painting=true;paintAt(+el.dataset.x,+el.dataset.z);e.preventDefault();});
         window.addEventListener('pointerup',()=>painting=false);
         protoGrid.addEventListener('pointermove',e=>{if(!painting||e.buttons!==1)return;const el=e.target.closest('rect.cell');if(!el)return;const pos=`${el.dataset.x}:${el.dataset.z}`;if(pos===protoGrid.dataset.last)return;protoGrid.dataset.last=pos;paintAt(+el.dataset.x,+el.dataset.z);});
-        $('prototype-launch').onclick=()=>{if(!Object.keys(proto.tiles).length)proto.tiles=blankPrototype();drawPrototypeGrid();protoDialog.showModal();};
+        $('prototype-launch').onclick=()=>{try{if(!Object.keys(proto.tiles).length)proto.tiles=blankPrototype();drawPrototypeGrid();if(typeof protoDialog.showModal==='function')protoDialog.showModal();else protoDialog.setAttribute('open','');}catch(error){console.error('Prototype builder:',error);alert('Prototype editor error: '+error.message);}};
         $('prototype-close').onclick=()=>protoDialog.close();
         $('prototype-brush').onchange=e=>proto.brush=e.target.value;
         $('prototype-clear').onclick=()=>{protoHistory.push(structuredClone(proto.tiles));proto.tiles=blankPrototype();drawPrototypeGrid();protoStatus('Blank light-green board ready.');};
